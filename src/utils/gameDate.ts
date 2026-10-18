@@ -68,6 +68,11 @@ export function getMonthIndex(date: string) {
   return (d.getFullYear() - start.getFullYear()) * 12 + d.getMonth() - start.getMonth();
 }
 
+// 이벤트 날의 에피소드 번호 (프롤로그가 #0, 이후 매달 데이트 → 월말 에피소드 순으로 1씩 증가)
+export function getEpisodeNumber(date: string) {
+  return getMonthIndex(date) * 2 + (getDayEvent(date) === 'date' ? 1 : 2);
+}
+
 // 진행하기 후의 날짜
 // 1주차 → 2주차 → 데이트(15일) → 3주차 → 4주차 → 에피소드(말일) → 다음 달 1일
 export function getNextWeekDate(date: string) {

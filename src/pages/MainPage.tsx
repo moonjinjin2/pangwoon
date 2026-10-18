@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import backgroundImg from '../img/room3.png';
 import hayeongImg from '../img/character/hayeong.png';
 import proceedBtnImg from '../img/btn_proceed2.png';
 import MonthPlan, { type Activity } from '../components/MonthPlan';
+import ActivityResult from '../components/ActivityResult';
 import ActivityScene from '../components/ActivityScene';
 import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/AffectionBox';
 import EpisodeScene from '../components/EpisodeScene';
 import StatsBox, { MAX_STAT, type StatKey, type Stats } from '../components/StatsBox';
+import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
+import CollectionPage from './CollectionPage';
 import WardrobePage from './WardrobePage';
-import { ACTIVITIES } from '../utils/activity';
+import { getWeekResult, rollDays } from '../utils/activity';
 import { HEROINES, SPEAKERS, getDateEpisode, getEpisode, type Affection, type Heroine } from '../utils/episode';
-import { formatShortDate, getDayEvent, getMonthIndex, getWeekIndex } from '../utils/gameDate';
-import { PROGRESS_KEYS, useStoredState } from '../utils/storage';
+import { formatShortDate, getDayEvent, getEpisodeNumber, getMonthIndex, getWeekIndex } from '../utils/gameDate';
+import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, markCollected, useStoredState } from '../utils/storage';
 
 interface Props {
   name: string;
@@ -40,7 +43,15 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
   const [affection, setAffection] = useStoredState(PROGRESS_KEYS.affection, initialAffection);
   const [revealed, setRevealed] = useStoredState(PROGRESS_KEYS.revealed, initialRevealed);
   const [playing, setPlaying] = useState(false);
+  // 활동 움짤이 끝나면 메인 화면으로 돌아와 결과창 표시
+  const [showResult, setShowResult] = useState(false);
+  // 이번 주차 5일치 성공/실패 (진행하기 누를 때 정함)
+  const [days, setDays] = useState<boolean[]>([]);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
+  const [textSpeed, setTextSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
 
   const week = getWeekIndex(gameDate);
   const month = Number(gameDate.split('-')[1]);
@@ -50,9 +61,14 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
     setPlans((prev) => prev.map((p, i) => (i === week ? activity : p)));
   };
 
-  // 이번 주차 활동 결과를 반영하고 다음 주로 넘어감
+  const finishActivity = useCallback(() => {
+    setPlaying(false);
+    setShowResult(true);
+  }, []);
+
+  // 결과창 확인 시 이번 주차 활동 결과를 반영하고 다음 주로 넘어감
   const finishWeek = () => {
-    const { coins: coinChange = 0, ...statChanges } = ACTIVITIES[plans[week]].result;
+    const { coins: coinChange = 0, ...statChanges } = getWeekResult(plans[week], days);
     setStats((prev) => {
       const next = { ...prev };
       for (const [key, value] of Object.entries(statChanges) as [StatKey, number][]) {
@@ -61,12 +77,13 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
       return next;
     });
     setCoins((prev) => prev + coinChange);
-    setPlaying(false);
+    setShowResult(false);
     onProceed?.();
   };
 
   // 데이트(15일)·에피소드(말일)가 끝나면 선택지 호감도를 반영하고 다음 날짜로
   const finishEpisode = (changes: Partial<Affection>) => {
+    markCollected(getEpisodeNumber(gameDate), eventEpisode().episode.id);
     setAffection((prev) => {
       const next = { ...prev };
       for (const key of HEROINES) {
@@ -110,27 +127,44 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
         <span className="episode__speaker">{name}</span>
         <p className="episode__text">오늘은 어떤 걸 해볼까?</p>
       </div>
-      <TopMenu coins={coins} onWardrobe={() => setWardrobeOpen(true)} />
+      <TopMenu coins={coins} onWardrobe={() => setWardrobeOpen(true)} onCollection={() => setCollectionOpen(true)} onSettings={() => setSettingsOpen(true)} />
       <div className="main__right">
         <StatsBox stats={stats} />
       </div>
-      <button className="main__logout" onClick={onLogout}>
-        Exit
-      </button>
-      <button className="main__proceed" onClick={() => setPlaying(true)}>
+      <button
+        className="main__proceed"
+        onClick={() => {
+          setDays(rollDays(plans[week]));
+          setPlaying(true);
+        }}
+      >
+        {/* 4주 활동을 다 마치고 말일 에피소드만 남았을 때 안내 */}
+        {dayEvent === 'episode' && <span className="main__bubble">메인 에피소드 발생!</span>}
         <img src={proceedBtnImg} alt="진행하기" />
       </button>
       {playing &&
         (dayEvent ? (
-          <EpisodeScene {...eventEpisode()} date={gameDate} playerName={name} onDone={finishEpisode} />
+          <EpisodeScene {...eventEpisode()} number={getEpisodeNumber(gameDate)} date={gameDate} playerName={name} onDone={finishEpisode} />
         ) : (
-          <ActivityScene weekLabel={`${month}월 ${week + 1}주`} activity={plans[week]} onDone={finishWeek} />
+          <ActivityScene weekLabel={`${month}월 ${week + 1}주`} activity={plans[week]} days={days} onFinish={finishActivity} />
         ))}
+      {showResult && <ActivityResult activity={plans[week]} days={days} onConfirm={finishWeek} />}
       {wardrobeOpen && (
         <WardrobePage
           coins={coins}
           onSpend={(amount) => setCoins((prev) => prev - amount)}
           onClose={() => setWardrobeOpen(false)}
+        />
+      )}
+      {collectionOpen && <CollectionPage onClose={() => setCollectionOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          volume={volume}
+          onChangeVolume={setVolume}
+          textSpeed={textSpeed}
+          onChangeTextSpeed={setTextSpeed}
+          onExit={onLogout}
+          onClose={() => setSettingsOpen(false)}
         />
       )}
     </div>

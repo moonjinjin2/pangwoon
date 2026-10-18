@@ -39,18 +39,20 @@ const icons = {
     '.w.......w..w.w.',
     'wwwwwwwwwwwwwwww',
   ],
-  camera: [
+  book: [
     '................',
-    '.....wwww.......',
-    '.wwwwwwwwwwwwww.',
-    'wwwwww....wwwwww',
-    'wwwww......wwwww',
-    'wwww...ww...wwww',
-    'wwww..w.....wwww',
-    'wwww........wwww',
-    'wwwww......wwwww',
-    'wwwwww....wwwwww',
-    '.wwwwwwwwwwwwww.',
+    '.wwwww....wwwww.',
+    'wwwwwwwllwwwwwww',
+    'wllllwwllwwllllw',
+    'wwwwwwwllwwwwwww',
+    'wllllwwllwwllllw',
+    'wwwwwwwllwwwwwww',
+    'wlllwwwllwwwlllw',
+    'wwwwwwwllwwwwwww',
+    'wwwwwwwllwwwwwww',
+    'pwwwwwwllwwwwwwp',
+    'pppppppppppppppp',
+    '......pppp......',
   ],
   coin: [
     '....dddddddd....',
@@ -117,11 +119,11 @@ interface Props {
   coins: number;
   onWardrobe?: () => void;
   onShop?: () => void;
-  onCamera?: () => void;
+  onCollection?: () => void;
   onSettings?: () => void;
 }
 
-export default function TopMenu({ coins, onWardrobe, onShop, onCamera, onSettings }: Props) {
+export default function TopMenu({ coins, onWardrobe, onShop, onCollection, onSettings }: Props) {
   return (
     <nav className="topmenu">
       <button className="topmenu__item topmenu__btn" onClick={onWardrobe} aria-label="옷장">
@@ -130,8 +132,8 @@ export default function TopMenu({ coins, onWardrobe, onShop, onCamera, onSetting
       <button className="topmenu__item topmenu__btn" onClick={onShop} aria-label="상점">
         <PixelIcon grid={icons.shop} />
       </button>
-      <button className="topmenu__item topmenu__btn" onClick={onCamera} aria-label="사진">
-        <PixelIcon grid={icons.camera} />
+      <button className="topmenu__item topmenu__btn" onClick={onCollection} aria-label="컬렉션">
+        <PixelIcon grid={icons.book} />
       </button>
       <div className="topmenu__item topmenu__coins" aria-label={`코인 ${coins.toLocaleString('en-US')}`}>
         <PixelIcon grid={icons.coin} />

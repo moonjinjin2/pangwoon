@@ -12,7 +12,25 @@ export const PROGRESS_KEYS = {
   revealed: 'revealed',
   ownedOutfits: 'ownedOutfits',
   equippedOutfit: 'equippedOutfit',
+  collection: 'collection',
 } as const;
+
+// 환경 설정 (Exit 해도 유지)
+export const SETTINGS_KEYS = {
+  bgmVolume: 'bgmVolume',
+  textSpeed: 'textSpeed',
+} as const;
+
+// 대사 한 글자가 나오는 간격(ms)
+export const TEXT_SPEEDS = [
+  { key: 'slow', label: '느리게', ms: 70 },
+  { key: 'normal', label: '보통', ms: 40 },
+  { key: 'fast', label: '빠르게', ms: 15 },
+] as const;
+
+export type TextSpeed = (typeof TEXT_SPEEDS)[number]['key'];
+
+export const DEFAULT_TEXT_SPEED: TextSpeed = 'normal';
 
 export function load(key: string) {
   try {
@@ -57,6 +75,15 @@ function loadJSON<T>(key: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+// 컬렉션: 에피소드 번호(#0, #1 …) → 그때 본 에피소드 id
+export type Collection = Record<string, string>;
+
+// 끝까지 본 에피소드를 그 회차 번호로 컬렉션에 기록
+export function markCollected(number: number, id: string) {
+  const collected = loadJSON<Collection>(PROGRESS_KEYS.collection, {});
+  save(PROGRESS_KEYS.collection, JSON.stringify({ ...collected, [number]: id }));
 }
 
 // useState와 같지만 값이 바뀔 때마다 localStorage에 저장해 새로고침해도 유지됨

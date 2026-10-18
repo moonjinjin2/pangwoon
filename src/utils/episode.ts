@@ -38,7 +38,11 @@ export interface EpisodeLine {
 }
 
 export interface Episode {
+  // 컬렉션에 기록할 때 쓰는 고유 키
+  id: string;
   title: string;
+  // 컬렉션 카드 일러스트 (없으면 배경 + 등장 캐릭터로 대신 그림)
+  illust?: string;
   // 현재 상황 창 아이콘 (이모지)
   icon?: string;
   // 현재 상황 창에 날짜 옆에 표시 (예: '저녁')
@@ -49,6 +53,7 @@ export interface Episode {
 // 임시 에피소드. 달(1~12)별로 지정하고, 없는 달은 DEFAULT_EPISODE
 const EPISODES: Record<number, Episode> = {
   4: {
+    id: 'month-4',
     title: '벚꽃 아래에서',
     lines: [
       { text: '4월의 마지막 날. 창밖으로 벚꽃잎이 흩날리고 있다.' },
@@ -80,6 +85,7 @@ const EPISODES: Record<number, Episode> = {
     ],
   },
   5: {
+    id: 'month-5',
     title: '새로운 얼굴',
     lines: [
       { text: '5월의 마지막 날. 알바하던 카페에 낯선 손님이 찾아왔다.' },
@@ -112,6 +118,7 @@ const EPISODES: Record<number, Episode> = {
 };
 
 const DEFAULT_EPISODE: Episode = {
+  id: 'month-default',
   title: '한 달을 돌아보며',
   icon: '📅',
   lines: [
@@ -149,6 +156,7 @@ export function getEpisode(month: number) {
 const DATE_EPISODES: Record<Heroine, Episode[]> = {
   minji: [
     {
+      id: 'date-minji-1',
       title: '첫 데이트',
       lines: [
         { text: '약속 장소인 카페 앞. 민지가 먼저 와서 손을 흔들고 있다.' },
@@ -180,6 +188,7 @@ const DATE_EPISODES: Record<Heroine, Episode[]> = {
       ],
     },
     {
+      id: 'date-minji-2',
       title: '야경 산책',
       lines: [
         { text: '해가 지고, 둘은 강변을 따라 천천히 걸었다.' },
@@ -210,6 +219,7 @@ const DATE_EPISODES: Record<Heroine, Episode[]> = {
   ],
   siyeong: [
     {
+      id: 'date-siyeong-1',
       title: '도서관 데이트',
       lines: [
         { text: '조용한 도서관. 시영이 창가 자리에서 책을 읽고 있다.' },
@@ -241,6 +251,7 @@ const DATE_EPISODES: Record<Heroine, Episode[]> = {
       ],
     },
     {
+      id: 'date-siyeong-2',
       title: '비 오는 날',
       lines: [
         { text: '갑자기 쏟아진 비. 우산은 하나뿐이다.' },
@@ -271,6 +282,7 @@ const DATE_EPISODES: Record<Heroine, Episode[]> = {
   ],
   emily: [
     {
+      id: 'date-emily-1',
       title: '시장 투어',
       lines: [
         { text: '북적이는 전통시장. 에밀리의 눈이 반짝인다.' },
@@ -299,6 +311,7 @@ const DATE_EPISODES: Record<Heroine, Episode[]> = {
       ],
     },
     {
+      id: 'date-emily-2',
       title: '사진 한 장',
       lines: [
         { text: '노을 지는 전망대. 에밀리가 휴대폰을 꺼낸다.' },
@@ -341,6 +354,7 @@ export function getDateEpisode(monthIndex: number) {
 export const PROLOGUE_DATE = '2026-03-02';
 
 export const PROLOGUE: Episode = {
+  id: 'prologue',
   title: '신입생 OT',
   icon: '🍺',
   time: '저녁',
@@ -366,3 +380,16 @@ export const PROLOGUE: Episode = {
     { text: '이렇게 {name}의 파란만장한 대학 생활이 시작되었다.' },
   ],
 };
+
+// 전체 에피소드 목록 (컬렉션에 기록된 id로 에피소드를 찾을 때 씀)
+export const EPISODE_CATALOG: Episode[] = [
+  PROLOGUE,
+  ...Object.values(EPISODES),
+  DEFAULT_EPISODE,
+  ...HEROINES.flatMap((h) => DATE_EPISODES[h]),
+];
+
+// 에피소드의 대표 캐릭터 (주인공이 아닌 첫 화자, 없으면 주인공)
+export function getMainSpeaker(episode: Episode): Speaker {
+  return episode.lines.find((l) => l.speaker && l.speaker !== 'player')?.speaker ?? 'player';
+}

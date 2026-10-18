@@ -76,7 +76,7 @@ function OutfitIcon({ outfit }: { outfit: Outfit }) {
 }
 
 // 버튼용 픽셀 글리프 (#=글자색)
-const glyphs = {
+export const glyphs = {
   close: ['##...##', '###.###', '.#####.', '..###..', '.#####.', '###.###', '##...##'],
   prev: ['...#', '..##', '.###', '####', '.###', '..##', '...#'],
   next: ['#...', '##..', '###.', '####', '###.', '##..', '#...'],
@@ -85,7 +85,7 @@ const glyphs = {
 
 const coinIcon = ['..kkkk..', '.k#ww#k.', 'k#w####k', 'k#w####k', 'k######k', 'k######k', '.k####k.', '..kkkk..'];
 
-function Glyph({ grid }: { grid: string[] }) {
+export function Glyph({ grid }: { grid: string[] }) {
   const width = Math.max(...grid.map((row) => row.length));
   return (
     <svg className="inv__glyph" viewBox={`0 0 ${width} ${grid.length}`} aria-hidden>
@@ -128,7 +128,7 @@ function Character({ outfit }: { outfit: Equipped }) {
 // 화면 높이가 낮으면 카드가 찌그러지지 않도록 한 페이지에 2줄만
 const SHORT_SCREEN = '(max-height: 700px)';
 
-function useMediaQuery(query: string) {
+export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
 
   useEffect(() => {
@@ -222,8 +222,9 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
         backgroundImage: `linear-gradient(rgba(20, 16, 40, 0.55), rgba(20, 16, 40, 0.55)), url(${backgroundImg})`,
       }}
     >
-      <button className="topmenu__item wardrobe__back" onClick={onClose}>
-        ◀ BACK
+      <button className="wardrobe__back" onClick={onClose}>
+        <Glyph grid={glyphs.prev} />
+        BACK
       </button>
 
       <div className="wardrobe__stage">

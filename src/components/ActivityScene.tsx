@@ -1,97 +1,71 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Box from './Box';
-import { STAT_LABELS } from './StatsBox';
-import { ACTIVITIES, type Activity, type Effect } from '../utils/activity';
+import DayMarks from './DayMarks';
+import { ACTIVITIES, DAYS_PER_WEEK, type Activity } from '../utils/activity';
 
 const FRAME_MS = 400;
-const PLAY_MS = 3200;
+// 하루치 결과가 하나씩 뜨는 간격. 마지막 결과를 잠깐 보여준 뒤 종료
+const DAY_MS = 700;
+const PLAY_MS = DAY_MS * DAYS_PER_WEEK + 600;
 
 interface Props {
   // 예: '4월 1주'
   weekLabel: string;
   activity: Activity;
-  onDone: () => void;
+  // 5일치 성공/실패 (미리 정해서 넘겨줌)
+  days: boolean[];
+  // 재생이 끝나거나 스킵하면 호출 (결과창은 메인 화면에서 띄움)
+  onFinish: () => void;
 }
 
-function effectLabel(key: keyof Effect) {
-  return key === 'coins' ? '골드' : STAT_LABELS[key];
-}
-
-export default function ActivityScene({ weekLabel, activity, onDone }: Props) {
+export default function ActivityScene({ weekLabel, activity, days, onFinish }: Props) {
   const info = ACTIVITIES[activity];
   const [frame, setFrame] = useState(0);
-  const [finished, setFinished] = useState(false);
+  const [revealed, setRevealed] = useState(0);
 
   useEffect(() => {
-    const tick = setInterval(() => setFrame((f) => (f + 1) % info.frames.length), FRAME_MS);
-    const end = setTimeout(() => setFinished(true), PLAY_MS);
+    // 움짤이 없을 때만 컷을 직접 넘김
+    const tick = info.animation ? undefined : setInterval(() => setFrame((f) => (f + 1) % info.frames.length), FRAME_MS);
+    const reveal = setInterval(() => setRevealed((r) => Math.min(r + 1, DAYS_PER_WEEK)), DAY_MS);
+    const end = setTimeout(onFinish, PLAY_MS);
     return () => {
       clearInterval(tick);
+      clearInterval(reveal);
       clearTimeout(end);
     };
-  }, [info.frames.length]);
+  }, [info.animation, info.frames.length, onFinish]);
 
   // Enter / Space로 스킵 (꾹 누르고 있을 때 결과창까지 넘어가지 않도록 반복 입력은 무시)
   useEffect(() => {
-    if (finished) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
         e.preventDefault();
-        setFinished(true);
+        onFinish();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [finished]);
-
-  const changes = Object.entries(info.result) as [keyof Effect, number][];
+  }, [onFinish]);
 
   return (
-    <div className="scene">
-      <header className="scene__header">
-        <span className="scene__week">{weekLabel}</span>
-        <h2 className="scene__message">{info.message}</h2>
-      </header>
-      <div className="scene__stage" style={{ background: info.color }}>
-        <span className="scene__frame" aria-hidden>{info.frames[frame]}</span>
-      </div>
-      {!finished && (
-        <button className="scene__skip" onClick={() => setFinished(true)}>
-          <span>SKIP ▶▶</span>
-          <span className="scene__skip-hint">Space / Enter</span>
-        </button>
-      )}
-      {finished && (
-        <div className="modal">
-          <div className="modal__dialog">
-            <Box title="Result" onClose={onDone}>
-              <div className="result">
-                <h3 className="result__title">
-                  {info.label} 완료!
-                </h3>
-                <ul className="result__list">
-                  {changes.map(([key, value]) => {
-                    // 스트레스는 줄어드는 쪽이 좋은 변화
-                    const good = key === 'stress' ? value < 0 : value > 0;
-                    return (
-                      <li key={key} className="result__item">
-                        <span>{effectLabel(key)}</span>
-                        <span className={good ? 'result__value result__value--good' : 'result__value result__value--bad'}>
-                          {value >= 0 ? '+' : ''}
-                          {value.toLocaleString()}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <button className="result__confirm" onClick={onDone} autoFocus>
-                  확인
-                </button>
-              </div>
-            </Box>
-          </div>
+    <div className="scene" style={{ '--scene-color': info.color, '--scene-duration': `${PLAY_MS}ms` } as CSSProperties}>
+      <Box title={`${weekLabel} · ${info.label}`} className="scene__window">
+        <div className="scene__stage">
+          {info.animation ? (
+            <img className="scene__animation" src={info.animation} alt={info.label} />
+          ) : (
+            <span className="scene__frame" aria-hidden>{info.frames[frame]}</span>
+          )}
         </div>
-      )}
+        {days.length > 0 && <DayMarks days={days} revealed={revealed} />}
+        <div className="scene__progress" aria-hidden>
+          <div className="scene__progress-fill" />
+        </div>
+      </Box>
+      <button className="scene__skip" onClick={onFinish}>
+        <span>SKIP ▶▶</span>
+        <span className="scene__skip-hint">Space / Enter</span>
+      </button>
     </div>
   );
 }

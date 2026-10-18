@@ -1,15 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import backgroundImg from '../img/room.jpg';
+import backgroundImg from '../img/cafe.jpg';
 import Box from './Box';
 import { SPEAKERS, type Affection, type Choice, type Episode, type Heroine } from '../utils/episode';
 import { formatFullDate } from '../utils/gameDate';
+import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 
-const TYPE_MS = 40;
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
 
 interface Props {
-  // 현재 상황 창에 날짜 옆에 표시 (예: '데이트 · 민지')
+  // 상단 창 제목에 표시 (에피소드 #0, #1 …)
+  number: number;
+  // 상단 창에 날짜 옆에 표시 (예: '데이트 · 민지')
   label: string;
   episode: Episode;
   // 'YYYY-MM-DD'
@@ -21,7 +23,7 @@ interface Props {
   onDone: (affection: Partial<Affection>) => void;
 }
 
-export default function EpisodeScene({ label, episode, date, background = backgroundImg, playerName, onDone }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = backgroundImg, playerName, onDone }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
   const [lines, setLines] = useState(episode.lines);
   const [index, setIndex] = useState(0);
@@ -31,6 +33,9 @@ export default function EpisodeScene({ label, episode, date, background = backgr
   const [feedback, setFeedback] = useState<Partial<Affection> | null>(null);
   const [auto, setAuto] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  // 설정에서 고른 텍스트 속도 (에피소드 도중에는 설정을 열 수 없으므로 시작할 때 한 번만 읽음)
+  const [textSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
+  const typeMs = (TEXT_SPEEDS.find((s) => s.key === textSpeed) ?? TEXT_SPEEDS[1]).ms;
 
   const fill = (text: string) => text.split('{name}').join(playerName);
   const nameOf = (speaker: keyof typeof SPEAKERS) => (speaker === 'player' ? playerName : SPEAKERS[speaker].name);
@@ -52,16 +57,16 @@ export default function EpisodeScene({ label, episode, date, background = backgr
     for (const { image } of Object.values(SPEAKERS)) {
       const img = new Image();
       img.src = image;
-      img.decode().catch(() => {});
+      img.decode().catch(() => { });
     }
   }, []);
 
   // 한 글자씩 타이핑
   useEffect(() => {
     if (!typing) return;
-    const timer = setTimeout(() => setTyped((t) => t + 1), TYPE_MS);
+    const timer = setTimeout(() => setTyped((t) => t + 1), typeMs);
     return () => clearTimeout(timer);
-  }, [typing, typed]);
+  }, [typing, typed, typeMs]);
 
   const next = () => {
     setIndex(index + 1);
@@ -155,7 +160,7 @@ export default function EpisodeScene({ label, episode, date, background = backgr
         />
       )}
 
-      <Box title="현재 상황" className="episode__status">
+      <Box title={`에피소드 #${number}`} className="episode__status">
         <div className="status">
           <span className="status__icon" aria-hidden>
             {episode.icon ?? '💌'}
@@ -227,9 +232,9 @@ export default function EpisodeScene({ label, episode, date, background = backgr
 
       {logOpen && (
         <div className="modal" onClick={(e) => {
-            e.stopPropagation();
-            setLogOpen(false);
-          }}>
+          e.stopPropagation();
+          setLogOpen(false);
+        }}>
           <div className="vn-log" role="dialog" aria-modal aria-label="로그" onClick={(e) => e.stopPropagation()}>
             <Box title="로그" onClose={() => setLogOpen(false)}>
               <ol className="vn-log__list">

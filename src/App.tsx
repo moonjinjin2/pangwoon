@@ -6,7 +6,7 @@ import EpisodeScene from './components/EpisodeScene';
 import PubBackdrop from './components/PubBackdrop';
 import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
 import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
-import { DATE_KEY, NAME_KEY, clearProgress, load, remove, save } from './utils/storage';
+import { DATE_KEY, NAME_KEY, clearProgress, load, markCollected, remove, save } from './utils/storage';
 
 type Screen = 'start' | 'setName' | 'prologue' | 'main';
 
@@ -27,6 +27,7 @@ export default function App() {
   };
 
   const handlePrologueDone = () => {
+    markCollected(0, PROLOGUE.id);
     if (!fade) setFade('out');
   };
 
@@ -62,6 +63,7 @@ export default function App() {
     return (
       <>
         <EpisodeScene
+          number={0}
           label="프롤로그"
           episode={PROLOGUE}
           date={PROLOGUE_DATE}
