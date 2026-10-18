@@ -2,6 +2,8 @@ import hayeongImg from '../img/character/hayeong.png';
 import minjiImg from '../img/character/minji.png';
 import siyeongImg from '../img/character/siyeong.png';
 import emilyImg from '../img/character/emily.png';
+import computerClassroomImg from '../img/computer_classroom.png';
+import type { Effect } from './activity';
 
 // 히로인. 데이트는 한 달에 한 명씩 이 순서대로 번갈아 등장
 export type Heroine = 'minji' | 'siyeong' | 'emily';
@@ -31,10 +33,49 @@ export interface Choice {
 export interface EpisodeLine {
   // 없으면 나레이션
   speaker?: Speaker;
+  // 초상화 없는 NPC 이름 (speaker가 없을 때만 씀, 예: '교수님')
+  name?: string;
   // {name} → 플레이어 이름
   text: string;
   // 있으면 이 대사 후 선택지 표시
   choices?: Choice[];
+  // 있으면 이 대사 후 화면 전환과 함께 쯔꾸르 게임 실행 (public 아래 폴더 이름, 예: 'hayeong')
+  game?: string;
+  // 게임 창 제목 표시줄에 보여줄 이름 (없으면 폴더 이름)
+  gameTitle?: string;
+  // 게임이 알려준 엔딩(GameEnd.ending)별로 게임 직후 이어지는 대사
+  gameEndings?: Record<string, EpisodeLine[]>;
+}
+
+// 쯔꾸르 게임이 끝날 때 게임 쪽에서 보내는 메시지
+// 게임 이벤트의 스크립트 명령으로 호출:
+//   window.parent.postMessage({ type: 'game-end', ending: 'A', stats: { strength: 10, stress: 20 } }, '*')
+// ending: 'A'(예정된 승리) · 'B'(끝나지 않은 악몽) · 'C'(마왕님의 남편)
+// stats: 게임에서 얻은 스탯 변화량 (health·strength·intellect·charm·stress, 골드는 coins)
+export const GAME_END_TYPE = 'game-end';
+
+export interface GameEnd {
+  ending?: string;
+  stats?: Effect;
+}
+
+const EFFECT_KEYS: (keyof Effect)[] = ['health', 'strength', 'intellect', 'charm', 'stress', 'coins'];
+
+// 게임이 보낸 메시지를 읽음 (게임 끝 메시지가 아니면 null, 'game-end' 문자열만 와도 인정)
+export function parseGameEnd(data: unknown): GameEnd | null {
+  if (data === GAME_END_TYPE) return {};
+  if (typeof data !== 'object' || data === null || (data as { type?: unknown }).type !== GAME_END_TYPE) return null;
+  const { ending, stats } = data as { ending?: unknown; stats?: unknown };
+  const end: GameEnd = {};
+  if (typeof ending === 'string') end.ending = ending;
+  if (typeof stats === 'object' && stats !== null) {
+    end.stats = {};
+    for (const key of EFFECT_KEYS) {
+      const value = Number((stats as Record<string, unknown>)[key]);
+      if (Number.isFinite(value) && value !== 0) end.stats[key] = Math.round(value);
+    }
+  }
+  return end;
 }
 
 export interface Episode {
@@ -43,6 +84,8 @@ export interface Episode {
   title: string;
   // 컬렉션 카드 일러스트 (없으면 배경 + 등장 캐릭터로 대신 그림)
   illust?: string;
+  // 에피소드 배경 이미지 (없으면 기본 배경)
+  background?: string;
   // 현재 상황 창 아이콘 (이모지)
   icon?: string;
   // 현재 상황 창에 날짜 옆에 표시 (예: '저녁')
@@ -54,34 +97,67 @@ export interface Episode {
 const EPISODES: Record<number, Episode> = {
   4: {
     id: 'month-4',
-    title: '벚꽃 아래에서',
+    title: '사라진 교수님',
+    icon: '🎮',
+    background: computerClassroomImg,
     lines: [
-      { text: '4월의 마지막 날. 창밖으로 벚꽃잎이 흩날리고 있다.' },
-      { speaker: 'minji', text: '{name}! 오늘 한강 갈래? 꽃 다 지기 전에 한 번은 봐야지!' },
-      { speaker: 'player', text: '좋아! 이번 달 진짜 바빴는데, 오늘은 좀 쉬어야겠다.' },
-      { text: '둘은 돗자리를 펴고 앉아 한참 동안 수다를 떨었다.' },
+      // 프롤로그 — 사라진 교수님
+      { text: '평범한 대학교 강의실. 게임콘텐츠학과 학생들은 오늘도 교수님의 수업을 듣고 있다.' },
+      { text: '하지만 오늘 수업은 평소와 조금 달랐다. 교수님이 고전 명작 VR 판타지 RPG를 직접 해보고 평가하기로 한 것이다.' },
+      { name: '교수님', text: '게임 만드는 것도 많이 경험해 봐야 잘 만들겠죠???' },
+      { text: '다른 세계에 소환된 모험가가 되어 동료를 모으고, 몬스터를 처치하며 마왕성으로 향하는 전형적인 판타지 RPG였다.' },
+      { speaker: 'player', text: '교수님, 요즘도 마왕 잡는 게임을 만들어요?' },
+      { name: '교수님', text: '야, 기본이 제일 중요한 거야. 제대로 만들면 이런 게임도 재미있어.' },
+      { text: '교수님이 직접 VR 기기를 착용한다. 그런데 게임을 실행하는 순간, 강의실 모니터에 붉은 오류 메시지가 나타난다.' },
+      { text: '[SYSTEM ERROR] 비정상적인 접속 요청이 감지되었습니다. 관리자 계정의 접근을 확인했습니다.' },
+      { text: '[SYSTEM ERROR] 외부 접속자를 강제 소환합니다. 접속을 취소할 수 없습니다.' },
+      { name: '교수님', text: '어? 이거 뭐야?' },
+      { text: '교수님이 기기를 벗으려는 순간, 기기에서 강렬한 빛이 쏟아져 나온다.' },
+      { text: '순식간에 교수님의 몸이 빛 속으로 빨려 들어가고, 강의실 바닥에는 빈 VR 기기만 떨어진다.' },
+      { text: '학생들의 비명이 강의실을 가득 채운다.' },
+      { speaker: 'minji', text: '뭐야 이게…?' },
+      { text: '기기를 만지던 송민지가 빛 속으로 빨려 들어가고, 말리려던 서시영까지 함께 사라진다.' },
+      { speaker: 'emily', text: '뭐… 나도 가자고? 진짜 무리인 거 알지?' },
+      { speaker: 'player', text: '뭐, 오지 말든가. 나 먼저 갈게.' },
+      { speaker: 'emily', text: '엥, 진짜 가려고????' },
+      { text: '그 순간 에밀리가 턱에 걸려 넘어지며 먼저 기기를 건드리고, 그대로 빨려 들어간다.' },
+      { speaker: 'player', text: '??? 뭐… 뭐야 이거. 오케이, 나도 들어가긴 해야겠네.' },
+      { speaker: 'player', text: '얘들아, 일단 상황 봐주고 안 돌아오면 신고해 줘!' },
+      { text: '마지막으로 {name}이(가) VR 기기를 착용한다.' },
+      { text: '아직 아무도 몰랐다. 현실에서 흐르는 1초가 게임 세계에서는 하루에 해당한다는 사실을.' },
+      { text: '먼저 접속한 친구들은 이미 게임 세계에서 며칠을 보내고 있었고, 무작위 소환 때문에 서로 다른 장소에 떨어진 상태였다.' },
+
+      // 1장부터 최종 선택까지는 쯔꾸르 게임(public/hayeong)으로 진행
       {
-        speaker: 'minji',
-        text: '다음 달엔 우리 같이 목표 하나 세워볼까? 뭐가 좋을 것 같아?',
-        choices: [
-          {
-            text: '같이 운동하자!',
-            affection: { minji: 10 },
-            reply: [{ speaker: 'minji', text: '좋아! 나 아침잠 많은데… 깨워줘야 해?' }],
-          },
-          {
-            text: '각자 알아서 하자.',
-            affection: { minji: -5 },
-            reply: [{ speaker: 'minji', text: '…그래, 뭐. 알겠어.' }],
-          },
-          {
-            text: '너랑 자주 만나는 거?',
-            affection: { minji: 15 },
-            reply: [{ speaker: 'minji', text: '뭐, 뭐야 갑자기…! 그, 그것도 나쁘지 않네.' }],
-          },
-        ],
+        text: '— 1장. 소환진: 직업 없는 모험가 —',
+        game: 'hayeong',
+        gameTitle: '하영의 이세계',
+        gameEndings: {
+          // 현실로 돌아오는 엔딩은 강의실에서 이어서 진행
+          A: [
+            { text: '눈을 뜨자, 익숙한 강의실 천장이 보였다.' },
+            { text: '교수님과 친구들도 하나둘 몸을 일으킨다. 모두 무사히 현실로 돌아온 것이다.' },
+            { speaker: 'minji', text: '우리…… 진짜 돌아온 거지?' },
+            { speaker: 'emily', text: '하…… 다시는 VR 안 해.' },
+            { speaker: 'siyeong', text: '다들…… 정말 다행이에요.' },
+            { name: '교수님', text: '너희…… 나 구하러 거기까지 들어온 거냐?' },
+            { text: "강의실 모니터에는 '마왕을 처치하고 세계를 구했습니다'라는 문구가 떠 있었다." },
+            { text: '모두가 귀환을 기뻐했지만, {name}은(는) 마지막까지 자신을 바라보던 마왕의 눈빛을 잊지 못한다.' },
+            { text: '[ENDING A — 예정된 승리]' },
+          ],
+          B: [
+            { text: '눈을 뜨자, 익숙한 강의실 천장이 보였다.' },
+            { text: '교수님과 친구들은 가까스로 현실로 탈출했다.' },
+            { speaker: 'minji', text: '{name}…… 괜찮아?' },
+            { speaker: 'player', text: '……응.' },
+            { text: '강의실 모니터 속 게임 화면은 멈춰 있었다. 움직이지 않는 왕좌 위에, 마왕만이 홀로 남아 있었다.' },
+            { text: '더 이상 죽지는 않지만 살아갈 수도 없는 마왕은, 끝나지 않는 시간을 보내게 된다.' },
+            { text: '[ENDING B — 끝나지 않은 악몽]' },
+          ],
+          // 게임 속에 남는 엔딩은 한 줄로 마무리
+          C: [{ text: '수천 번의 죽음 끝에, 그녀는 처음으로 내일을 맞이했다.' }],
+        },
       },
-      { text: '벚꽃잎 하나가 민지의 머리 위에 살포시 내려앉았다.' },
     ],
   },
   5: {

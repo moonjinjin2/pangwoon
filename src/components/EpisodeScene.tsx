@@ -1,12 +1,25 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type AnimationEvent, type ReactNode } from 'react';
 import backgroundImg from '../img/cafe.jpg';
+import desktopImg from '../img/windows.jpg';
 import Box from './Box';
-import { SPEAKERS, type Affection, type Choice, type Episode, type Heroine } from '../utils/episode';
+import ResultDialog from './ResultDialog';
+import { SPEAKERS, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine } from '../utils/episode';
+import type { Effect } from '../utils/activity';
 import { formatFullDate } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
+
+// 게임 화면 전환 단계: 들어가는 전환 → 게임 중 → 나오는 전환(암전) → 에피소드로 복귀(밝아짐)
+type GamePhase = 'enter' | 'play' | 'leave' | 'return';
+
+// TODO(테스트용): 쯔꾸르가 아직 미완성이라 창 닫기(✕)로 나와도 엔딩 A + 예시 스탯으로 이어감
+// 게임에서 game-end 메시지를 보내게 되면 {}로 바꿔서 엔딩·스탯 없이 끝나게 할 것
+const EXIT_GAME_END: GameEnd = {
+  ending: 'A',
+  stats: { health: -20, strength: 10, intellect: 10, charm: 5, stress: 15 },
+};
 
 interface Props {
   // 상단 창 제목에 표시 (에피소드 #0, #1 …)
@@ -19,11 +32,11 @@ interface Props {
   // 배경 이미지 주소, 또는 직접 그린 배경
   background?: string | ReactNode;
   playerName: string;
-  // 이번 에피소드에서 선택지로 바뀐 호감도 합계
-  onDone: (affection: Partial<Affection>) => void;
+  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 게임에서 얻은 스탯 변화량
+  onDone: (affection: Partial<Affection>, stats?: Effect) => void;
 }
 
-export default function EpisodeScene({ number, label, episode, date, background = backgroundImg, playerName, onDone }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? backgroundImg, playerName, onDone }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
   const [lines, setLines] = useState(episode.lines);
   const [index, setIndex] = useState(0);
@@ -33,6 +46,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [feedback, setFeedback] = useState<Partial<Affection> | null>(null);
   const [auto, setAuto] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const [gamePhase, setGamePhase] = useState<GamePhase | null>(null);
+  // 게임이 끝나며 알려준 엔딩·스탯 (게임 종료 버튼으로 나오면 빈 값)
+  const [gameEnd, setGameEnd] = useState<GameEnd | null>(null);
+  const [gameResultOpen, setGameResultOpen] = useState(false);
   // 설정에서 고른 텍스트 속도 (에피소드 도중에는 설정을 열 수 없으므로 시작할 때 한 번만 읽음)
   const [textSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
   const typeMs = (TEXT_SPEEDS.find((s) => s.key === textSpeed) ?? TEXT_SPEEDS[1]).ms;
@@ -43,7 +60,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const line = lines[index];
   const text = fill(line.text);
   const speaker = line.speaker && SPEAKERS[line.speaker];
-  const speakerName = line.speaker && nameOf(line.speaker);
+  const speakerName = line.speaker ? nameOf(line.speaker) : line.name;
   // 나레이션 중에도 마지막으로 말한 캐릭터 이미지를 유지해 다시 나타날 때 깜박이지 않게 함
   let shownSpeaker = line.speaker;
   for (let i = index; !shownSpeaker && i >= 0; i--) shownSpeaker = lines[i].speaker;
@@ -73,26 +90,83 @@ export default function EpisodeScene({ number, label, episode, date, background 
     setTyped(0);
   };
 
-  // 타이핑 중이면 문장을 바로 다 보여주고, 아니면 다음 대사로 (선택지가 떠 있으면 무시)
-  const advance = () => {
-    if (typing) {
-      setTyped(text.length);
-    } else if (choosing) {
-      return;
-    } else if (index < lines.length - 1) {
-      setFeedback(null);
-      next();
+  const gameStats = gameEnd?.stats;
+  const hasGameStats = !!gameStats && Object.keys(gameStats).length > 0;
+
+  // 에피소드 종료 (게임에서 얻은 스탯이 있으면 결과창을 먼저 보여줌)
+  const finish = () => {
+    if (hasGameStats && !gameResultOpen) {
+      setGameResultOpen(true);
     } else {
-      onDone(affection);
+      onDone(affection, gameStats);
     }
   };
 
-  // 다음 선택지까지 건너뜀 (선택지가 더 없으면 에피소드 종료)
+  // 다음 대사로 (마지막 대사였으면 에피소드 종료)
+  const proceed = (current = lines) => {
+    if (index < current.length - 1) {
+      setFeedback(null);
+      next();
+    } else {
+      finish();
+    }
+  };
+
+  // 타이핑 중이면 문장을 바로 다 보여주고, 아니면 다음 대사로 (선택지가 떠 있거나 게임 중이면 무시)
+  const advance = () => {
+    if (gamePhase || gameResultOpen) {
+      return;
+    } else if (typing) {
+      setTyped(text.length);
+    } else if (choosing) {
+      return;
+    } else if (line.game) {
+      setGamePhase('enter');
+    } else {
+      proceed();
+    }
+  };
+
+  const endGame = (end: GameEnd) => {
+    setGameEnd(end);
+    setGamePhase('leave');
+  };
+
+  // 전환 효과가 끝날 때마다 다음 단계로
+  const onWarpEnd = (e: AnimationEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (gamePhase === 'enter') {
+      setGamePhase('play');
+    } else if (gamePhase === 'leave') {
+      setGamePhase('return');
+      // 게임이 알려준 엔딩의 대사를 게임 바로 뒤에 끼워 넣고 이어서 진행
+      const ending = gameEnd?.ending ? line.gameEndings?.[gameEnd.ending] : undefined;
+      const current = ending ? [...lines.slice(0, index + 1), ...ending, ...lines.slice(index + 1)] : lines;
+      setLines(current);
+      proceed(current);
+    } else {
+      setGamePhase(null);
+    }
+  };
+
+  // 게임 쪽에서 끝났다고 알려주면 에피소드로 돌아옴
+  useEffect(() => {
+    if (gamePhase !== 'play') return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const end = parseGameEnd(e.data);
+      if (end) endGame(end);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [gamePhase]);
+
+  // 다음 선택지(또는 게임)까지 건너뜀 (더 없으면 에피소드 종료)
   const skip = () => {
-    if (choosing) return;
-    const target = lines.findIndex((l, i) => i >= index && l.choices);
+    if (choosing || gamePhase || gameResultOpen) return;
+    const target = lines.findIndex((l, i) => i >= index && (l.choices || l.game));
     if (target === -1) {
-      onDone(affection);
+      finish();
       return;
     }
     setFeedback(null);
@@ -115,13 +189,15 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 자동 진행
   useEffect(() => {
-    if (!auto || typing || choosing || logOpen) return;
+    if (!auto || typing || choosing || logOpen || gamePhase || gameResultOpen) return;
     const timer = setTimeout(advance, AUTO_MS);
     return () => clearTimeout(timer);
   });
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // 게임 중에는 키 입력을 게임에 맡기고, 결과창에서는 확인 버튼이 받음
+      if (gamePhase || gameResultOpen) return;
       if (logOpen) {
         if (e.key === 'Escape') setLogOpen(false);
         return;
@@ -205,14 +281,16 @@ export default function EpisodeScene({ number, label, episode, date, background 
       )}
 
       <div className="vn">
-        {speaker && (
+        {speakerName && (
           <div className="vn__nameplate">
-            <span className={`vn__portrait vn__portrait--${line.speaker}`} style={{ backgroundImage: `url(${speaker.image})` }} aria-hidden />
+            {speaker && (
+              <span className={`vn__portrait vn__portrait--${line.speaker}`} style={{ backgroundImage: `url(${speaker.image})` }} aria-hidden />
+            )}
             <span className="vn__name">{speakerName}</span>
           </div>
         )}
         <div className="vn__panel">
-          <p className={speaker ? 'vn__text' : 'vn__text vn__text--narration'}>{text.slice(0, typed)}</p>
+          <p className={speakerName ? 'vn__text' : 'vn__text vn__text--narration'}>{text.slice(0, typed)}</p>
           <div className="vn__controls" onClick={(e) => e.stopPropagation()}>
             <button className={auto ? 'vn__btn vn__btn--on' : 'vn__btn'} onClick={() => setAuto(!auto)}>
               <span aria-hidden>▶</span> 자동
@@ -230,6 +308,50 @@ export default function EpisodeScene({ number, label, episode, date, background 
         </div>
       </div>
 
+      {line.game && (gamePhase === 'play' || gamePhase === 'leave') && (
+        // 바탕화면 위에 뜬 프로그램 창처럼 게임을 띄움
+        <div className="episode__game" style={{ backgroundImage: `url(${desktopImg})` }} onClick={(e) => e.stopPropagation()}>
+          <div className="game-window">
+            <div className="game-window__titlebar">
+              <span className="game-window__title">{line.gameTitle ?? line.game}</span>
+              <button
+                className="game-window__close"
+                onClick={() => endGame(EXIT_GAME_END)}
+                disabled={gamePhase === 'leave'}
+                aria-label="게임 종료"
+                title="게임 종료"
+              >
+                ✕
+              </button>
+            </div>
+            <iframe
+              className="game-window__frame"
+              src={`${import.meta.env.BASE_URL}${line.game}/index.html`}
+              title={line.gameTitle ?? '게임'}
+              allow="autoplay; fullscreen"
+              // 바로 키보드로 조작할 수 있게 게임에 포커스
+              onLoad={(e) => e.currentTarget.contentWindow?.focus()}
+            />
+          </div>
+        </div>
+      )}
+
+      {gamePhase && gamePhase !== 'play' && (
+        // 단계마다 새로 그려야 애니메이션이 처음부터 다시 재생됨 (같은 요소면 leave → return에서 멈춤)
+        <div key={gamePhase} className={`warp warp--${gamePhase}`} onAnimationEnd={onWarpEnd} onClick={(e) => e.stopPropagation()}>
+          {gamePhase === 'enter' && (
+            <div className="warp__message">
+              <p className="warp__error">SYSTEM ERROR</p>
+              <p>외부 접속자를 강제 소환합니다.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {gameResultOpen && gameStats && (
+        <ResultDialog title="게임 결과" changes={gameStats} onConfirm={() => onDone(affection, gameStats)} />
+      )}
+
       {logOpen && (
         <div className="modal" onClick={(e) => {
           e.stopPropagation();
@@ -240,8 +362,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
               <ol className="vn-log__list">
                 {lines.slice(0, index + 1).map((l, i) => (
                   <li key={i} className="vn-log__item">
-                    {l.speaker && <span className="vn-log__name">{nameOf(l.speaker)}</span>}
-                    <p className={l.speaker ? 'vn-log__text' : 'vn-log__text vn-log__text--narration'}>{fill(l.text)}</p>
+                    {(l.speaker || l.name) && <span className="vn-log__name">{l.speaker ? nameOf(l.speaker) : l.name}</span>}
+                    <p className={l.speaker || l.name ? 'vn-log__text' : 'vn-log__text vn-log__text--narration'}>{fill(l.text)}</p>
                   </li>
                 ))}
               </ol>

@@ -19,7 +19,7 @@ function EpisodeArt({ episode }: { episode: Episode }) {
   return (
     <div
       className={isPrologue ? 'ep-card__art ep-card__art--night' : 'ep-card__art'}
-      style={{ backgroundImage: `url(${isPrologue ? barImg : roomImg})` }}
+      style={{ backgroundImage: `url(${isPrologue ? barImg : episode.background ?? roomImg})` }}
     >
       <img className="ep-card__char" src={SPEAKERS[getMainSpeaker(episode)].image} alt="" />
     </div>

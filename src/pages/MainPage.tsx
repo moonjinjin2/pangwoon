@@ -12,7 +12,7 @@ import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
 import CollectionPage from './CollectionPage';
 import WardrobePage from './WardrobePage';
-import { getWeekResult, rollDays } from '../utils/activity';
+import { getWeekResult, rollDays, type Effect } from '../utils/activity';
 import { HEROINES, SPEAKERS, getDateEpisode, getEpisode, type Affection, type Heroine } from '../utils/episode';
 import { formatShortDate, getDayEvent, getEpisodeNumber, getMonthIndex, getWeekIndex } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, markCollected, useStoredState } from '../utils/storage';
@@ -67,8 +67,8 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
   }, []);
 
   // 결과창 확인 시 이번 주차 활동 결과를 반영하고 다음 주로 넘어감
-  const finishWeek = () => {
-    const { coins: coinChange = 0, ...statChanges } = getWeekResult(plans[week], days);
+  // 스탯·골드 변화량 반영 (스탯은 0~MAX_STAT 사이로)
+  const applyEffect = ({ coins: coinChange = 0, ...statChanges }: Effect) => {
     setStats((prev) => {
       const next = { ...prev };
       for (const [key, value] of Object.entries(statChanges) as [StatKey, number][]) {
@@ -77,12 +77,17 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
       return next;
     });
     setCoins((prev) => prev + coinChange);
+  };
+
+  const finishWeek = () => {
+    applyEffect(getWeekResult(plans[week], days));
     setShowResult(false);
     onProceed?.();
   };
 
-  // 데이트(15일)·에피소드(말일)가 끝나면 선택지 호감도를 반영하고 다음 날짜로
-  const finishEpisode = (changes: Partial<Affection>) => {
+  // 데이트(15일)·에피소드(말일)가 끝나면 선택지 호감도와 게임에서 얻은 스탯을 반영하고 다음 날짜로
+  const finishEpisode = (changes: Partial<Affection>, gameStats?: Effect) => {
+    if (gameStats) applyEffect(gameStats);
     markCollected(getEpisodeNumber(gameDate), eventEpisode().episode.id);
     setAffection((prev) => {
       const next = { ...prev };

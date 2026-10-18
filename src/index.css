@@ -2729,3 +2729,157 @@ button.inv__card:hover {
     transform: translate(-50%, -4px);
   }
 }
+
+/* 쯔꾸르 게임으로 넘어가는 화면 전환 */
+.warp {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+/* 붉은 오류 깜박임 → 하얀 빛에 빨려 들어감 → 암전 */
+.warp--enter {
+  animation: warp-enter 2.6s steps(1, end) forwards, warp-enter-fade 2.6s ease-in forwards;
+}
+
+@keyframes warp-enter {
+  0% { background-color: rgba(0, 0, 0, 0); }
+  8% { background-color: rgba(255, 30, 70, 0.35); }
+  12% { background-color: rgba(0, 0, 0, 0); }
+  18% { background-color: rgba(255, 30, 70, 0.45); }
+  22% { background-color: rgba(0, 0, 0, 0); }
+  28% { background-color: rgba(255, 30, 70, 0.55); }
+  32% { background-color: rgba(0, 0, 0, 0); }
+}
+
+/* 위 깜박임 위로 덮이는 빛 → 어둠 */
+@keyframes warp-enter-fade {
+  0%, 35% { box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0); }
+  60% { box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1); }
+  72% { box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1); }
+  100% { box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 1); }
+}
+
+.warp__message {
+  text-align: center;
+  font-size: 1.4rem;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  animation: warp-message 2.6s linear forwards;
+}
+
+.warp__error {
+  margin-bottom: 8px;
+  font-size: 2.6rem;
+  color: #ff3b5c;
+}
+
+@keyframes warp-message {
+  0% { opacity: 0; transform: translateX(0); }
+  6% { opacity: 1; transform: translateX(-6px); }
+  10% { transform: translateX(6px); }
+  14% { transform: translateX(-3px); }
+  18% { transform: translateX(0); }
+  45% { opacity: 1; }
+  58%, 100% { opacity: 0; }
+}
+
+/* 게임에서 나올 때 암전 → 에피소드로 돌아오며 밝아짐 */
+.warp--leave {
+  background: #000;
+  animation: warp-fade-in 0.8s ease-in forwards;
+}
+
+.warp--return {
+  background: #000;
+  animation: warp-fade-out 0.8s ease-out forwards;
+}
+
+@keyframes warp-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes warp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.episode__game {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3a6ea5;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+  cursor: default;
+}
+
+/* 바탕화면 위에 뜬 XP 스타일 프로그램 창 */
+.game-window {
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px 4px;
+  background: #0831d9;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  animation: game-window-open 0.5s ease-out;
+}
+
+@keyframes game-window-open {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.game-window__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 34px;
+  padding: 0 4px 0 10px;
+  background: linear-gradient(#3d95ff, #0a5be8 18%, #0053e1 80%, #0447c9);
+  border-radius: 7px 7px 0 0;
+}
+
+.game-window__title {
+  overflow: hidden;
+  font-size: 1rem;
+  color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 1px 1px 0 #0a1e6e;
+}
+
+.game-window__close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  font-size: 0.95rem;
+  color: #fff;
+  background: linear-gradient(#e97a5c, #d6461f);
+  border: 2px solid #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.game-window__close:hover {
+  background: linear-gradient(#f39478, #e5552c);
+}
+
+/* 게임 화면 비율(816x624)을 유지하며 화면 안에 맞춤 */
+.game-window__frame {
+  display: block;
+  width: min(92vw, calc((90vh - 38px) * 816 / 624));
+  aspect-ratio: 816 / 624;
+  border: none;
+  background: #000;
+}
