@@ -140,8 +140,9 @@ body {
 }
 
 .start__press {
-  font-size: 2.8rem;
-  letter-spacing: 0.4em;
+  /* 창 너비에 맞춰 부드럽게 줄어듦 */
+  font-size: clamp(1.2rem, 4vw, 2.8rem);
+  letter-spacing: clamp(0.2em, 1vw, 0.4em);
   color: white;
   animation: blink 1.5s ease-in-out infinite;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
@@ -163,6 +164,7 @@ body {
 /* Main */
 .main {
   position: relative;
+  height: 100vh;
   min-height: 100%;
 }
 
@@ -205,6 +207,11 @@ body {
   text-shadow:
     -3px 0 0 #1c2340, 3px 0 0 #1c2340, 0 -3px 0 #1c2340, 0 3px 0 #1c2340,
     4px 4px 0 #1c2340;
+}
+
+.main__date--label {
+  font-size: 2.5rem;
+  margin-right: 10px;
 }
 
 .calendar-icon {
@@ -424,6 +431,145 @@ body {
 
 .main__proceed:active {
   transform: translateY(1px);
+}
+
+/* 메인 화면 모바일: 겹쳐 있던 요소들을 세로로 쌓고 스크롤 */
+@media (max-width: 760px) {
+  .main {
+    height: auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 12px 12px 24px;
+    background-position: center top !important;
+  }
+
+  /* 왼쪽 묶음을 풀어서 프로필·날짜·계획을 각각 배치 */
+  .main__left {
+    display: contents;
+  }
+
+  .topmenu {
+    order: 1;
+    position: static;
+    gap: 8px;
+  }
+
+  .profile {
+    order: 2;
+  }
+
+  .main__today {
+    order: 3;
+  }
+
+  .main__hero {
+    order: 4;
+  }
+
+  .main__dialog {
+    order: 5;
+  }
+
+  .main__left>.box {
+    order: 6;
+  }
+
+  .main__right {
+    order: 7;
+  }
+
+  .main__proceed {
+    order: 8;
+  }
+
+  .topmenu__item {
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .topmenu__btn {
+    width: 44px;
+    flex-shrink: 0;
+  }
+
+  .topmenu__coins {
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .topmenu__icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .topmenu__amount {
+    font-size: 1.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile__avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .profile__name {
+    font-size: 1.3rem;
+  }
+
+  .main__date {
+    font-size: 2.6rem;
+  }
+
+  .main__date--label {
+    font-size: 1.6rem;
+  }
+
+  .main__hero {
+    position: static;
+    transform: none;
+    align-self: center;
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+  }
+
+  /* 캐릭터 발밑에 살짝 겹치게 */
+  .episode__dialog.main__dialog {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    margin-top: -40px;
+    padding: 20px 18px 16px;
+  }
+
+  .main__dialog .episode__text {
+    font-size: 1.1rem;
+  }
+
+  .main__right {
+    position: static;
+    width: auto;
+  }
+
+  /* 진행하기는 스크롤해도 화면 아래에 붙어 있게 */
+  .main__proceed {
+    position: sticky;
+    right: auto;
+    bottom: 12px;
+    align-self: center;
+    margin-top: 40px;
+  }
+
+  .main__proceed img {
+    width: 200px;
+  }
 }
 
 /* Set Name */
@@ -900,31 +1046,72 @@ body {
 }
 
 .activity-card {
+  --px: 3px;
+  --px-ink: #2a1426;
+  position: relative;
   aspect-ratio: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: #1e1426;
-  border: 2px solid #e4d5e0;
-  border-radius: 10px;
+  padding: 0 0 4px;
+  font: inherit;
+  color: #4a2440;
+  background: #fcd3de;
+  border: 3px solid var(--px-ink);
+  border-radius: 0;
+  box-shadow:
+    inset 3px 3px 0 #fff4f7,
+    inset -3px -3px 0 #f1a9bf;
   cursor: pointer;
-  background-color: rgb(255, 227, 243);
+  clip-path: polygon(var(--px) 0, calc(100% - var(--px)) 0, calc(100% - var(--px)) var(--px), 100% var(--px),
+      100% calc(100% - var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - var(--px)) 100%,
+      var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px)),
+      0 var(--px), var(--px) var(--px));
 }
 
-.activity-card:hover {
-  border-color: var(--activity-color);
-  box-shadow: 0 0 0 2px var(--activity-color);
+/* 깎인 모서리 안쪽에 테두리색 픽셀을 찍어 외곽선을 계단 모양으로 */
+.activity-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--px-ink), var(--px-ink)) left top / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--px-ink), var(--px-ink)) right top / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--px-ink), var(--px-ink)) left bottom / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--px-ink), var(--px-ink)) right bottom / var(--px) var(--px) no-repeat;
 }
 
-.activity-card--current {
-  border-color: #ff6fcf;
-  box-shadow: 0 0 0 2px #ff6fcf;
+.activity-card:hover,
+.activity-card:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--activity-color) 35%, #fde2ea);
+  box-shadow:
+    inset 3px 3px 0 #fff4f7,
+    inset -3px -3px 0 color-mix(in srgb, var(--activity-color) 80%, #4a2440);
+}
+
+.activity-card:active {
+  transform: translateY(2px);
+}
+
+/* 현재 선택된 활동은 눌려 들어간 모양 */
+.activity-card--current,
+.activity-card--current:hover {
+  padding: 4px 0 0;
+  color: #fff;
+  background: #f390b0;
+  box-shadow:
+    inset 3px 3px 0 #d8668c,
+    inset -3px -3px 0 #f7b3c9;
 }
 
 .activity-card__icon {
   font-size: 3.5rem;
+  /* 아이콘 아래 딱 떨어지는 픽셀 그림자 */
+  filter: drop-shadow(3px 3px 0 rgba(42, 20, 38, 0.25));
 }
 
 .activity-card__label {
@@ -2206,6 +2393,95 @@ button.inv__card:hover {
   cursor: default;
 }
 
+/* 옷장 모바일: 캐릭터 위, 인벤토리 아래로 쌓고 스크롤 */
+@media (max-width: 760px) {
+  .wardrobe {
+    --wardrobe-height: 36dvh;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 76px 12px 24px;
+    overflow-y: auto;
+  }
+
+  .wardrobe__back {
+    top: 12px;
+    left: 12px;
+    height: 44px;
+    font-size: 1.05rem;
+  }
+
+  .wardrobe__stage::after {
+    width: 140px;
+    height: 16px;
+  }
+
+  .wardrobe__preview {
+    top: -40px;
+  }
+
+  .inv {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 470px;
+    height: auto;
+  }
+
+  .inv__side {
+    margin-top: 56px;
+  }
+
+  .inv__side-tab {
+    width: 44px;
+    height: 44px;
+  }
+
+  .inv__side-tab--active {
+    width: 48px;
+  }
+
+  .inv__side-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .inv__window {
+    height: auto;
+  }
+
+  .inv__title {
+    font-size: 1.2rem;
+  }
+
+  .inv__label,
+  .inv__coins {
+    font-size: 1rem;
+  }
+
+  .inv__filter {
+    padding: 4px 10px;
+  }
+
+  /* 높이가 정해져 있지 않으니 카드를 정사각형으로 */
+  .inv__grid>li {
+    aspect-ratio: 1;
+  }
+
+  .inv__price {
+    right: 4px;
+    bottom: 4px;
+    padding: 1px 5px;
+    font-size: 0.7rem;
+  }
+
+  .inv__star {
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
 /* 버튼·배지·라벨은 모서리를 계단식으로 깎은 픽셀 형태 */
 .wardrobe__back,
 .inv__round,
@@ -2675,6 +2951,7 @@ button.inv__card:hover {
   font-size: 0.95rem;
   color: #ff8fd8;
 }
+
 /* 진행하기 버튼 위 말풍선 (아래 꼬리) */
 .main__bubble {
   --bubble-ink: #4a2347;
@@ -2747,21 +3024,54 @@ button.inv__card:hover {
 }
 
 @keyframes warp-enter {
-  0% { background-color: rgba(0, 0, 0, 0); }
-  8% { background-color: rgba(255, 30, 70, 0.35); }
-  12% { background-color: rgba(0, 0, 0, 0); }
-  18% { background-color: rgba(255, 30, 70, 0.45); }
-  22% { background-color: rgba(0, 0, 0, 0); }
-  28% { background-color: rgba(255, 30, 70, 0.55); }
-  32% { background-color: rgba(0, 0, 0, 0); }
+  0% {
+    background-color: rgba(0, 0, 0, 0);
+  }
+
+  8% {
+    background-color: rgba(255, 30, 70, 0.35);
+  }
+
+  12% {
+    background-color: rgba(0, 0, 0, 0);
+  }
+
+  18% {
+    background-color: rgba(255, 30, 70, 0.45);
+  }
+
+  22% {
+    background-color: rgba(0, 0, 0, 0);
+  }
+
+  28% {
+    background-color: rgba(255, 30, 70, 0.55);
+  }
+
+  32% {
+    background-color: rgba(0, 0, 0, 0);
+  }
 }
 
 /* 위 깜박임 위로 덮이는 빛 → 어둠 */
 @keyframes warp-enter-fade {
-  0%, 35% { box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0); }
-  60% { box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1); }
-  72% { box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1); }
-  100% { box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 1); }
+
+  0%,
+  35% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0);
+  }
+
+  60% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1);
+  }
+
+  72% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1);
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 1);
+  }
 }
 
 .warp__message {
@@ -2779,13 +3089,36 @@ button.inv__card:hover {
 }
 
 @keyframes warp-message {
-  0% { opacity: 0; transform: translateX(0); }
-  6% { opacity: 1; transform: translateX(-6px); }
-  10% { transform: translateX(6px); }
-  14% { transform: translateX(-3px); }
-  18% { transform: translateX(0); }
-  45% { opacity: 1; }
-  58%, 100% { opacity: 0; }
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+
+  6% {
+    opacity: 1;
+    transform: translateX(-6px);
+  }
+
+  10% {
+    transform: translateX(6px);
+  }
+
+  14% {
+    transform: translateX(-3px);
+  }
+
+  18% {
+    transform: translateX(0);
+  }
+
+  45% {
+    opacity: 1;
+  }
+
+  58%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* 게임에서 나올 때 암전 → 에피소드로 돌아오며 밝아짐 */
@@ -2800,13 +3133,23 @@ button.inv__card:hover {
 }
 
 @keyframes warp-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes warp-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .episode__game {
@@ -2835,8 +3178,15 @@ button.inv__card:hover {
 }
 
 @keyframes game-window-open {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .game-window__titlebar {
@@ -2882,4 +3232,111 @@ button.inv__card:hover {
   aspect-ratio: 816 / 624;
   border: none;
   background: #000;
+}
+
+/* 시스템 오류 화면 효과 */
+.sys-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 16px 220px;
+  background: repeating-linear-gradient(0deg, rgba(255, 30, 70, 0.12) 0 2px, transparent 2px 5px), rgba(40, 0, 10, 0.45);
+  animation: sys-error-flicker 2.4s steps(1, end) infinite;
+}
+
+@keyframes sys-error-flicker {
+
+  0%,
+  100% {
+    background-color: rgba(40, 0, 10, 0.45);
+  }
+
+  4% {
+    background-color: rgba(255, 30, 70, 0.35);
+  }
+
+  7% {
+    background-color: rgba(40, 0, 10, 0.45);
+  }
+
+  52% {
+    background-color: rgba(255, 30, 70, 0.25);
+  }
+
+  54% {
+    background-color: rgba(40, 0, 10, 0.45);
+  }
+}
+
+.sys-error__window {
+  width: min(680px, 100%);
+  background: rgba(20, 0, 6, 0.92);
+  border: 3px solid #ff3b5c;
+  box-shadow: 0 0 0 3px #3a0010, 0 0 40px rgba(255, 40, 80, 0.6);
+  animation: sys-error-pop 0.45s steps(6, end);
+}
+
+/* 오류 창이 지직거리며 튀어나옴 */
+@keyframes sys-error-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-10px, 4px) scaleY(0.2);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translate(8px, -3px) scaleY(1.05);
+  }
+
+  60% {
+    transform: translate(-5px, 2px);
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+.sys-error__title {
+  padding: 8px 16px;
+  font-size: 1.5rem;
+  color: #fff;
+  letter-spacing: 2px;
+  background: #d81b3f;
+  text-shadow: 2px 0 0 #3a0010, -2px 0 0 #ff8fa3;
+}
+
+.sys-error__text {
+  margin: 0;
+  padding: 14px 20px 18px;
+  font-size: 1.3rem;
+  line-height: 1.6;
+  color: #fff;
+}
+
+
+.sys-error__cursor {
+  animation: sys-error-blink 0.8s steps(1, end) infinite;
+}
+
+@keyframes sys-error-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .sys-error {
+    padding-bottom: 180px;
+  }
+
+  .sys-error__title {
+    font-size: 1.2rem;
+  }
+
+  .sys-error__text {
+    font-size: 1.05rem;
+  }
 }

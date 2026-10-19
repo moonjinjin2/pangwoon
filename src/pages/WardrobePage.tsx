@@ -127,6 +127,7 @@ function Character({ outfit }: { outfit: Equipped }) {
 
 // 화면 높이가 낮으면 카드가 찌그러지지 않도록 한 페이지에 2줄만
 const SHORT_SCREEN = '(max-height: 700px)';
+const MOBILE_SCREEN = '(max-width: 760px)';
 
 export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
@@ -164,7 +165,11 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
   const [selectedId, setSelectedId] = useState<string>(equipped.top);
   const [filter, setFilter] = useState<Filter>('all');
   const [page, setPage] = useState(0);
-  const pageSize = useMediaQuery(SHORT_SCREEN) ? 4 : 6;
+  // 모바일은 세로 스크롤 레이아웃이라 높이와 상관없이 3열 x 2줄
+  const isMobile = useMediaQuery(MOBILE_SCREEN);
+  const isShort = useMediaQuery(SHORT_SCREEN);
+  const pageSize = !isMobile && isShort ? 4 : 6;
+  const columns = isMobile ? 3 : 2;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -287,7 +292,7 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
             ))}
           </div>
 
-          <ul className="inv__grid" style={{ gridTemplateRows: `repeat(${pageSize / 2}, 1fr)` }}>
+          <ul className="inv__grid" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)`, gridTemplateRows: `repeat(${pageSize / columns}, 1fr)` }}>
             {Array.from({ length: pageSize }, (_, i) => {
               const outfit = pageItems[i];
               if (!outfit) return <li key={i} className="inv__card inv__card--empty" />;

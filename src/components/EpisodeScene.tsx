@@ -68,6 +68,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   shownSpeaker ??= lines.find((l) => l.speaker)?.speaker;
   const typing = typed < text.length;
   const choosing = !typing && !!line.choices;
+  // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
+  const systemError = line.effect === 'system-error';
 
   // 캐릭터 이미지를 미리 불러와서 처음 등장할 때 비어 보이지 않게 함
   useEffect(() => {
@@ -280,6 +282,18 @@ export default function EpisodeScene({ number, label, episode, date, background 
         </ul>
       )}
 
+      {systemError && (
+        <div className="sys-error">
+          <div key={index} className="sys-error__window" role="alert">
+            <div className="sys-error__title">⚠ SYSTEM ERROR</div>
+            <p className="sys-error__text">
+              {text.slice(0, typed)}
+              <span className="sys-error__cursor" aria-hidden>_</span>
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="vn">
         {speakerName && (
           <div className="vn__nameplate">
@@ -290,7 +304,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
           </div>
         )}
         <div className="vn__panel">
-          <p className={speakerName ? 'vn__text' : 'vn__text vn__text--narration'}>{text.slice(0, typed)}</p>
+          <p className={speakerName ? 'vn__text' : 'vn__text vn__text--narration'}>{systemError ? '' : text.slice(0, typed)}</p>
           <div className="vn__controls" onClick={(e) => e.stopPropagation()}>
             <button className={auto ? 'vn__btn vn__btn--on' : 'vn__btn'} onClick={() => setAuto(!auto)}>
               <span aria-hidden>▶</span> 자동
@@ -363,7 +377,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
                 {lines.slice(0, index + 1).map((l, i) => (
                   <li key={i} className="vn-log__item">
                     {(l.speaker || l.name) && <span className="vn-log__name">{l.speaker ? nameOf(l.speaker) : l.name}</span>}
-                    <p className={l.speaker || l.name ? 'vn-log__text' : 'vn-log__text vn-log__text--narration'}>{fill(l.text)}</p>
+                    <p className={l.speaker || l.name ? 'vn-log__text' : 'vn-log__text vn-log__text--narration'}>
+                      {l.effect === 'system-error' && '[SYSTEM ERROR] '}
+                      {fill(l.text)}
+                    </p>
                   </li>
                 ))}
               </ol>

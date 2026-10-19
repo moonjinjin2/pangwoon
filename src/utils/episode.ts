@@ -37,6 +37,8 @@ export interface EpisodeLine {
   name?: string;
   // {name} → 플레이어 이름
   text: string;
+  // 대사창 대신 화면 효과로 보여줌 ('system-error': 대사마다 붉은 오류 창을 새로 띄움)
+  effect?: 'system-error';
   // 있으면 이 대사 후 선택지 표시
   choices?: Choice[];
   // 있으면 이 대사 후 화면 전환과 함께 쯔꾸르 게임 실행 (public 아래 폴더 이름, 예: 'hayeong')
@@ -109,8 +111,8 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'player', text: '교수님, 요즘도 마왕 잡는 게임을 만들어요?' },
       { name: '교수님', text: '야, 기본이 제일 중요한 거야. 제대로 만들면 이런 게임도 재미있어.' },
       { text: '교수님이 직접 VR 기기를 착용한다. 그런데 게임을 실행하는 순간, 강의실 모니터에 붉은 오류 메시지가 나타난다.' },
-      { text: '[SYSTEM ERROR] 비정상적인 접속 요청이 감지되었습니다. 관리자 계정의 접근을 확인했습니다.' },
-      { text: '[SYSTEM ERROR] 외부 접속자를 강제 소환합니다. 접속을 취소할 수 없습니다.' },
+      { text: '비정상적인 접속 요청이 감지되었습니다. 관리자 계정의 접근을 확인했습니다.', effect: 'system-error' },
+      { text: '외부 접속자를 강제 소환합니다. 접속을 취소할 수 없습니다.', effect: 'system-error' },
       { name: '교수님', text: '어? 이거 뭐야?' },
       { text: '교수님이 기기를 벗으려는 순간, 기기에서 강렬한 빛이 쏟아져 나온다.' },
       { text: '순식간에 교수님의 몸이 빛 속으로 빨려 들어가고, 강의실 바닥에는 빈 VR 기기만 떨어진다.' },

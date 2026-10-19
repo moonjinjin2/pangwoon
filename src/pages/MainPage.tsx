@@ -115,14 +115,14 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
   };
 
   return (
-    <div className="main" style={{ backgroundImage: `url(${backgroundImg})`, backgroundSize: 'cover', backgroundPosition: 'center', height: '100vh' }}>
+    <div className="main" style={{ backgroundImage: `url(${backgroundImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="main__left">
         <div className="profile">
           <span className="profile__avatar" style={{ backgroundImage: `url(${hayeongImg})` }} aria-hidden />
           <span className="profile__name">{name}</span>
         </div>
-        <p>
-          <span className="main__date" style={{ fontSize: '2.5rem', marginRight: '10px' }}>TODAY</span>
+        <p className="main__today">
+          <span className="main__date main__date--label">TODAY</span>
           <span className="main__date">{formatShortDate(gameDate)}</span>
         </p>
         <MonthPlan gameDate={gameDate} plans={plans} onChangePlan={changePlan} />
