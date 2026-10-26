@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import Box from './Box';
 import DayMarks from './DayMarks';
-import { ACTIVITIES, DAYS_PER_WEEK, type Activity } from '../utils/activity';
+import { ACTIVITIES, DAYS_PER_WEEK, type Activity, type Grade } from '../utils/activity';
 
 const FRAME_MS = 400;
 // 하루치 결과가 하나씩 뜨는 간격. 마지막 결과를 잠깐 보여준 뒤 종료
@@ -12,8 +12,8 @@ interface Props {
   // 예: '4월 1주'
   weekLabel: string;
   activity: Activity;
-  // 5일치 성공/실패 (미리 정해서 넘겨줌)
-  days: boolean[];
+  // 5일치 판정 결과 (미리 정해서 넘겨줌)
+  days: Grade[];
   // 재생이 끝나거나 스킵하면 호출 (결과창은 메인 화면에서 띄움)
   onFinish: () => void;
 }
@@ -57,7 +57,7 @@ export default function ActivityScene({ weekLabel, activity, days, onFinish }: P
             <span className="scene__frame" aria-hidden>{info.frames[frame]}</span>
           )}
         </div>
-        {days.length > 0 && <DayMarks days={days} revealed={revealed} />}
+        <DayMarks days={days} revealed={revealed} />
         <div className="scene__progress" aria-hidden>
           <div className="scene__progress-fill" />
         </div>

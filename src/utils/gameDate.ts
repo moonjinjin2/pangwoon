@@ -28,11 +28,11 @@ function lastDayOf(d: Date) {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 }
 
-// 매달 15일(2주차와 3주차 사이)은 데이트 날
-export const DATE_DAY = 15;
+// 매달 15일(2주차와 3주차 사이)은 대회 날 (헬스대회/경시대회 번갈아)
+export const CONTEST_DAY = 15;
 
-// 각 주차 시작일. 2주차 다음 15일은 데이트, 4주차는 말일 전날까지(말일은 에피소드)
-const WEEK_START_DAYS = [1, 8, DATE_DAY + 1, DATE_DAY + 8];
+// 각 주차 시작일. 2주차 다음 15일은 대회, 4주차는 말일 전날까지(말일은 에피소드)
+const WEEK_START_DAYS = [1, 8, CONTEST_DAY + 1, CONTEST_DAY + 8];
 
 export function getMonthWeeks(date: string): Week[] {
   const d = toDate(date);
@@ -41,7 +41,7 @@ export function getMonthWeeks(date: string): Week[] {
   const lastDay = lastDayOf(d);
   return WEEK_START_DAYS.map((startDay, i) => ({
     start: new Date(year, month, startDay),
-    end: new Date(year, month, i === 1 ? DATE_DAY - 1 : i === 3 ? lastDay - 1 : startDay + 6),
+    end: new Date(year, month, i === 1 ? CONTEST_DAY - 1 : i === 3 ? lastDay - 1 : startDay + 6),
   }));
 }
 
@@ -51,13 +51,13 @@ export function getWeekIndex(date: string) {
   return WEEK_START_DAYS.filter((startDay) => startDay <= day).length - 1;
 }
 
-export type DayEvent = 'date' | 'episode';
+export type DayEvent = 'contest' | 'episode';
 
-// 이벤트 날인지: 15일은 데이트, 말일은 에피소드
+// 이벤트 날인지: 15일은 대회, 말일은 에피소드
 export function getDayEvent(date: string): DayEvent | null {
   const d = toDate(date);
   if (d.getDate() === lastDayOf(d)) return 'episode';
-  if (d.getDate() === DATE_DAY) return 'date';
+  if (d.getDate() === CONTEST_DAY) return 'contest';
   return null;
 }
 
@@ -68,20 +68,15 @@ export function getMonthIndex(date: string) {
   return (d.getFullYear() - start.getFullYear()) * 12 + d.getMonth() - start.getMonth();
 }
 
-// 이벤트 날의 에피소드 번호 (프롤로그가 #0, 이후 매달 데이트 → 월말 에피소드 순으로 1씩 증가)
-export function getEpisodeNumber(date: string) {
-  return getMonthIndex(date) * 2 + (getDayEvent(date) === 'date' ? 1 : 2);
-}
-
 // 진행하기 후의 날짜
-// 1주차 → 2주차 → 데이트(15일) → 3주차 → 4주차 → 에피소드(말일) → 다음 달 1일
+// 1주차 → 2주차 → 대회(15일) → 3주차 → 4주차 → 에피소드(말일) → 다음 달 1일
 export function getNextWeekDate(date: string) {
   const d = toDate(date);
   const year = d.getFullYear();
   const month = d.getMonth();
   const day = d.getDate();
   const lastDay = lastDayOf(d);
-  const nextDay = [...WEEK_START_DAYS, DATE_DAY, lastDay].sort((a, b) => a - b).find((n) => n > day);
+  const nextDay = [...WEEK_START_DAYS, CONTEST_DAY, lastDay].sort((a, b) => a - b).find((n) => n > day);
   const next = nextDay ? new Date(year, month, nextDay) : new Date(year, month + 1, 1);
   const mm = String(next.getMonth() + 1).padStart(2, '0');
   const dd = String(next.getDate()).padStart(2, '0');

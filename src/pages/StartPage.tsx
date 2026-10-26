@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import backgroundImg from '../img/intro_background.png';
 import logoImg from '../img/logo.png';
 import PetalFall from '../components/PetalFall';
+import { MOBILE_QUERY, useMediaQuery } from './WardrobePage';
 
 interface Props {
   onEnter: () => void;
@@ -16,8 +17,8 @@ export default function StartPage({ onEnter }: Props) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [onEnter]);
 
-  // 모바일(터치 기기)에서는 화면 아무 곳이나 탭하면 시작
-  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  // 모바일에서는 화면 아무 곳이나 탭하면 시작
+  const isTouch = useMediaQuery(MOBILE_QUERY);
   const handleClick = () => {
     if (isTouch) onEnter();
   };

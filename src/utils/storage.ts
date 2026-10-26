@@ -8,6 +8,8 @@ export const PROGRESS_KEYS = {
   plans: 'plans',
   stats: 'stats',
   coins: 'coins',
+  unpaidRent: 'unpaidRent',
+  rentMonth: 'rentMonth',
   affection: 'affection',
   revealed: 'revealed',
   ownedOutfits: 'ownedOutfits',
@@ -80,10 +82,23 @@ function loadJSON<T>(key: string, fallback: T): T {
 // 컬렉션: 에피소드 번호(#0, #1 …) → 그때 본 에피소드 id
 export type Collection = Record<string, string>;
 
+export function loadCollection() {
+  return loadJSON<Collection>(PROGRESS_KEYS.collection, {});
+}
+
+// 다음에 볼 에피소드의 회차 번호 (프롤로그 #0 다음부터 본 순서대로)
+export function getNextEpisodeNumber() {
+  return Math.max(0, ...Object.keys(loadCollection()).map(Number)) + 1;
+}
+
+// 이미 끝까지 본 에피소드인지
+export function isCollected(id: string) {
+  return Object.values(loadCollection()).includes(id);
+}
+
 // 끝까지 본 에피소드를 그 회차 번호로 컬렉션에 기록
 export function markCollected(number: number, id: string) {
-  const collected = loadJSON<Collection>(PROGRESS_KEYS.collection, {});
-  save(PROGRESS_KEYS.collection, JSON.stringify({ ...collected, [number]: id }));
+  save(PROGRESS_KEYS.collection, JSON.stringify({ ...loadCollection(), [number]: id }));
 }
 
 // useState와 같지만 값이 바뀔 때마다 localStorage에 저장해 새로고침해도 유지됨

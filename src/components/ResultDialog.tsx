@@ -12,10 +12,10 @@ interface Props {
 }
 
 function effectLabel(key: keyof Effect) {
-  return key === 'coins' ? '골드' : STAT_LABELS[key];
+  return key === 'coins' ? '자금' : STAT_LABELS[key];
 }
 
-// 스탯·골드 변화량을 보여주는 결과창 (활동 결과, 게임 결과에서 같이 씀)
+// 스탯·자금 변화량을 보여주는 결과창 (활동 결과, 게임 결과에서 같이 씀)
 export default function ResultDialog({ title, children, changes, onConfirm }: Props) {
   const items = Object.entries(changes) as [keyof Effect, number][];
 

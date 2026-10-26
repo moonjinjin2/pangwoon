@@ -127,7 +127,10 @@ function Character({ outfit }: { outfit: Equipped }) {
 
 // 화면 높이가 낮으면 카드가 찌그러지지 않도록 한 페이지에 2줄만
 const SHORT_SCREEN = '(max-height: 700px)';
-const MOBILE_SCREEN = '(max-width: 760px)';
+const MOBILE_LANDSCAPE = '(orientation: landscape) and (max-height: 500px)';
+
+// 터치 기기이거나 폰 크기 화면이면 모바일로 봄 (PC 브라우저의 모바일 미리보기도 포함)
+export const MOBILE_QUERY = '(pointer: coarse), (max-width: 760px), (max-height: 500px)';
 
 export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
@@ -165,8 +168,8 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
   const [selectedId, setSelectedId] = useState<string>(equipped.top);
   const [filter, setFilter] = useState<Filter>('all');
   const [page, setPage] = useState(0);
-  // 모바일은 세로 스크롤 레이아웃이라 높이와 상관없이 3열 x 2줄
-  const isMobile = useMediaQuery(MOBILE_SCREEN);
+  // 모바일(가로)은 카드가 가로로 넓으니 3열 x 2줄
+  const isMobile = useMediaQuery(MOBILE_LANDSCAPE);
   const isShort = useMediaQuery(SHORT_SCREEN);
   const pageSize = !isMobile && isShort ? 4 : 6;
   const columns = isMobile ? 3 : 2;

@@ -3,6 +3,7 @@ import backgroundImg from '../img/cafe.jpg';
 import desktopImg from '../img/windows.jpg';
 import Box from './Box';
 import ResultDialog from './ResultDialog';
+import SelectBox from './SelectBox';
 import { SPEAKERS, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine } from '../utils/episode';
 import type { Effect } from '../utils/activity';
 import { formatFullDate } from '../utils/gameDate';
@@ -18,7 +19,7 @@ type GamePhase = 'enter' | 'play' | 'leave' | 'return';
 // 게임에서 game-end 메시지를 보내게 되면 {}로 바꿔서 엔딩·스탯 없이 끝나게 할 것
 const EXIT_GAME_END: GameEnd = {
   ending: 'A',
-  stats: { health: -20, strength: 10, intellect: 10, charm: 5, stress: 15 },
+  stats: { health: -20, strength: 10, intellect: 10, stress: 15 },
 };
 
 interface Props {
@@ -46,6 +47,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [feedback, setFeedback] = useState<Partial<Affection> | null>(null);
   const [auto, setAuto] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  // 선택지에서 강조된 항목 (방향키·마우스로 고르고 Enter/Space로 선택)
+  const [choiceIndex, setChoiceIndex] = useState(0);
   const [gamePhase, setGamePhase] = useState<GamePhase | null>(null);
   // 게임이 끝나며 알려준 엔딩·스탯 (게임 종료 버튼으로 나오면 빈 값)
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(null);
@@ -177,6 +180,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
   };
 
   const choose = (choice: Choice) => {
+    setChoiceIndex(0);
     setLines([...lines.slice(0, index + 1), ...choice.reply, ...lines.slice(index + 1)]);
     setAffection((prev) => {
       const sum = { ...prev };
@@ -207,6 +211,13 @@ export default function EpisodeScene({ number, label, episode, date, background 
       if (e.key === 'Escape') {
         e.preventDefault();
         skip();
+      } else if (choosing && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        e.preventDefault();
+        const count = line.choices!.length;
+        setChoiceIndex((prev) => (prev + (e.key === 'ArrowUp' ? count - 1 : 1)) % count);
+      } else if (choosing && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        choose(line.choices![choiceIndex]);
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         advance();
@@ -264,22 +275,14 @@ export default function EpisodeScene({ number, label, episode, date, background 
       )}
 
       {choosing && (
-        <ul className="episode__choices">
-          {line.choices!.map((choice, i) => (
-            <li key={i}>
-              <button
-                className="episode__choice"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  choose(choice);
-                }}
-              >
-                <span className="episode__choice-key">{i + 1}</span>
-                {choice.text}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <SelectBox
+          title="Choice"
+          className="episode__choices"
+          items={line.choices!.map((choice, i) => ({ label: choice.text, hotkey: String(i + 1) }))}
+          selected={choiceIndex}
+          onHover={setChoiceIndex}
+          onSelect={(i) => choose(line.choices![i])}
+        />
       )}
 
       {systemError && (

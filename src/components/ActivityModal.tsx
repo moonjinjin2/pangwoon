@@ -1,6 +1,6 @@
 import { useEffect, type CSSProperties } from 'react';
 import Box from './Box';
-import { ACTIVITIES, ACTIVITY_ORDER, type Activity } from '../utils/activity';
+import { ACTIVITIES, ACTIVITY_ORDER, getWeekCost, type Activity } from '../utils/activity';
 
 interface Props {
   title: string;
@@ -25,6 +25,7 @@ export default function ActivityModal({ title, current, onSelect, onClose }: Pro
           <div className="activity-grid">
             {ACTIVITY_ORDER.map((key) => {
               const activity = ACTIVITIES[key];
+              const cost = getWeekCost(key);
               return (
                 <button
                   key={key}
@@ -34,6 +35,7 @@ export default function ActivityModal({ title, current, onSelect, onClose }: Pro
                 >
                   <span className="activity-card__icon" aria-hidden>{activity.icon}</span>
                   <span className="activity-card__label">{activity.label}</span>
+                  {cost > 0 && <span className="activity-card__effect">-{cost.toLocaleString()}원</span>}
                 </button>
               );
             })}
