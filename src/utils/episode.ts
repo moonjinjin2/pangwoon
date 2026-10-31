@@ -249,7 +249,7 @@ export function getEpisode(month: number) {
   return EPISODES[month] ?? DEFAULT_EPISODE;
 }
 
-// 데이트(호감도 이벤트). 히로인별로 DATE_UNLOCKS 순서대로 호감도를 채우면 해금
+// 데이트(호감도 이벤트). 매달 15일 이벤트로 히로인별 순서대로 진행 (utils/monthEvent)
 export const DATE_EPISODES: Record<Heroine, Episode[]> = {
   // 친해지기 → 숨겨진 고민 → 자신만의 장점 발견 → 새로운 도전
   minji: [
@@ -935,12 +935,6 @@ export function getDateLabel(episode: Episode) {
     if (order !== -1) return `${SPEAKERS[partner].name} · 데이트 ${order + 1}`;
   }
 }
-
-// 데이트 에피소드 해금에 필요한 호감도 (히로인별 1번째, 2번째 …)
-export const DATE_UNLOCKS = [0, 20, 50, 80];
-
-// 데이트 1회 비용
-export const DATE_COST = 50000;
 
 // 이름 입력 직후 한 번 보는 프롤로그 (신입생 OT)
 export const PROLOGUE_DATE = '2026-03-02';

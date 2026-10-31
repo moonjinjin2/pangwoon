@@ -303,6 +303,8 @@ body {
   height: 100%;
   background: var(--start-pink);
   border-radius: 999px;
+  /* 프레임이 끊겨 진행률이 한 번에 뛰어도 부드럽게 차오르게 */
+  transition: width 0.25s linear;
 }
 
 .loading__percent {
@@ -1303,6 +1305,11 @@ body {
 
 .modal__dialog {
   width: min(380px, 100%);
+}
+
+/* 히로인 선택 데이트 */
+.modal__dialog.pick {
+  width: min(520px, 100%);
 }
 
 /* Settings */

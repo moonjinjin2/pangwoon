@@ -227,7 +227,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
         e.preventDefault();
         const count = line.choices!.length;
         setChoiceIndex((prev) => (prev + (e.key === 'ArrowUp' ? count - 1 : 1)) % count);
-      } else if (choosing && (e.key === 'Enter' || e.key === ' ')) {
+      } else if (choosing && e.key === 'Enter') {
+        // 스페이스는 대사 넘기기용이라 연타하다 선택지가 골라지지 않게 Enter로만 선택
         e.preventDefault();
         choose(line.choices![choiceIndex]);
       } else if (e.key === 'Enter' || e.key === ' ') {

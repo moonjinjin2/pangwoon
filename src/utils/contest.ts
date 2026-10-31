@@ -1,11 +1,8 @@
 import type { StatKey, Stats } from '../components/StatsBox';
 import type { Effect } from './activity';
-import { getMonthIndex } from './gameDate';
 
-// 기획서 4.3 미니 이벤트: 매달 15일 대회 (헬스대회·경시대회를 달마다 번갈아)
+// 기획서 4.3 미니 이벤트: 대회 (열리는 달은 utils/monthEvent에서 정함)
 export type ContestType = 'gym' | 'exam';
-
-const CONTEST_ORDER: ContestType[] = ['gym', 'exam'];
 
 interface Requirement {
   stat: StatKey;
@@ -50,10 +47,6 @@ export const CONTESTS: Record<ContestType, ContestInfo> = {
     entryEffect: { stress: 10 },
   },
 };
-
-export function getContest(date: string): ContestType {
-  return CONTEST_ORDER[getMonthIndex(date) % CONTEST_ORDER.length];
-}
 
 export function meetsRequirement({ stat, kind, value }: Requirement, stats: Stats) {
   return kind === 'min' ? stats[stat] >= value : stats[stat] <= value;

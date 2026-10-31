@@ -60,8 +60,11 @@ export function useMinLoading(done: boolean, progress: number, minMs: number, fa
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    const start = performance.now();
+    // 로딩 화면이 실제로 처음 그려진 프레임부터 셈
+    // (처음에 이미지를 받느라 첫 프레임이 늦게 그려지면, 마운트 시점부터 세는 경우 화면이 보이자마자 시간이 다 지나 있음)
+    let start: number | null = null;
     let frame = requestAnimationFrame(function tick(now) {
+      start ??= now;
       const t = now - start;
       setElapsed(t);
       if (t < minMs + fadeMs) frame = requestAnimationFrame(tick);

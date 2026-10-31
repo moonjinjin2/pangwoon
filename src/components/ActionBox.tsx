@@ -5,6 +5,7 @@ interface Props {
   // 다른 창이 떠 있을 때는 단축키를 받지 않음
   keysEnabled: boolean;
   onProceed: () => void;
+  // 본 데이트 다시 보기 (데이트 앨범)
   onDate: () => void;
 }
 

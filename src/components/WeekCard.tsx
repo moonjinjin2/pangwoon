@@ -1,7 +1,7 @@
 import { HeartMark } from './Icon';
 import { ACTIVITIES, type Activity } from '../utils/activity';
-import { CONTESTS, getContest } from '../utils/contest';
 import { getDayEvent, getWeekIndex } from '../utils/gameDate';
+import { getMonthEvent, getMonthEventLabel } from '../utils/monthEvent';
 
 const MONTH_NAMES = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
@@ -18,12 +18,12 @@ export default function WeekCard({ gameDate, plans }: Props) {
   const month = Number(gameDate.split('-')[1]);
   const week = getWeekIndex(gameDate);
   const dayEvent = getDayEvent(gameDate);
-  // 대회·말일 에피소드 날은 이번 주 활동 대신 그날 일정
+  // 이벤트·말일 에피소드 날은 이번 주 활동 대신 그날 일정
   const subtitle =
     dayEvent === 'episode'
       ? '오늘 · 메인 에피소드'
-      : dayEvent === 'contest'
-        ? `오늘 · ${CONTESTS[getContest(gameDate)].label}`
+      : dayEvent === 'event'
+        ? `오늘 · ${getMonthEventLabel(getMonthEvent(gameDate))}`
         : `이번 주 · ${ACTIVITIES[plans[week]].label}`;
 
   return (

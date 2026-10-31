@@ -28,11 +28,11 @@ function lastDayOf(d: Date) {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 }
 
-// 매달 15일(2주차와 3주차 사이)은 대회 날 (헬스대회/경시대회 번갈아)
-export const CONTEST_DAY = 15;
+// 매달 15일(2주차와 3주차 사이)은 이달의 이벤트 날 (데이트·대회, utils/monthEvent 참고)
+export const EVENT_DAY = 15;
 
-// 각 주차 시작일. 2주차 다음 15일은 대회, 4주차는 말일 전날까지(말일은 에피소드)
-const WEEK_START_DAYS = [1, 8, CONTEST_DAY + 1, CONTEST_DAY + 8];
+// 각 주차 시작일. 2주차 다음 15일은 이벤트, 4주차는 말일 전날까지(말일은 에피소드)
+const WEEK_START_DAYS = [1, 8, EVENT_DAY + 1, EVENT_DAY + 8];
 
 export function getMonthWeeks(date: string): Week[] {
   const d = toDate(date);
@@ -41,7 +41,7 @@ export function getMonthWeeks(date: string): Week[] {
   const lastDay = lastDayOf(d);
   return WEEK_START_DAYS.map((startDay, i) => ({
     start: new Date(year, month, startDay),
-    end: new Date(year, month, i === 1 ? CONTEST_DAY - 1 : i === 3 ? lastDay - 1 : startDay + 6),
+    end: new Date(year, month, i === 1 ? EVENT_DAY - 1 : i === 3 ? lastDay - 1 : startDay + 6),
   }));
 }
 
@@ -51,32 +51,25 @@ export function getWeekIndex(date: string) {
   return WEEK_START_DAYS.filter((startDay) => startDay <= day).length - 1;
 }
 
-export type DayEvent = 'contest' | 'episode';
+export type DayEvent = 'event' | 'episode';
 
-// 이벤트 날인지: 15일은 대회, 말일은 에피소드
+// 이벤트 날인지: 15일은 이달의 이벤트, 말일은 에피소드
 export function getDayEvent(date: string): DayEvent | null {
   const d = toDate(date);
   if (d.getDate() === lastDayOf(d)) return 'episode';
-  if (d.getDate() === CONTEST_DAY) return 'contest';
+  if (d.getDate() === EVENT_DAY) return 'event';
   return null;
 }
 
-// 게임 시작 달부터 몇 번째 달인지 (0부터)
-export function getMonthIndex(date: string) {
-  const d = toDate(date);
-  const start = toDate(START_GAME_DATE);
-  return (d.getFullYear() - start.getFullYear()) * 12 + d.getMonth() - start.getMonth();
-}
-
 // 진행하기 후의 날짜
-// 1주차 → 2주차 → 대회(15일) → 3주차 → 4주차 → 에피소드(말일) → 다음 달 1일
+// 1주차 → 2주차 → 이벤트(15일) → 3주차 → 4주차 → 에피소드(말일) → 다음 달 1일
 export function getNextWeekDate(date: string) {
   const d = toDate(date);
   const year = d.getFullYear();
   const month = d.getMonth();
   const day = d.getDate();
   const lastDay = lastDayOf(d);
-  const nextDay = [...WEEK_START_DAYS, CONTEST_DAY, lastDay].sort((a, b) => a - b).find((n) => n > day);
+  const nextDay = [...WEEK_START_DAYS, EVENT_DAY, lastDay].sort((a, b) => a - b).find((n) => n > day);
   const next = nextDay ? new Date(year, month, nextDay) : new Date(year, month + 1, 1);
   const mm = String(next.getMonth() + 1).padStart(2, '0');
   const dd = String(next.getDate()).padStart(2, '0');

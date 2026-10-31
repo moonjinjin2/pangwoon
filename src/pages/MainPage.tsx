@@ -9,6 +9,7 @@ import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/Affecti
 import ContestScene from '../components/ContestScene';
 import EpisodeScene from '../components/EpisodeScene';
 import FundsAlert from '../components/FundsAlert';
+import HeroinePick from '../components/HeroinePick';
 import { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
 import RentNotice from '../components/RentNotice';
@@ -20,9 +21,9 @@ import CollectionPage from './CollectionPage';
 import DatePage from './DatePage';
 import WardrobePage from './WardrobePage';
 import { getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
-import { CONTESTS, getContest } from '../utils/contest';
-import { DATE_COST, HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
+import { HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
 import { getDayEvent, getWeekIndex } from '../utils/gameDate';
+import { getMonthEvent, getMonthEventLabel, getNextDate } from '../utils/monthEvent';
 import { RENT, RENT_DELAY_MS, START_COINS, UNPAID_STRESS } from '../utils/rent';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
 
@@ -67,8 +68,11 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [affectionOpen, setAffectionOpen] = useState(false);
-  const [dateListOpen, setDateListOpen] = useState(false);
-  // 데이트 목록에서 고른 데이트 에피소드 (진행 중)
+  // 본 데이트를 다시 보는 데이트 앨범
+  const [dateAlbumOpen, setDateAlbumOpen] = useState(false);
+  // 히로인 선택 데이트 달: 데이트 상대를 고르는 창
+  const [pickOpen, setPickOpen] = useState(false);
+  // 이달의 이벤트로 진행 중인 데이트 에피소드
   const [dateEpisode, setDateEpisode] = useState<{ partner: Heroine; episode: Episode; number: number } | null>(null);
   // 데이트를 끝내고 공개하는 일러스트
   const [illustEpisode, setIllustEpisode] = useState<Episode | null>(null);
@@ -78,6 +82,7 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   const week = getWeekIndex(gameDate);
   const month = Number(gameDate.split('-')[1]);
   const dayEvent = getDayEvent(gameDate);
+  const monthEvent = getMonthEvent(gameDate);
 
   const changePlan = (week: number, activity: Activity) => {
     setPlans((prev) => prev.map((p, i) => (i === week ? activity : p)));
@@ -135,21 +140,40 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
     onProceed?.();
   };
 
-  // 데이트는 날짜를 넘기지 않음. 일러스트가 있으면 끝나자마자 공개
+  // 15일 데이트가 끝나면 3주차로. 일러스트가 있으면 끝나자마자 공개
   const finishDate = (changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
     if (!dateEpisode) return;
     completeEpisode(dateEpisode.number, dateEpisode.episode.id, changes, gameStats, picks);
     setDateEpisode(null);
     if (dateEpisode.episode.illust) setIllustEpisode(dateEpisode.episode);
+    onProceed?.();
   };
 
-  const startDate = (partner: Heroine, episode: Episode) => {
-    if (coins < DATE_COST) return;
-    setCoins((prev) => prev - DATE_COST);
-    setDateListOpen(false);
-    setDateEpisode({ partner, episode, number: getNextEpisodeNumber() });
+  // 히로인의 다음 데이트를 시작 (무료). 그 히로인 데이트를 다 봤으면 이벤트 없이 3주차로
+  const startDate = (partner: Heroine) => {
+    setPickOpen(false);
+    const next = getNextDate(partner);
+    if (!next) {
+      onProceed?.();
+      return;
+    }
+    setDateEpisode({ partner, episode: next.episode, number: getNextEpisodeNumber() });
     // 끝나고 공개할 일러스트를 데이트 도중에 미리 불러둠 (용량이 커서 공개 순간에 비어 보이지 않게)
-    if (episode.illust) new Image().src = episode.illust;
+    if (next.episode.illust) new Image().src = next.episode.illust;
+  };
+
+  // 15일 이달의 이벤트 시작: 대회 / 정해진 히로인과 데이트 / 데이트 상대 고르기
+  const startMonthEvent = () => {
+    if (monthEvent.kind === 'contest') {
+      setPlaying(true);
+    } else if (monthEvent.kind === 'date') {
+      startDate(monthEvent.heroine);
+    } else if (HEROINES.some((h) => getNextDate(h))) {
+      setPickOpen(true);
+    } else {
+      // 남은 데이트가 없으면 이벤트 없이 3주차로
+      onProceed?.();
+    }
   };
 
   // 그 달 월세를 아직 안 냈으면 메인 화면에 들어온 뒤 RENT_DELAY_MS 후 납부 (게임 시작 직후, 말일 에피소드 후 다음 달 1일)
@@ -181,9 +205,13 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   }, [rentDue, currentMonth]);
 
   const proceed = () => {
-    // 월세 내기 전에 진행하기·데이트를 누르면 월세부터
+    // 월세 내기 전에 진행하기를 누르면 월세부터
     if (rentDue) {
       chargeRent();
+      return;
+    }
+    if (dayEvent === 'event') {
+      startMonthEvent();
       return;
     }
     if (!dayEvent) {
@@ -196,21 +224,11 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
     setPlaying(true);
   };
 
-  const openDateList = () => {
-    if (rentDue) {
-      chargeRent();
-      return;
-    }
-    setDateListOpen(true);
-  };
-
   const revealAffection = (heroine: Heroine) => {
     if (coins < REVEAL_PRICE || revealed[heroine]) return;
     setCoins(coins - REVEAL_PRICE);
     setRevealed({ ...revealed, [heroine]: true });
   };
-
-  const contest = getContest(gameDate);
 
   // 메인 화면 위에 다른 화면·창이 떠 있으면 진행하기/데이트 단축키를 막음
   const overlayOpen =
@@ -218,7 +236,8 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
     showResult ||
     !!dateEpisode ||
     !!illustEpisode ||
-    dateListOpen ||
+    pickOpen ||
+    dateAlbumOpen ||
     !!rentResult ||
     fundsAlert ||
     wardrobeOpen ||
@@ -258,10 +277,14 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
           <HeartMark className="talk__next" />
         </div>
         <div className="main__action">
-          {/* 대회 날·말일 에피소드 날 안내 */}
+          {/* 이벤트 날·말일 에피소드 날 안내 */}
           {dayEvent === 'episode' && <span className="main__bubble">메인 에피소드 발생!</span>}
-          {dayEvent === 'contest' && <span className="main__bubble">{CONTESTS[contest].label} 개최!</span>}
-          <ActionBox keysEnabled={!overlayOpen} onProceed={proceed} onDate={openDateList} />
+          {dayEvent === 'event' && (
+            <span className="main__bubble">
+              {monthEvent.kind === 'contest' ? `${getMonthEventLabel(monthEvent)} 개최!` : `💗 ${getMonthEventLabel(monthEvent)}`}
+            </span>
+          )}
+          <ActionBox keysEnabled={!overlayOpen} onProceed={proceed} onDate={() => setDateAlbumOpen(true)} />
         </div>
       </div>
       {playing &&
@@ -274,8 +297,10 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
             playerName={name}
             onDone={finishEpisode}
           />
-        ) : dayEvent === 'contest' ? (
-          <ContestScene type={contest} month={month} stats={stats} onDone={finishContest} />
+        ) : dayEvent === 'event' ? (
+          monthEvent.kind === 'contest' && (
+            <ContestScene type={monthEvent.contest} month={month} stats={stats} onDone={finishContest} />
+          )
         ) : (
           <ActivityScene weekLabel={`${month}월 ${week + 1}주`} activity={plans[week]} days={days} onFinish={finishActivity} />
         ))}
@@ -298,9 +323,8 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
           onClose={() => setIllustEpisode(null)}
         />
       )}
-      {dateListOpen && (
-        <DatePage affection={affection} coins={coins} onSelect={startDate} onClose={() => setDateListOpen(false)} />
-      )}
+      {pickOpen && <HeroinePick onPick={startDate} />}
+      {dateAlbumOpen && <DatePage onClose={() => setDateAlbumOpen(false)} />}
       {showResult && <ActivityResult activity={plans[week]} days={days} onConfirm={finishWeek} />}
       {rentResult && (
         <RentNotice {...rentResult} gameDate={gameDate} onConfirm={() => setRentResult(null)} />
