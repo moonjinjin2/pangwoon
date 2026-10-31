@@ -4,7 +4,7 @@ import desktopImg from '../img/windows.jpg';
 import Box from './Box';
 import ResultDialog from './ResultDialog';
 import { HeartMark } from './Icon';
-import { SPEAKERS, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
+import { SPEAKERS, getReplayLines, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
 import type { Effect } from '../utils/activity';
 import { getWeekIndex } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
@@ -28,20 +28,24 @@ interface Props {
   // 상단 창에 표시 (예: '데이트 · 민지'). 첫 부분은 태그로, 나머지는 날짜 옆에
   label: string;
   episode: Episode;
-  // 'YYYY-MM-DD'
-  date: string;
+  // 'YYYY-MM-DD' (다시 보기처럼 날짜가 없으면 현재 상황 창에 날짜를 빼고 보여줌)
+  date?: string;
   // 배경 이미지 주소, 또는 직접 그린 배경
   background?: string | ReactNode;
   playerName: string;
   // 주인공 대사에서도 주인공 이미지를 보여줄지 (기본은 대사만)
   showPlayer?: boolean;
-  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 게임에서 얻은 스탯 변화량
-  onDone: (affection: Partial<Affection>, stats?: Effect) => void;
+  // 컬렉션에서 다시 볼 때 그때 고른 선택지 번호들 (선택지 대신 고른 대사가 바로 나오고, 호감도는 바뀌지 않음)
+  replay?: number[];
+  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 게임에서 얻은 스탯 변화량, 고른 선택지 번호들
+  onDone: (affection: Partial<Affection>, stats?: Effect, picks?: number[]) => void;
 }
 
-export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? backgroundImg, playerName, showPlayer = false, onDone }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? backgroundImg, playerName, showPlayer = false, replay, onDone }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
-  const [lines, setLines] = useState(episode.lines);
+  const [lines, setLines] = useState(() => (replay ? getReplayLines(episode.lines, replay) : episode.lines));
+  // 고른 선택지 번호 (나온 순서대로 기록해 다시 보기에 씀)
+  const [picks, setPicks] = useState<number[]>([]);
   const [index, setIndex] = useState(0);
   const [typed, setTyped] = useState(0);
   const [affection, setAffection] = useState<Partial<Affection>>({});
@@ -109,7 +113,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
     if (hasGameStats && !gameResultOpen) {
       setGameResultOpen(true);
     } else {
-      onDone(affection, gameStats);
+      onDone(affection, gameStats, picks);
     }
   };
 
@@ -187,6 +191,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   const choose = (choice: Choice) => {
     setChoiceIndex(0);
+    setPicks((prev) => [...prev, line.choices!.indexOf(choice)]);
     setLines([...lines.slice(0, index + 1), ...choice.reply, ...lines.slice(index + 1)]);
     setAffection((prev) => {
       const sum = { ...prev };
@@ -195,7 +200,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
       }
       return sum;
     });
-    setFeedback(choice.affection);
+    // 다시 보기에서는 호감도가 바뀌지 않으므로 표시하지 않음
+    if (!replay) setFeedback(choice.affection);
     next();
   };
 
@@ -238,8 +244,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   });
 
   const [tag, ...labelRest] = label.split(' · ');
-  const [, month] = date.split('-').map(Number);
-  const subtitle = [`${month}월 ${getWeekIndex(date) + 1}주차`, episode.time ?? labelRest.join(' · ')].filter(Boolean).join(' · ');
+  const dateText = date && `${Number(date.split('-')[1])}월 ${getWeekIndex(date) + 1}주차`;
+  const subtitle = [dateText, episode.time ?? labelRest.join(' · ')].filter(Boolean).join(' · ');
 
   const feedbackItems = feedback ? (Object.entries(feedback) as [Heroine, number][]).filter(([, v]) => v !== 0) : [];
 
@@ -262,7 +268,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
       <section className="hud-card episode__status" onClick={(e) => e.stopPropagation()}>
         <header className="hud-card__head">
           <HeartMark />
-          <h3 className="hud-card__title hud-card__title--en">EPISODE #{number}</h3>
+          <h3 className="hud-card__title">EPISODE #{number}</h3>
           <span className="episode__tag">{tag}</span>
         </header>
         <strong className="episode__title">{episode.title}</strong>
@@ -284,7 +290,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
         <section className="hud-card episode__choices" onClick={(e) => e.stopPropagation()}>
           <header className="hud-card__head">
             <HeartMark />
-            <h3 className="hud-card__title hud-card__title--en">Choice</h3>
+            <h3 className="hud-card__title">Choice</h3>
           </header>
           <ul className="action__list">
             {line.choices!.map((choice, i) => (
@@ -319,8 +325,13 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
       <div className="talk episode__talk">
         {speakerName && (
-          <span className="talk__speaker">
-            <HeartMark />
+          <span className={line.speaker === 'player' ? 'talk__speaker talk__speaker--player' : 'talk__speaker'}>
+            {/* 캐릭터면 얼굴, 이미지 없는 NPC(교수님 등)는 하트 */}
+            {line.speaker ? (
+              <span className={`talk__face face face--${line.speaker}`} style={{ backgroundImage: `url(${SPEAKERS[line.speaker].image})` }} aria-hidden />
+            ) : (
+              <HeartMark />
+            )}
             {speakerName}
           </span>
         )}
@@ -389,7 +400,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
       )}
 
       {gameResultOpen && gameStats && (
-        <ResultDialog title="게임 결과" changes={gameStats} onConfirm={() => onDone(affection, gameStats)} />
+        <ResultDialog title="게임 결과" changes={gameStats} onConfirm={() => onDone(affection, gameStats, picks)} />
       )}
 
       {logOpen && (

@@ -36,7 +36,7 @@ export default function AffectionBox({ affection, revealed, coins, onReveal, onC
               const { name, image } = SPEAKERS[key];
               return (
                 <li key={key} className="affection__item">
-                  <span className="affection__avatar" style={{ backgroundImage: `url(${image})` }} aria-hidden />
+                  <span className={`affection__avatar face face--${key}`} style={{ backgroundImage: `url(${image})` }} aria-hidden />
                   <span className="affection__name">{name}</span>
                   {revealed[key] ? (
                     <span className="affection__value">♥ {affection[key]}</span>

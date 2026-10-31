@@ -7,6 +7,8 @@ interface Props {
   mode: 'reveal' | 'view';
   // 일러스트 아래 작은 글씨 (예: '에밀리 · 데이트 1')
   caption?: string;
+  // 있으면 '다시 보기' 버튼을 보여주고 누르면 에피소드를 다시 재생
+  onReplay?: () => void;
   onClose: () => void;
 }
 
@@ -24,7 +26,7 @@ const SPARKLES = [
 ];
 
 // 데이트 일러스트를 화면 가득 보여줌. 클릭·Enter·ESC로 닫기
-export default function IllustView({ illust, title, mode, caption, onClose }: Props) {
+export default function IllustView({ illust, title, mode, caption, onReplay, onClose }: Props) {
   const reveal = mode === 'reveal';
   const [ready, setReady] = useState(!reveal);
 
@@ -72,6 +74,17 @@ export default function IllustView({ illust, title, mode, caption, onClose }: Pr
           <strong className="illust__title">{title}</strong>
         </figcaption>
       </figure>
+      {onReplay && ready && (
+        <button
+          className="illust__replay"
+          onClick={(e) => {
+            e.stopPropagation();
+            onReplay();
+          }}
+        >
+          ▶ 다시 보기
+        </button>
+      )}
       <p className="illust__hint">{reveal ? '컬렉션에서 다시 볼 수 있어요 · 클릭해서 닫기' : '클릭해서 닫기'}</p>
     </div>
   );

@@ -52,7 +52,7 @@ export default function StatsBox({ stats }: Props) {
     <section className="hud-card">
       <header className="hud-card__head">
         <HeartMark />
-        <h3 className="hud-card__title hud-card__title--en">Status</h3>
+        <h3 className="hud-card__title">Status</h3>
       </header>
       <ul className="stats">
         {statMeta.map(({ key, label, color }) => {

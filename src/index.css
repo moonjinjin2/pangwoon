@@ -350,7 +350,6 @@ body {
   padding: 0 calc(40 * var(--u)) 0 calc(28 * var(--u));
   display: flex;
   align-items: center;
-  font-family: var(--font-title);
   font-weight: 700;
   font-size: calc(26 * var(--u));
   color: var(--hud-ink);
@@ -390,12 +389,6 @@ body {
   font-weight: 700;
   font-size: calc(23 * var(--u));
   color: #b84a77;
-}
-
-/* 영어 제목은 기울여서 */
-.hud-card__title--en {
-  font-style: italic;
-  letter-spacing: 0.01em;
 }
 
 .heart-mark {
@@ -775,13 +768,33 @@ body {
   gap: calc(10 * var(--u));
   height: calc(50 * var(--u));
   padding: 0 calc(44 * var(--u)) 0 calc(26 * var(--u));
-  font-family: var(--font-title);
   font-weight: 700;
   font-size: calc(26 * var(--u));
   color: #9a3a65;
   background: #f8dce7;
   border-radius: calc(25 * var(--u)) 0 0 calc(25 * var(--u));
   clip-path: polygon(0 0, 100% 0, calc(100% - calc(20 * var(--u))) 100%, 0 100%);
+}
+
+/* 주인공 이름표는 히로인(분홍)과 구분되게 하늘색 */
+.talk__speaker--player {
+  color: #3a5f9a;
+  background: #dce8f8;
+}
+
+.talk__speaker--player .heart-mark {
+  fill: #6f97d0;
+}
+
+/* 이름표 하트 자리에 들어가는 말하는 캐릭터 얼굴 */
+.talk__face {
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+  flex-shrink: 0;
+  margin-left: calc(-14 * var(--u));
+  background-color: #fff;
+  border: calc(2 * var(--u)) solid #fff;
+  border-radius: 50%;
 }
 
 .talk__line {
@@ -1833,6 +1846,28 @@ body {
   }
 }
 
+/* 캐릭터 전신 그림에서 얼굴만 원형 아이콘으로 잘라 보여줌 (호감도 창, 대사 이름표)
+   그림마다 구도가 달라 캐릭터별로 확대 비율·위치를 맞춤 */
+.face {
+  background-repeat: no-repeat;
+  background-size: 260% auto;
+  background-position: 50% 6%;
+}
+
+.face--player {
+  background-size: 350% auto;
+  background-position: 48% 9%;
+}
+
+.face--minji {
+  background-size: 180% auto;
+  background-position: 50% 11%;
+}
+
+.face--emily {
+  background-position: 43% 6%;
+}
+
 /* Episode */
 .episode {
   position: fixed;
@@ -2288,8 +2323,6 @@ body {
   height: 40px;
   flex-shrink: 0;
   background-color: #fdf1f6;
-  background-size: 260% auto;
-  background-position: 50% 6%;
   border: 2px solid #fff;
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--hud-line);
@@ -2410,7 +2443,6 @@ body {
   position: fixed;
   inset: 0;
   z-index: 80;
-  /* 캐릭터와 인벤토리를 한 덩어리로 화면 정중앙에 배치 */
   --wardrobe-height: min(82vh, 820px);
   display: flex;
   align-items: center;
@@ -2477,7 +2509,8 @@ body {
 .wardrobe__char {
   position: relative;
   height: var(--wardrobe-height);
-  aspect-ratio: 678 / 1038;
+  /* hayeong_whole.png 원본 비율 (887 × 1774) */
+  aspect-ratio: 887 / 1774;
   isolation: isolate;
 }
 
@@ -2946,7 +2979,7 @@ button.inv__card--selected:hover {
   align-items: center;
   justify-content: center;
   gap: 20px;
-  padding: 80px 16px 24px;
+  padding: 60px 16px 24px;
   color: var(--hud-ink);
   background-size: cover;
   background-position: center;
@@ -4001,6 +4034,24 @@ button.inv__card--selected:hover {
   font-family: var(--font-title);
   font-weight: 700;
   font-size: 1.25rem;
+}
+
+/* 일러스트 아래 에피소드 다시 보기 버튼 */
+.illust__replay {
+  padding: 8px 22px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  background: var(--hud-pink);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(120, 40, 80, 0.3);
+  cursor: pointer;
+}
+
+.illust__replay:hover {
+  filter: brightness(1.08);
 }
 
 .illust__hint {

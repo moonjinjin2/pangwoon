@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BookView from '../components/BookView';
+import EpisodeReplay from '../components/EpisodeReplay';
 import IllustView from '../components/IllustView';
 import { EpisodeArt } from './CollectionPage';
 import { DATE_COST, DATE_EPISODES, DATE_UNLOCKS, HEROINES, SPEAKERS, type Affection, type Episode, type Heroine } from '../utils/episode';
@@ -26,7 +27,8 @@ const DATES = HEROINES.flatMap((partner) =>
 // 본 데이트 카드는 일러스트로 바뀌고, 누르면 일러스트를 크게 다시 봄
 export default function DatePage({ affection, coins, onSelect, onClose }: Props) {
   const affordable = coins >= DATE_COST;
-  const [viewing, setViewing] = useState<{ illust: string; title: string; label: string } | null>(null);
+  const [viewing, setViewing] = useState<{ illust: string; title: string; label: string; episode: Episode } | null>(null);
+  const [replaying, setReplaying] = useState<Episode | null>(null);
 
   const renderCard = (index: number) => {
     const date = DATES[index];
@@ -55,7 +57,7 @@ export default function DatePage({ affection, coins, onSelect, onClose }: Props)
         <button
           className="ep-card__button"
           disabled={!playable && !illust}
-          onClick={() => (illust ? setViewing({ illust, title: episode.title, label }) : onSelect(partner, episode))}
+          onClick={() => (illust ? setViewing({ illust, title: episode.title, label, episode }) : onSelect(partner, episode))}
           aria-label={`${label} ${episode.title}${illust ? ' (일러스트 보기)' : done ? ' (완료)' : !affordable ? ' (자금 부족)' : ''}`}
         >
           <div className="ep-card__frame">
@@ -76,11 +78,23 @@ export default function DatePage({ affection, coins, onSelect, onClose }: Props)
         badge={`1회 ${DATE_COST.toLocaleString()}원`}
         cardCount={DATES.length}
         renderCard={renderCard}
-        onClose={onClose}
+        // 다시 보기 중에는 ESC가 에피소드 스킵이므로 책이 같이 닫히지 않게 함
+        onClose={replaying ? () => {} : onClose}
       />
       {viewing && (
-        <IllustView mode="view" illust={viewing.illust} title={viewing.title} caption={viewing.label} onClose={() => setViewing(null)} />
+        <IllustView
+          mode="view"
+          illust={viewing.illust}
+          title={viewing.title}
+          caption={viewing.label}
+          onReplay={() => {
+            setReplaying(viewing.episode);
+            setViewing(null);
+          }}
+          onClose={() => setViewing(null)}
+        />
       )}
+      {replaying && <EpisodeReplay episode={replaying} onClose={() => setReplaying(null)} />}
     </>
   );
 }

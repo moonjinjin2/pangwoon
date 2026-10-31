@@ -981,6 +981,20 @@ export const EPISODE_CATALOG: Episode[] = [
   ...HEROINES.flatMap((h) => DATE_EPISODES[h]),
 ];
 
+// 다시 보기용 대사: 고른 선택지를 주인공 대사로 바꾸고 그 답변을 바로 이어 붙임
+// (선택 기록이 생기기 전에 본 에피소드는 기록이 없으므로 첫 번째 선택지로 보여줌, 게임은 건너뜀)
+export function getReplayLines(lines: EpisodeLine[], picks: number[]): EpisodeLine[] {
+  let k = 0;
+  const expand = (list: EpisodeLine[]): EpisodeLine[] =>
+    list.flatMap(({ game: _game, gameTitle: _gameTitle, gameEndings: _gameEndings, ...line }) => {
+      if (!line.choices) return [line];
+      const choice = line.choices[picks[k++]] ?? line.choices[0];
+      const { choices: _choices, ...rest } = line;
+      return [rest, { speaker: 'player' as const, text: choice.text }, ...expand(choice.reply)];
+    });
+  return expand(lines);
+}
+
 // 에피소드의 대표 캐릭터 (주인공이 아닌 첫 화자, 없으면 주인공)
 export function getMainSpeaker(episode: Episode): Speaker {
   return episode.lines.find((l) => l.speaker && l.speaker !== 'player')?.speaker ?? 'player';

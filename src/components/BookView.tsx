@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
-import backgroundImg from '../img/room3.png';
+import backgroundImg from '../img/main_background.jpg';
 import { Glyph, glyphs, useMediaQuery } from '../pages/WardrobePage';
 
 // 한 쪽에 카드 4장 (2x2)

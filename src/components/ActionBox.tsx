@@ -44,7 +44,7 @@ export default function ActionBox({ keysEnabled, onProceed, onDate }: Props) {
     <section className="hud-card action">
       <header className="hud-card__head">
         <HeartMark />
-        <h3 className="hud-card__title hud-card__title--en">Action</h3>
+        <h3 className="hud-card__title">Action</h3>
       </header>
       <ul className="action__list">
         {items.map(({ label, hotkey }, i) => (

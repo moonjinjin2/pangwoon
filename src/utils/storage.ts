@@ -15,6 +15,7 @@ export const PROGRESS_KEYS = {
   ownedOutfits: 'ownedOutfits',
   equippedOutfit: 'equippedOutfit',
   collection: 'collection',
+  choices: 'choices',
 } as const;
 
 // 환경 설정 (새 게임을 시작해도 유지)
@@ -91,6 +92,12 @@ export function getNextEpisodeNumber() {
   return Math.max(0, ...Object.keys(loadCollection()).map(Number)) + 1;
 }
 
+// 에피소드를 컬렉션에 기록한 회차 번호 (없으면 undefined)
+export function getCollectedNumber(id: string) {
+  const entry = Object.entries(loadCollection()).find(([, value]) => value === id);
+  return entry && Number(entry[0]);
+}
+
 // 이미 끝까지 본 에피소드인지
 export function isCollected(id: string) {
   return Object.values(loadCollection()).includes(id);
@@ -99,6 +106,17 @@ export function isCollected(id: string) {
 // 끝까지 본 에피소드를 그 회차 번호로 컬렉션에 기록
 export function markCollected(number: number, id: string) {
   save(PROGRESS_KEYS.collection, JSON.stringify({ ...loadCollection(), [number]: id }));
+}
+
+// 에피소드 id → 끝까지 봤을 때 고른 선택지 번호들 (나온 순서대로, 다시 보기에서 그대로 재생)
+export type ChoiceRecord = Record<string, number[]>;
+
+export function loadChoices(id: string): number[] | undefined {
+  return loadJSON<ChoiceRecord>(PROGRESS_KEYS.choices, {})[id];
+}
+
+export function saveChoices(id: string, picks: number[]) {
+  save(PROGRESS_KEYS.choices, JSON.stringify({ ...loadJSON<ChoiceRecord>(PROGRESS_KEYS.choices, {}), [id]: picks }));
 }
 
 // useState와 같지만 값이 바뀔 때마다 localStorage에 저장해 새로고침해도 유지됨

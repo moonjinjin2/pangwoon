@@ -2,6 +2,7 @@ import roomImg from '../img/room.jpg';
 import barImg from '../img/bar_background.jpg';
 import { useState } from 'react';
 import BookView from '../components/BookView';
+import EpisodeReplay from '../components/EpisodeReplay';
 import IllustView from '../components/IllustView';
 import { EPISODE_CATALOG, PROLOGUE, SPEAKERS, getDateLabel, getMainSpeaker, type Episode } from '../utils/episode';
 import { PROGRESS_KEYS, useStoredState, type Collection } from '../utils/storage';
@@ -62,6 +63,7 @@ interface Props {
 export default function CollectionPage({ onClose }: Props) {
   const [stored] = useStoredState<Collection>(PROGRESS_KEYS.collection, {});
   const [viewing, setViewing] = useState<Episode | null>(null);
+  const [replaying, setReplaying] = useState<Episode | null>(null);
 
   // 메인 화면은 프롤로그를 본 뒤에만 오므로 #0 프롤로그는 항상 수집된 것으로 봄
   const collected: Collection = { 0: PROLOGUE.id, ...stored };
@@ -76,7 +78,8 @@ export default function CollectionPage({ onClose }: Props) {
         badge={`${numbers.length}개 수집`}
         cardCount={Math.max(...numbers) + 2}
         renderCard={(number) => <EpisodeCard episode={episodeAt(number)} number={number} onView={setViewing} />}
-        onClose={onClose}
+        // 다시 보기 중에는 ESC가 에피소드 스킵이므로 책이 같이 닫히지 않게 함
+        onClose={replaying ? () => {} : onClose}
       />
       {viewing?.illust && (
         <IllustView
@@ -84,9 +87,14 @@ export default function CollectionPage({ onClose }: Props) {
           illust={viewing.illust}
           title={viewing.title}
           caption={getDateLabel(viewing)}
+          onReplay={() => {
+            setReplaying(viewing);
+            setViewing(null);
+          }}
           onClose={() => setViewing(null)}
         />
       )}
+      {replaying && <EpisodeReplay episode={replaying} onClose={() => setReplaying(null)} />}
     </>
   );
 }

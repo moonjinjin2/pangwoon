@@ -24,7 +24,7 @@ import { CONTESTS, getContest } from '../utils/contest';
 import { DATE_COST, HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
 import { getDayEvent, getWeekIndex } from '../utils/gameDate';
 import { RENT, RENT_DELAY_MS, START_COINS, UNPAID_STRESS } from '../utils/rent';
-import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, useStoredState } from '../utils/storage';
+import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
 
 interface Props {
   name: string;
@@ -108,9 +108,10 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   };
 
   // 에피소드를 끝까지 보면 컬렉션에 기록하고 선택지 호감도와 게임에서 얻은 스탯을 반영
-  const completeEpisode = (number: number, id: string, changes: Partial<Affection>, gameStats?: Effect) => {
+  const completeEpisode = (number: number, id: string, changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
     if (gameStats) applyEffect(gameStats);
     markCollected(number, id);
+    if (picks) saveChoices(id, picks);
     setAffection((prev) => {
       const next = { ...prev };
       for (const key of HEROINES) {
@@ -121,8 +122,8 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   };
 
   // 말일 에피소드가 끝나면 다음 달로
-  const finishEpisode = (changes: Partial<Affection>, gameStats?: Effect) => {
-    completeEpisode(getNextEpisodeNumber(), getEpisode(month).id, changes, gameStats);
+  const finishEpisode = (changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
+    completeEpisode(getNextEpisodeNumber(), getEpisode(month).id, changes, gameStats, picks);
     setPlaying(false);
     onProceed?.();
   };
@@ -135,9 +136,9 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   };
 
   // 데이트는 날짜를 넘기지 않음. 일러스트가 있으면 끝나자마자 공개
-  const finishDate = (changes: Partial<Affection>, gameStats?: Effect) => {
+  const finishDate = (changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
     if (!dateEpisode) return;
-    completeEpisode(dateEpisode.number, dateEpisode.episode.id, changes, gameStats);
+    completeEpisode(dateEpisode.number, dateEpisode.episode.id, changes, gameStats, picks);
     setDateEpisode(null);
     if (dateEpisode.episode.illust) setIllustEpisode(dateEpisode.episode);
   };

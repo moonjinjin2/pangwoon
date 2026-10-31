@@ -30,7 +30,7 @@ export default function WeekCard({ gameDate, plans }: Props) {
     <section className="hud-card week-card">
       <header className="hud-card__head">
         <HeartMark />
-        <h3 className="hud-card__title hud-card__title--en">{MONTH_NAMES[month - 1]}</h3>
+        <h3 className="hud-card__title">{MONTH_NAMES[month - 1]}</h3>
       </header>
       <div className="week-card__body">
         <span className="week-card__number">{week + 1}</span>
