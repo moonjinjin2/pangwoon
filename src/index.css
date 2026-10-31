@@ -77,7 +77,10 @@ body {
 
 .start__heroines {
   position: absolute;
-  inset: 0;
+  right: 0;
+  bottom: 0;
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
   pointer-events: none;
 }
 
@@ -310,6 +313,7 @@ body {
 }
 
 @keyframes loading-beat {
+
   0%,
   100% {
     transform: scale(1);

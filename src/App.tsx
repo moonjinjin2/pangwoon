@@ -111,10 +111,10 @@ export default function App() {
   // 화면을 옮길 때 이미지가 깨져 보이지 않게 처음에 모두 불러옴
   const { done, progress } = usePreload(CORE_IMAGES);
   const loading = useMinLoading(done, progress, MIN_LOADING_MS, LOADING_FADE_MS);
-  // 로딩 화면이 사라지기 시작할 때 게임 화면을 뒤에 깔아서 서서히 드러나게 함
+  // 이미지를 다 불러오면 게임 화면을 로딩 화면 뒤에 미리 깔아 둠
   return (
     <>
-      {loading.leaving && <Game />}
+      {done && <Game />}
       {!loading.gone && <LoadingScreen progress={loading.progress} leaving={loading.leaving} />}
     </>
   );

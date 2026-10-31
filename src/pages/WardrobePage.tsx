@@ -53,7 +53,8 @@ export function Glyph({ grid }: { grid: string }) {
 function Character({ outfit }: { outfit: Equipped }) {
   return (
     <div className="wardrobe__char">
-      <img src={characterImg} alt="하영" />
+      {/* 큰 이미지라 비동기로 그리면 옷장을 연 뒤 한 박자 늦게 나타나므로, 화면과 같이 그려지게 동기 디코딩 */}
+      <img src={characterImg} alt="하영" decoding="sync" />
       {CATEGORIES.map((category) => {
         const tint = getOutfit(outfit[category])?.tint;
         if (!tint) return null;
