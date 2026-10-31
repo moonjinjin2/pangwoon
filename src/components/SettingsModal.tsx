@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function SettingsModal({ volume, onChangeVolume, textSpeed, onChangeTextSpeed, onExit, onClose }: Props) {
-  // 게임 종료 시 진행 상황이 지워지므로 한 번 더 확인
+  // 게임 종료 전 한 번 더 확인 (진행 상황은 저장돼 있어 이어하기로 돌아올 수 있음)
   const [confirmExit, setConfirmExit] = useState(false);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function SettingsModal({ volume, onChangeVolume, textSpeed, onCha
             </div>
             {confirmExit ? (
               <div className="settings__confirm">
-                <p>진행 상황이 모두 사라져요.<br />종료할까요?</p>
+                <p>타이틀로 돌아갈까요?<br />진행 상황은 저장돼요.</p>
                 <div className="settings__actions">
                   <button className="settings__btn settings__btn--danger" onClick={onExit}>종료</button>
                   <button className="settings__btn" onClick={() => setConfirmExit(false)}>취소</button>

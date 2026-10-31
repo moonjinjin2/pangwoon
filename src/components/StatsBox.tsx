@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
-import Box from './Box';
+import type { CSSProperties } from 'react';
+import { HeartMark } from './Icon';
 
 export type StatKey = 'health' | 'strength' | 'intellect' | 'stress';
 
@@ -34,26 +34,11 @@ export function clampStats(stats: Stats): Stats {
   return next;
 }
 
-// 16x16 픽셀 아이콘
-const icons: Record<StatKey, ReactNode> = {
-  health: (
-    <path d="M3 3h4v1h2V3h4v1h1v4h-1v1h-1v1h-1v1h-1v1h-1v1H7v-1H6v-1H5v-1H4V9H3V8H2V4h1z" />
-  ),
-  strength: <path d="M2 4h2v8H2z M12 4h2v8h-2z M1 6h1v4H1z M14 6h1v4h-1z M4 7h8v2H4z" />,
-  intellect: (
-    <>
-      <path d="M1 3h6v10H1z M9 3h6v10H9z" />
-      <path className="stat__icon-ink" d="M2 5h4v1H2z M2 7h4v1H2z M2 9h4v1H2z M10 5h4v1h-4z M10 7h4v1h-4z M10 9h4v1h-4z" />
-    </>
-  ),
-  stress: <path className="stat__icon-stroke" d="M7 8h2V6H5v5h6V4H3v9h10" />,
-};
-
 const statMeta: { key: StatKey; label: string; color: string }[] = [
-  { key: 'health', label: '체력', color: '#f28ba8' },
-  { key: 'strength', label: '근력', color: '#a8d08d' },
-  { key: 'intellect', label: '지성', color: '#8fc4f2' },
-  { key: 'stress', label: '스트레스', color: '#b98cf0' },
+  { key: 'health', label: '체력', color: '#d9668f' },
+  { key: 'strength', label: '근력', color: '#eb9a78' },
+  { key: 'intellect', label: '지성', color: '#a597e8' },
+  { key: 'stress', label: '스트레스', color: '#b4aacb' },
 ];
 
 export const STAT_LABELS = Object.fromEntries(statMeta.map(({ key, label }) => [key, label])) as Record<StatKey, string>;
@@ -64,31 +49,28 @@ interface Props {
 
 export default function StatsBox({ stats }: Props) {
   return (
-    <Box title="Status">
+    <section className="hud-card">
+      <header className="hud-card__head">
+        <HeartMark />
+        <h3 className="hud-card__title hud-card__title--en">Status</h3>
+      </header>
       <ul className="stats">
         {statMeta.map(({ key, label, color }) => {
           const max = getStatMax(key, stats);
           const value = Math.max(0, Math.min(max, stats[key]));
           return (
             <li key={key} className="stat" style={{ '--stat-color': color } as CSSProperties}>
-              <span className="stat__icon">
-                <svg viewBox="0 0 16 16" aria-hidden>
-                  {icons[key]}
-                </svg>
+              <span className="stat__label">{label}</span>
+              <span className="stat__value">
+                {value} / {max}
               </span>
-              <div className="stat__info">
-                <span className="stat__label">{label}</span>
-                <div className="stat__bar">
-                  <div className="stat__fill" style={{ width: `${(value / max) * 100}%` }} />
-                </div>
-                <span className="stat__value">
-                  {value} / {max}
-                </span>
+              <div className="stat__bar">
+                <div className="stat__fill" style={{ width: `${(value / max) * 100}%` }} />
               </div>
             </li>
           );
         })}
       </ul>
-    </Box>
+    </section>
   );
 }

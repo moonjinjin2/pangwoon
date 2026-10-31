@@ -3,11 +3,11 @@ import type { Grade } from '../utils/activity';
 
 const DAY_NAMES = ['월', '화', '수', '목', '금'];
 
-// 글꼴마다 ○/△/✕ 글자 높이가 달라 정렬이 어긋나므로 같은 10x10 격자의 픽셀 아이콘으로 그림
+// 글꼴마다 ○/△/✕ 글자 높이가 달라 정렬이 어긋나므로 같은 크기의 선 아이콘으로 그림
 const MARK_ICONS: Record<Grade, ReactNode> = {
-  success: <path d="M3 0h4v1h2v2h1v4H9v2H7v1H3V9H1V7H0V3h1V1h2zM3 2v1H2v4h1v1h4V7h1V3H7V2z" fillRule="evenodd" />,
-  normal: <path d="M4 0h2v2h1v2h1v2h1v2h1v2H0V8h1V6h1V4h1V2h1zM4 4v2H3v2h4V6H6V4z" fillRule="evenodd" />,
-  fail: <path d="M0 0h2v1h1v1h1v1h2V2h1V1h1V0h2v2H9v1H8v1H7v2h1v1h1v1h1v2H8V9H7V8H6V7H4v1H3v1H2v1H0V8h1V7h1V6h1V4H2V3H1V2H0z" />,
+  success: <circle cx="10" cy="10" r="6.5" />,
+  normal: <path d="M10 3.5 16.5 15.5H3.5z" />,
+  fail: <path d="M4.5 4.5l11 11M15.5 4.5l-11 11" />,
 };
 
 interface Props {
@@ -32,7 +32,7 @@ export default function DayMarks({ days, revealed = days.length }: Props) {
               aria-label={shown ? GRADE_LABELS[grade] : '진행 전'}
             >
               {shown && (
-                <svg viewBox="0 0 10 10" aria-hidden>
+                <svg viewBox="0 0 20 20" aria-hidden>
                   {MARK_ICONS[grade]}
                 </svg>
               )}

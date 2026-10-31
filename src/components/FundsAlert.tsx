@@ -24,7 +24,7 @@ export default function FundsAlert({ activity, cost, coins, onClose }: Props) {
   return (
     <div className="modal" onClick={onClose}>
       <div className="modal__dialog funds" role="alertdialog" aria-modal aria-label="자금 부족" onClick={(e) => e.stopPropagation()}>
-        <Box title="Warning" color="#ff8f8f" bodyColor="#5a2430" onClose={onClose}>
+        <Box title="Warning" color="var(--hud-red)" onClose={onClose}>
           <div className="result">
             <h3 className="result__title">💸 자금이 부족해요!</h3>
             <ul className="result__list">

@@ -1,5 +1,5 @@
 import roomImg from '../img/room.jpg';
-import barImg from '../img/bar_background.png';
+import barImg from '../img/bar_background.jpg';
 import { useState } from 'react';
 import BookView from '../components/BookView';
 import IllustView from '../components/IllustView';

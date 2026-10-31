@@ -11,16 +11,12 @@ interface Props {
 // 주차 활동이 끝난 뒤 메인 화면 위에 띄우는 결과창
 export default function ActivityResult({ activity, days, onConfirm }: Props) {
   const info = ACTIVITIES[activity];
-  const count = (grade: Grade) => days.filter((d) => d === grade).length;
 
   return (
     <ResultDialog
       title={
         <>
           {info.label} 완료!
-          <span className="result__count">
-            ○{count('success')} △{count('normal')} ✕{count('fail')}
-          </span>
         </>
       }
       changes={getWeekResult(activity, days)}

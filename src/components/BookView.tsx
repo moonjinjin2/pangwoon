@@ -40,7 +40,7 @@ export default function BookView({ title, badge, cardCount, renderCard, onClose 
     <div
       className="collection"
       style={{
-        backgroundImage: `linear-gradient(rgba(20, 16, 40, 0.6), rgba(20, 16, 40, 0.6)), url(${backgroundImg})`,
+        backgroundImage: `linear-gradient(rgba(255, 240, 246, 0.6), rgba(255, 240, 246, 0.6)), url(${backgroundImg})`,
       }}
     >
       <button className="wardrobe__back" onClick={onClose}>

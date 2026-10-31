@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import backgroundImg from '../img/room3.png';
-import characterImg from '../img/character/hayeong.png';
+import characterImg from '../img/character/hayeong_whole.png';
+import { HeartMark } from '../components/Icon';
 import { PROGRESS_KEYS, useStoredState } from '../utils/storage';
 import {
   CATEGORIES,
@@ -14,84 +15,36 @@ import {
   type Outfit,
 } from '../utils/wardrobe';
 
-// 픽셀 아이콘: k=테두리, #=아이템 색, w=흰 디테일, .=투명
-const icons: Record<Category, string[]> = {
-  top: [
-    '....kkkkkk....',
-    '..kk#wkkw#kk..',
-    '.k###w..w###k.',
-    'k####w..w####k',
-    'k#k##w##w##k#k',
-    'k#k########k#k',
-    'k#k########k#k',
-    'k#k########k#k',
-    'k#k########k#k',
-    'k#k########k#k',
-    'kkk########kkk',
-    '..k########k..',
-    '..kkkkkkkkkk..',
-  ],
-  bottom: [
-    'kkkkkkkkkkkk',
-    'k####ww####k',
-    'kkkkkkkkkkkk',
-    'k##########k',
-    'k####kk####k',
-    'k###k..k###k',
-    'k###k..k###k',
-    'k###k..k###k',
-    'k###k..k###k',
-    'k###k..k###k',
-    'kkkkk..kkkkk',
-  ],
+// 옷 종류 아이콘 (24x24, 아이템 색으로 채움)
+const OUTFIT_PATHS: Record<Category, string> = {
+  top: 'M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z',
+  bottom: 'M6 2h12l1.5 19.5h-5.5L12 9.5l-2 12H4.5z',
 };
 
-function PixelIcon({ grid, color, className }: { grid: string[]; color: string; className: string }) {
-  const width = Math.max(...grid.map((row) => row.length));
-  const fills: Record<string, string> = { k: '#4a2440', '#': color, w: '#fff8f0' };
-  const rects: JSX.Element[] = [];
-
-  grid.forEach((row, y) => {
-    let x = 0;
-    while (x < row.length) {
-      const key = row[x];
-      let end = x + 1;
-      while (end < row.length && row[end] === key) end++;
-      if (key !== '.') {
-        rects.push(<rect key={`${x}-${y}`} x={x} y={y} width={end - x} height={1} fill={fills[key]} />);
-      }
-      x = end;
-    }
-  });
-
+function OutfitShape({ category, color, className }: { category: Category; color: string; className: string }) {
   return (
-    <svg className={className} viewBox={`-1 -1 ${width + 2} ${width + 2}`} aria-hidden>
-      {rects}
+    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+      <path d={OUTFIT_PATHS[category]} fill={color} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function OutfitIcon({ outfit }: { outfit: Outfit }) {
-  return <PixelIcon grid={icons[outfit.category]} color={outfit.color} className="inv__icon" />;
+  return <OutfitShape category={outfit.category} color={outfit.color} className="inv__icon" />;
 }
 
-// 버튼용 픽셀 글리프 (#=글자색)
+// 버튼용 선 글리프 (12x12)
 export const glyphs = {
-  close: ['##...##', '###.###', '.#####.', '..###..', '.#####.', '###.###', '##...##'],
-  prev: ['...#', '..##', '.###', '####', '.###', '..##', '...#'],
-  next: ['#...', '##..', '###.', '####', '###.', '##..', '#...'],
-  star: ['...#...', '..###..', '#######', '.#####.', '..###..', '.##.##.', '.#...#.'],
+  close: 'M3 3l6 6M9 3l-6 6',
+  prev: 'M7.5 2.5 4 6l3.5 3.5',
+  next: 'M4.5 2.5 8 6l-3.5 3.5',
+  star: 'M6 1.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1L6 8.6l-2.8 1.5.6-3.1-2.3-2.2 3.1-.4z',
 };
 
-const coinIcon = ['..kkkk..', '.k#ww#k.', 'k#w####k', 'k#w####k', 'k######k', 'k######k', '.k####k.', '..kkkk..'];
-
-export function Glyph({ grid }: { grid: string[] }) {
-  const width = Math.max(...grid.map((row) => row.length));
+export function Glyph({ grid }: { grid: string }) {
   return (
-    <svg className="inv__glyph" viewBox={`0 0 ${width} ${grid.length}`} aria-hidden>
-      {grid.flatMap((row, y) =>
-        [...row].map((key, x) => (key === '#' ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} /> : null)),
-      )}
+    <svg className="inv__glyph" viewBox="0 0 12 12" aria-hidden>
+      <path d={grid} />
     </svg>
   );
 }
@@ -227,7 +180,7 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
     <div
       className="wardrobe"
       style={{
-        backgroundImage: `linear-gradient(rgba(20, 16, 40, 0.55), rgba(20, 16, 40, 0.55)), url(${backgroundImg})`,
+        backgroundImage: `linear-gradient(rgba(255, 240, 246, 0.6), rgba(255, 240, 246, 0.6)), url(${backgroundImg})`,
       }}
     >
       <button className="wardrobe__back" onClick={onClose}>
@@ -256,16 +209,14 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
               className={tab === category ? 'inv__side-tab inv__side-tab--active' : 'inv__side-tab'}
               onClick={() => changeTab(category)}
             >
-              <PixelIcon grid={icons[category]} color="#f390b0" className="inv__side-icon" />
+              <OutfitShape category={category} color="#fff" className="inv__side-icon" />
             </button>
           ))}
         </nav>
 
         <div className="inv__window">
           <header className="inv__header">
-            <svg className="inv__gem" viewBox="0 0 7 7" aria-hidden>
-              <path d="M3 0h1v1h1v1h1v1h1v1H6v1H5v1H4v1H3V6H2V5H1V4H0V3h1V2h1V1h1z" />
-            </svg>
+            <HeartMark className="inv__gem" />
             <h2 className="inv__title">WARDROBE</h2>
             <button className="inv__round" onClick={onClose} aria-label="닫기">
               <Glyph grid={glyphs.close} />
@@ -275,7 +226,7 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
           <div className="inv__toolbar">
             <span className="inv__label">{CATEGORY_META[tab].tab}</span>
             <span className="inv__coins">
-              <PixelIcon grid={coinIcon} color="#f2a65a" className="inv__coin" />
+              <span className="inv__coin" aria-hidden>G</span>
               {coins.toLocaleString('en-US')}
             </span>
           </div>

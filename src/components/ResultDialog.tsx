@@ -11,7 +11,7 @@ interface Props {
   onConfirm: () => void;
 }
 
-function effectLabel(key: keyof Effect) {
+export function effectLabel(key: keyof Effect) {
   return key === 'coins' ? '자금' : STAT_LABELS[key];
 }
 

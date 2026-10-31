@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import backgroundImg from '../img/room3.png';
-import hayeongImg from '../img/character/hayeong.png';
+import backgroundImg from '../img/main_background.jpg';
+import hayeongImg from '../img/character/hayeong_default.png';
 import MonthPlan, { type Activity } from '../components/MonthPlan';
 import ActionBox from '../components/ActionBox';
 import ActivityResult from '../components/ActivityResult';
@@ -9,25 +9,28 @@ import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/Affecti
 import ContestScene from '../components/ContestScene';
 import EpisodeScene from '../components/EpisodeScene';
 import FundsAlert from '../components/FundsAlert';
+import { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
 import RentNotice from '../components/RentNotice';
 import StatsBox, { clampStats, type StatKey, type Stats } from '../components/StatsBox';
 import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
+import WeekCard from '../components/WeekCard';
 import CollectionPage from './CollectionPage';
 import DatePage from './DatePage';
 import WardrobePage from './WardrobePage';
 import { getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
 import { CONTESTS, getContest } from '../utils/contest';
 import { DATE_COST, HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
-import { formatShortDate, getDayEvent, getWeekIndex } from '../utils/gameDate';
+import { getDayEvent, getWeekIndex } from '../utils/gameDate';
 import { RENT, RENT_DELAY_MS, START_COINS, UNPAID_STRESS } from '../utils/rent';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, useStoredState } from '../utils/storage';
 
 interface Props {
   name: string;
   gameDate: string;
-  onLogout: () => void;
+  // 설정의 게임 종료: 시작 화면으로
+  onExit: () => void;
   onProceed?: () => void;
 }
 
@@ -40,7 +43,7 @@ const initialAffection: Affection = { minji: 0, siyeong: 0, emily: 0 };
 // 호감도는 비공개, 골드를 내야 볼 수 있음
 const initialRevealed: Record<Heroine, boolean> = { minji: false, siyeong: false, emily: false };
 
-export default function MainPage({ name, gameDate, onLogout, onProceed }: Props) {
+export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   // 진행 상황은 새로고침해도 유지되도록 저장
   const [plans, setPlans] = useStoredState(PROGRESS_KEYS.plans, initialPlans);
   const [stats, setStats] = useStoredState(PROGRESS_KEYS.stats, initialStats);
@@ -63,6 +66,7 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [affectionOpen, setAffectionOpen] = useState(false);
   const [dateListOpen, setDateListOpen] = useState(false);
   // 데이트 목록에서 고른 데이트 에피소드 (진행 중)
   const [dateEpisode, setDateEpisode] = useState<{ partner: Heroine; episode: Episode; number: number } | null>(null);
@@ -218,33 +222,39 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
     fundsAlert ||
     wardrobeOpen ||
     collectionOpen ||
+    affectionOpen ||
     settingsOpen;
 
   return (
-    <div className="main" style={{ backgroundImage: `url(${backgroundImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="main" style={{ backgroundImage: `url(${backgroundImg})` }}>
       <div className="main__left">
         <div className="profile">
           <span className="profile__avatar" style={{ backgroundImage: `url(${hayeongImg})` }} aria-hidden />
           <span className="profile__name">{name}</span>
         </div>
-        <p className="main__today">
-          <span className="main__date main__date--label">TODAY</span>
-          <span className="main__date">{formatShortDate(gameDate)}</span>
-        </p>
+        <WeekCard gameDate={gameDate} plans={plans} />
         <MonthPlan gameDate={gameDate} plans={plans} onChangePlan={changePlan} />
       </div>
       <img className="main__hero" src={hayeongImg} alt="하영" />
-      <TopMenu coins={coins} onWardrobe={() => setWardrobeOpen(true)} onCollection={() => setCollectionOpen(true)} onSettings={() => setSettingsOpen(true)} />
+      <TopMenu
+        coins={coins}
+        onWardrobe={() => setWardrobeOpen(true)}
+        onCollection={() => setCollectionOpen(true)}
+        onAffection={() => setAffectionOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
+      />
       <div className="main__right">
         <StatsBox stats={stats} />
-        <AffectionBox affection={affection} revealed={revealed} coins={coins} onReveal={revealAffection} />
       </div>
-      {/* 하단: 에피소드와 같은 대화창 + 행동 선택 창 */}
+      {/* 하단: 대화창 + 행동 선택 창 */}
       <div className="main__bottom">
-        <div className="main__talk">
-          <div className="vn__panel">
-            <p className="vn__text">오늘은 어떤 걸 해볼까?</p>
-          </div>
+        <div className="talk main__talk">
+          <span className="talk__speaker">
+            <HeartMark />
+            {name}
+          </span>
+          <p className="talk__line">오늘은 어떤 걸 해볼까?</p>
+          <HeartMark className="talk__next" />
         </div>
         <div className="main__action">
           {/* 대회 날·말일 에피소드 날 안내 */}
@@ -304,6 +314,15 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
           onClose={() => setWardrobeOpen(false)}
         />
       )}
+      {affectionOpen && (
+        <AffectionBox
+          affection={affection}
+          revealed={revealed}
+          coins={coins}
+          onReveal={revealAffection}
+          onClose={() => setAffectionOpen(false)}
+        />
+      )}
       {collectionOpen && <CollectionPage onClose={() => setCollectionOpen(false)} />}
       {settingsOpen && (
         <SettingsModal
@@ -311,7 +330,7 @@ export default function MainPage({ name, gameDate, onLogout, onProceed }: Props)
           onChangeVolume={setVolume}
           textSpeed={textSpeed}
           onChangeTextSpeed={setTextSpeed}
-          onExit={onLogout}
+          onExit={onExit}
           onClose={() => setSettingsOpen(false)}
         />
       )}

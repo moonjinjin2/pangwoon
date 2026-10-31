@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 export const NAME_KEY = 'playerName';
 export const DATE_KEY = 'gameDate';
 
-// 게임 진행 상황 (새 게임·Exit 시 모두 지움)
+// 게임 진행 상황 (새 게임 시작 시 모두 지움)
 export const PROGRESS_KEYS = {
   plans: 'plans',
   stats: 'stats',
@@ -17,7 +17,7 @@ export const PROGRESS_KEYS = {
   collection: 'collection',
 } as const;
 
-// 환경 설정 (Exit 해도 유지)
+// 환경 설정 (새 게임을 시작해도 유지)
 export const SETTINGS_KEYS = {
   bgmVolume: 'bgmVolume',
   textSpeed: 'textSpeed',

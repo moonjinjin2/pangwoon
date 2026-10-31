@@ -154,3 +154,20 @@ export function getWeekResult(activity: Activity, days: Grade[]): Effect {
   }
   return result;
 }
+
+// 스케줄 카드에 보여줄 순서 (자금 → 스탯 → 스트레스)
+// 계획표에 보여줄 활동별 주요 효과 (실제 수치의 부수 효과·비용은 빼고 핵심만)
+const EFFECT_SUMMARY: Record<Activity, [keyof Effect, 'up' | 'down'][]> = {
+  job: [['coins', 'up'], ['health', 'down'], ['stress', 'up']],
+  study: [['intellect', 'up'], ['stress', 'up']],
+  gym: [['strength', 'up'], ['health', 'down']],
+  rest: [['health', 'up'], ['stress', 'down']],
+};
+
+// 활동이 올리고 내리는 항목
+export function getEffectDirections(activity: Activity) {
+  return EFFECT_SUMMARY[activity].map(([key, direction]) => {
+    const up = direction === 'up';
+    return { key, up, good: isGoodChange(key, up ? 1 : -1) };
+  });
+}

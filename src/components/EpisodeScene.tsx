@@ -3,10 +3,10 @@ import backgroundImg from '../img/cafe.jpg';
 import desktopImg from '../img/windows.jpg';
 import Box from './Box';
 import ResultDialog from './ResultDialog';
-import SelectBox from './SelectBox';
-import { SPEAKERS, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine } from '../utils/episode';
+import { HeartMark } from './Icon';
+import { SPEAKERS, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
 import type { Effect } from '../utils/activity';
-import { formatFullDate } from '../utils/gameDate';
+import { getWeekIndex } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
@@ -25,7 +25,7 @@ const EXIT_GAME_END: GameEnd = {
 interface Props {
   // 상단 창 제목에 표시 (에피소드 #0, #1 …)
   number: number;
-  // 상단 창에 날짜 옆에 표시 (예: '데이트 · 민지')
+  // 상단 창에 표시 (예: '데이트 · 민지'). 첫 부분은 태그로, 나머지는 날짜 옆에
   label: string;
   episode: Episode;
   // 'YYYY-MM-DD'
@@ -33,11 +33,13 @@ interface Props {
   // 배경 이미지 주소, 또는 직접 그린 배경
   background?: string | ReactNode;
   playerName: string;
+  // 주인공 대사에서도 주인공 이미지를 보여줄지 (기본은 대사만)
+  showPlayer?: boolean;
   // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 게임에서 얻은 스탯 변화량
   onDone: (affection: Partial<Affection>, stats?: Effect) => void;
 }
 
-export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? backgroundImg, playerName, onDone }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? backgroundImg, playerName, showPlayer = false, onDone }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
   const [lines, setLines] = useState(episode.lines);
   const [index, setIndex] = useState(0);
@@ -64,11 +66,15 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const text = fill(line.text);
   const speaker = line.speaker && SPEAKERS[line.speaker];
   const speakerName = line.speaker ? nameOf(line.speaker) : line.name;
-  // 나레이션 중에도 마지막으로 말한 캐릭터 이미지를 유지해 다시 나타날 때 깜박이지 않게 함
-  let shownSpeaker = line.speaker;
-  for (let i = index; !shownSpeaker && i >= 0; i--) shownSpeaker = lines[i].speaker;
-  // 아직 아무도 말하지 않았으면 처음 말할 캐릭터를 투명하게 깔아둠 (첫 등장도 페이드인)
-  shownSpeaker ??= lines.find((l) => l.speaker)?.speaker;
+  // 주인공은 이미지 없이 대사만 나오고 (showPlayer면 주인공 이미지도 보여줌),
+  // 히로인 이미지는 주인공 대사·나레이션 중에도 유지해 번갈아 깜박이지 않게 함
+  const portraitOf = (l: (typeof lines)[number]) => (l.speaker && (showPlayer || l.speaker !== 'player') ? l.speaker : undefined);
+  let shownSpeaker: Speaker | undefined;
+  for (let i = index; !shownSpeaker && i >= 0; i--) shownSpeaker = portraitOf(lines[i]);
+  // 이미 등장한 캐릭터가 있으면 이미지 없는 주인공 대사 중에도 계속 보여줌
+  const portraitVisible = !!shownSpeaker && !!speaker;
+  // 아직 아무도 등장하지 않았으면 처음 등장할 캐릭터를 투명하게 깔아둠 (첫 등장도 페이드인)
+  shownSpeaker ??= lines.map(portraitOf).find(Boolean);
   const typing = typed < text.length;
   const choosing = !typing && !!line.choices;
   // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
@@ -231,6 +237,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
+  const [tag, ...labelRest] = label.split(' · ');
+  const [, month] = date.split('-').map(Number);
+  const subtitle = [`${month}월 ${getWeekIndex(date) + 1}주차`, episode.time ?? labelRest.join(' · ')].filter(Boolean).join(' · ');
+
   const feedbackItems = feedback ? (Object.entries(feedback) as [Heroine, number][]).filter(([, v]) => v !== 0) : [];
 
   return (
@@ -243,25 +253,21 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
       {shownSpeaker && (
         <img
-          className={`episode__character episode__character--${shownSpeaker}${speaker ? ' episode__character--shown' : ''}`}
+          className={`episode__character episode__character--${shownSpeaker}${portraitVisible ? ' episode__character--shown' : ''}`}
           src={SPEAKERS[shownSpeaker].image}
           alt=""
         />
       )}
 
-      <Box title={`에피소드 #${number}`} className="episode__status">
-        <div className="status">
-          <span className="status__icon" aria-hidden>
-            {episode.icon ?? '💌'}
-          </span>
-          <div className="status__info">
-            <strong className="status__title">{episode.title}</strong>
-            <span className="status__date">
-              {formatFullDate(date)} · {episode.time ?? label}
-            </span>
-          </div>
-        </div>
-      </Box>
+      <section className="hud-card episode__status" onClick={(e) => e.stopPropagation()}>
+        <header className="hud-card__head">
+          <HeartMark />
+          <h3 className="hud-card__title hud-card__title--en">EPISODE #{number}</h3>
+          <span className="episode__tag">{tag}</span>
+        </header>
+        <strong className="episode__title">{episode.title}</strong>
+        <span className="episode__sub">{subtitle}</span>
+      </section>
 
       {feedbackItems.length > 0 && (
         <div className="episode__affection">
@@ -275,14 +281,28 @@ export default function EpisodeScene({ number, label, episode, date, background 
       )}
 
       {choosing && (
-        <SelectBox
-          title="Choice"
-          className="episode__choices"
-          items={line.choices!.map((choice, i) => ({ label: choice.text, hotkey: String(i + 1) }))}
-          selected={choiceIndex}
-          onHover={setChoiceIndex}
-          onSelect={(i) => choose(line.choices![i])}
-        />
+        <section className="hud-card episode__choices" onClick={(e) => e.stopPropagation()}>
+          <header className="hud-card__head">
+            <HeartMark />
+            <h3 className="hud-card__title hud-card__title--en">Choice</h3>
+          </header>
+          <ul className="action__list">
+            {line.choices!.map((choice, i) => (
+              <li key={i}>
+                <button
+                  className={choiceIndex === i ? 'action__item action__item--selected' : 'action__item'}
+                  onMouseEnter={() => setChoiceIndex(i)}
+                  onFocus={() => setChoiceIndex(i)}
+                  onClick={() => choose(choice)}
+                >
+                  <HeartMark className="action__cursor" />
+                  <span className="action__label">{fill(choice.text)}</span>
+                  <kbd className="action__key">{i + 1}</kbd>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {systemError && (
@@ -297,31 +317,34 @@ export default function EpisodeScene({ number, label, episode, date, background 
         </div>
       )}
 
-      <div className="vn">
+      <div className="talk episode__talk">
         {speakerName && (
-          <div className="vn__nameplate">
-            {speaker && (
-              <span className={`vn__portrait vn__portrait--${line.speaker}`} style={{ backgroundImage: `url(${speaker.image})` }} aria-hidden />
-            )}
-            <span className="vn__name">{speakerName}</span>
-          </div>
+          <span className="talk__speaker">
+            <HeartMark />
+            {speakerName}
+          </span>
         )}
-        <div className="vn__panel">
-          <p className={speakerName ? 'vn__text' : 'vn__text vn__text--narration'}>{systemError ? '' : text.slice(0, typed)}</p>
-          <div className="vn__controls" onClick={(e) => e.stopPropagation()}>
-            <button className={auto ? 'vn__btn vn__btn--on' : 'vn__btn'} onClick={() => setAuto(!auto)}>
-              <span aria-hidden>▶</span> 자동
-            </button>
-            <button className="vn__btn" onClick={() => setLogOpen(true)}>
-              <span aria-hidden>☰</span> 로그
-            </button>
-            <button className="vn__btn" onClick={skip} disabled={choosing} title="ESC">
-              <span aria-hidden>▶▶</span> 스킵
-            </button>
-            <span className={!typing && !choosing ? 'vn__next' : 'vn__next vn__next--hidden'} aria-hidden>
-              ▼
-            </span>
-          </div>
+        <p className={speakerName ? 'talk__line' : 'talk__line talk__line--narration'}>{systemError ? '' : text.slice(0, typed)}</p>
+        <HeartMark className={!typing && !choosing ? 'talk__next' : 'talk__next talk__next--hidden'} />
+        <div className="talk__controls" onClick={(e) => e.stopPropagation()}>
+          <button className={auto ? 'talk__btn talk__btn--on' : 'talk__btn'} onClick={() => setAuto(!auto)}>
+            <svg viewBox="0 0 10 10" aria-hidden>
+              <path d="M2 1l7 4-7 4z" />
+            </svg>
+            자동
+          </button>
+          <button className="talk__btn" onClick={() => setLogOpen(true)}>
+            <svg viewBox="0 0 10 10" aria-hidden>
+              <path d="M1 2h8v1.2H1zM1 4.4h8v1.2H1zM1 6.8h8V8H1z" />
+            </svg>
+            로그
+          </button>
+          <button className="talk__btn" onClick={skip} disabled={choosing} title="ESC">
+            <svg viewBox="0 0 10 10" aria-hidden>
+              <path d="M0 1.5l5 3.5-5 3.5zM5 1.5l5 3.5-5 3.5z" />
+            </svg>
+            스킵
+          </button>
         </div>
       </div>
 

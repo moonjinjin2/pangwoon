@@ -71,9 +71,9 @@ export default function RentNotice({ gameDate, paid, before, streak, onConfirm }
     <div className={className} onClick={() => !done && setPhase(3)}>
       {!paid && phase >= 2 && <div className="rent__flash" aria-hidden />}
       <div className="modal__dialog rent__dialog" role="dialog" aria-modal aria-label={`${month}월 월세 고지서`}>
-        <Box title="Bill" color={paid ? '#f6bedc' : '#ff8f8f'} bodyColor={paid ? '#552f52' : '#5a2430'}>
+        <Box title="Bill" color={paid ? undefined : "var(--hud-red)"}>
           <div className="rent__bill">
-            <p className="rent__label">{month}월 월세·생활비</p>
+            <p className="rent__label">{month}월 월세</p>
             <p className="rent__amount">{RENT.toLocaleString()}원</p>
             <div className="rent__balance">
               <span>내 자금</span>
@@ -95,7 +95,7 @@ export default function RentNotice({ gameDate, paid, before, streak, onConfirm }
             {done && (
               <>
                 {paid ? (
-                  <p className="rent__msg">{first ? '자취 생활의 첫 월세... 통장이 순식간에 가벼워졌다.' : '이번 달도 무사히 넘겼다...!'}</p>
+                  <p className="rent__msg">{first ? '자취 생활의 첫 월세...\n통장이 순식간에 가벼워졌다.' : '이번 달도 무사히 넘겼다...!'}</p>
                 ) : (
                   <>
                     <p className="rent__msg rent__msg--bad">스트레스 +{UNPAID_STRESS}</p>

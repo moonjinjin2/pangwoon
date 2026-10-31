@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import SelectBox from './SelectBox';
+import { HeartMark } from './Icon';
 
 interface Props {
   // 다른 창이 떠 있을 때는 단축키를 받지 않음
@@ -40,5 +40,28 @@ export default function ActionBox({ keysEnabled, onProceed, onDate }: Props) {
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  return <SelectBox title="Action" items={items} selected={selected} onHover={setSelected} onSelect={run} />;
+  return (
+    <section className="hud-card action">
+      <header className="hud-card__head">
+        <HeartMark />
+        <h3 className="hud-card__title hud-card__title--en">Action</h3>
+      </header>
+      <ul className="action__list">
+        {items.map(({ label, hotkey }, i) => (
+          <li key={i}>
+            <button
+              className={selected === i ? 'action__item action__item--selected' : 'action__item'}
+              onMouseEnter={() => setSelected(i)}
+              onFocus={() => setSelected(i)}
+              onClick={() => run(i)}
+            >
+              <HeartMark className="action__cursor" />
+              <span className="action__label">{label}</span>
+              <kbd className="action__key">{hotkey}</kbd>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }

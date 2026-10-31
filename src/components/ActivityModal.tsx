@@ -1,5 +1,7 @@
 import { useEffect, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import Box from './Box';
+import Icon, { ACTIVITY_ICONS } from './Icon';
 import { ACTIVITIES, ACTIVITY_ORDER, getWeekCost, type Activity } from '../utils/activity';
 
 interface Props {
@@ -18,7 +20,8 @@ export default function ActivityModal({ title, current, onSelect, onClose }: Pro
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  return (
+  // 스케줄 카드(backdrop-filter)가 fixed 기준이 되지 않도록 body에 띄워 화면 가운데에 둠
+  return createPortal(
     <div className="modal" onClick={onClose}>
       <div className="modal__dialog" role="dialog" aria-modal aria-label={title} onClick={(e) => e.stopPropagation()}>
         <Box title={title} onClose={onClose}>
@@ -33,7 +36,9 @@ export default function ActivityModal({ title, current, onSelect, onClose }: Pro
                   style={{ '--activity-color': activity.color } as CSSProperties}
                   onClick={() => onSelect(key)}
                 >
-                  <span className="activity-card__icon" aria-hidden>{activity.icon}</span>
+                  <span className="activity-card__icon">
+                    <Icon name={ACTIVITY_ICONS[key]} />
+                  </span>
                   <span className="activity-card__label">{activity.label}</span>
                   {cost > 0 && <span className="activity-card__effect">-{cost.toLocaleString()}원</span>}
                 </button>
@@ -42,6 +47,7 @@ export default function ActivityModal({ title, current, onSelect, onClose }: Pro
           </div>
         </Box>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
