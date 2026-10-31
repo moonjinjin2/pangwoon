@@ -251,6 +251,75 @@ body {
 }
 
 /* 모바일 세로 모드에서는 가로로 돌리라는 안내로 화면을 덮음 (터치 기기이거나 폰 크기 화면) */
+/* 이미지 불러오는 동안 보여주는 화면 */
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: #fff0f6;
+  color: var(--start-pink);
+}
+
+.loading--leaving {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-out;
+}
+
+.loading__heart {
+  width: 36px;
+  height: 36px;
+  fill: var(--start-pink);
+  animation: loading-beat 0.9s ease-in-out infinite;
+}
+
+.loading__text {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+}
+
+.loading__bar {
+  width: min(320px, 70vw);
+  height: 12px;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid #f3c3d6;
+  border-radius: 999px;
+}
+
+.loading__fill {
+  height: 100%;
+  background: var(--start-pink);
+  border-radius: 999px;
+}
+
+.loading__percent {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #c9839f;
+}
+
+@keyframes loading-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.18);
+  }
+}
+
 .rotate-notice {
   display: none;
 }

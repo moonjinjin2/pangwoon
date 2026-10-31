@@ -7,6 +7,8 @@ import barImg from './img/bar_background.jpg';
 import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
 import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
 import { DATE_KEY, NAME_KEY, clearProgress, load, markCollected, save } from './utils/storage';
+import LoadingScreen from './components/LoadingScreen';
+import { CORE_IMAGES, useMinLoading, usePreload } from './utils/preload';
 
 type Screen = 'start' | 'setName' | 'prologue' | 'main';
 
@@ -24,7 +26,7 @@ function loadScreen(hasName: boolean): Screen {
   return 'start';
 }
 
-export default function App() {
+function Game() {
   const [name, setName] = useState<string | null>(() => load(NAME_KEY));
   const [gameDate, setGameDate] = useState(() => load(DATE_KEY) ?? START_GAME_DATE);
   // 처음 접속하면 시작 화면부터 (저장된 게임이 있으면 이어하기로 메인 화면), 새로고침하면 보던 화면 그대로
@@ -97,6 +99,23 @@ export default function App() {
     <>
       <MainPage name={name ?? ''} gameDate={gameDate} onExit={handleExit} onProceed={handleProceed} />
       {fadeOverlay}
+    </>
+  );
+}
+
+// 로딩 화면을 최소 2초 보여주고 0.5초 동안 서서히 사라지게 함
+const MIN_LOADING_MS = 2000;
+const LOADING_FADE_MS = 500;
+
+export default function App() {
+  // 화면을 옮길 때 이미지가 깨져 보이지 않게 처음에 모두 불러옴
+  const { done, progress } = usePreload(CORE_IMAGES);
+  const loading = useMinLoading(done, progress, MIN_LOADING_MS, LOADING_FADE_MS);
+  // 로딩 화면이 사라지기 시작할 때 게임 화면을 뒤에 깔아서 서서히 드러나게 함
+  return (
+    <>
+      {loading.leaving && <Game />}
+      {!loading.gone && <LoadingScreen progress={loading.progress} leaving={loading.leaving} />}
     </>
   );
 }

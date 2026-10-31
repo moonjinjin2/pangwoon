@@ -4,6 +4,8 @@ import { useState } from 'react';
 import BookView from '../components/BookView';
 import EpisodeReplay from '../components/EpisodeReplay';
 import IllustView from '../components/IllustView';
+import LoadingScreen from '../components/LoadingScreen';
+import { usePreload } from '../utils/preload';
 import { EPISODE_CATALOG, PROLOGUE, SPEAKERS, getDateLabel, getMainSpeaker, type Episode } from '../utils/episode';
 import { PROGRESS_KEYS, useStoredState, type Collection } from '../utils/storage';
 
@@ -69,6 +71,9 @@ export default function CollectionPage({ onClose }: Props) {
   const collected: Collection = { 0: PROLOGUE.id, ...stored };
   const episodeAt = (number: number) => EPISODE_CATALOG.find((e) => e.id === collected[number]);
   const numbers = Object.keys(collected).map(Number);
+  // 카드에 보일 데이트 일러스트를 다 불러온 뒤에 책을 펼침
+  const { done, progress } = usePreload(numbers.flatMap((n) => episodeAt(n)?.illust ?? []));
+  if (!done) return <LoadingScreen progress={progress} />;
 
   // 본 회차까지 + 다음 회차 한 칸을 잠긴 카드로 보여주고, 펼친 면이 꽉 차도록 빈칸도 잠긴 카드로 채움
   return (

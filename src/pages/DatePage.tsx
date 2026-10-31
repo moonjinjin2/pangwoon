@@ -2,6 +2,8 @@ import { useState } from 'react';
 import BookView from '../components/BookView';
 import EpisodeReplay from '../components/EpisodeReplay';
 import IllustView from '../components/IllustView';
+import LoadingScreen from '../components/LoadingScreen';
+import { usePreload } from '../utils/preload';
 import { EpisodeArt } from './CollectionPage';
 import { DATE_COST, DATE_EPISODES, DATE_UNLOCKS, HEROINES, SPEAKERS, type Affection, type Episode, type Heroine } from '../utils/episode';
 import { isCollected } from '../utils/storage';
@@ -29,6 +31,8 @@ export default function DatePage({ affection, coins, onSelect, onClose }: Props)
   const affordable = coins >= DATE_COST;
   const [viewing, setViewing] = useState<{ illust: string; title: string; label: string; episode: Episode } | null>(null);
   const [replaying, setReplaying] = useState<Episode | null>(null);
+  // 본 데이트 카드에 보일 일러스트를 다 불러온 뒤에 책을 펼침
+  const { done: illustsReady, progress } = usePreload(DATES.flatMap(({ episode }) => (isCollected(episode.id) && episode.illust) || []));
 
   const renderCard = (index: number) => {
     const date = DATES[index];
@@ -70,6 +74,8 @@ export default function DatePage({ affection, coins, onSelect, onClose }: Props)
       </li>
     );
   };
+
+  if (!illustsReady) return <LoadingScreen progress={progress} />;
 
   return (
     <>
