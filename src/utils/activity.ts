@@ -42,9 +42,9 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     frames: ['📖', '✏️', '📝'],
     cost: 5000,
     perDay: {
-      fail: { intellect: 2, stress: 8, health: -2 },
-      normal: { intellect: 3, stress: 6, health: -2 },
-      success: { intellect: 4, stress: 4, health: -2 },
+      fail: { intellect: 2, stress: 8 },
+      normal: { intellect: 3, stress: 6 },
+      success: { intellect: 4, stress: 4 },
     },
     relatedStats: ['intellect'],
   },
@@ -57,9 +57,9 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     frames: ['🏋️', '💪', '🏃'],
     cost: 10000,
     perDay: {
-      fail: { strength: 2, health: -8, stress: 2 },
-      normal: { strength: 3, health: -6, stress: 2 },
-      success: { strength: 4, health: -4, stress: 2 },
+      fail: { strength: 2, health: -8 },
+      normal: { strength: 3, health: -6 },
+      success: { strength: 4, health: -4 },
     },
     relatedStats: ['strength'],
   },
@@ -155,7 +155,6 @@ export function getWeekResult(activity: Activity, days: Grade[]): Effect {
   return result;
 }
 
-// 스케줄 카드에 보여줄 순서 (자금 → 스탯 → 스트레스)
 // 계획표에 보여줄 활동별 주요 효과 (실제 수치의 부수 효과·비용은 빼고 핵심만)
 const EFFECT_SUMMARY: Record<Activity, [keyof Effect, 'up' | 'down'][]> = {
   job: [['coins', 'up'], ['health', 'down'], ['stress', 'up']],
