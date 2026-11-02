@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import backgroundImg from '../img/main_background.jpg';
+import backgroundImg from '../img/background/main_background.jpg';
 import characterImg from '../img/character/hayeong_whole.png';
 import { HeartMark } from '../components/Icon';
 import { PROGRESS_KEYS, useStoredState } from '../utils/storage';

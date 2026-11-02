@@ -5,7 +5,7 @@ import { HEROINES, SPEAKERS, type Affection, type Heroine } from '../utils/episo
 export const MAX_AFFECTION = 100;
 
 // 히로인 한 명의 호감도를 공개하는 가격 (한 번 공개하면 계속 보임)
-export const REVEAL_PRICE = 30000;
+export const REVEAL_PRICE = 500000;
 
 interface Props {
   affection: Affection;
@@ -39,7 +39,12 @@ export default function AffectionBox({ affection, revealed, coins, onReveal, onC
                   <span className={`affection__avatar face face--${key}`} style={{ backgroundImage: `url(${image})` }} aria-hidden />
                   <span className="affection__name">{name}</span>
                   {revealed[key] ? (
-                    <span className="affection__value">♥ {affection[key]}</span>
+                    <span className="affection__value">
+                      <span className="affection__bar" aria-hidden>
+                        <span style={{ width: `${(affection[key] / MAX_AFFECTION) * 100}%` }} />
+                      </span>
+                      ♥ {affection[key]} / {MAX_AFFECTION}
+                    </span>
                   ) : (
                     <button
                       className="affection__reveal"

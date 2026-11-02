@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import backgroundImg from '../img/main_background.jpg';
+import backgroundImg from '../img/background/main_background.jpg';
 import hayeongImg from '../img/character/hayeong_default.png';
 import MonthPlan, { type Activity } from '../components/MonthPlan';
 import ActionBox from '../components/ActionBox';
@@ -115,7 +115,7 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   // 에피소드를 끝까지 보면 컬렉션에 기록하고 선택지 호감도와 게임에서 얻은 스탯을 반영
   const completeEpisode = (number: number, id: string, changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
     if (gameStats) applyEffect(gameStats);
-    markCollected(number, id);
+    markCollected(number, id, gameDate);
     if (picks) saveChoices(id, picks);
     setAffection((prev) => {
       const next = { ...prev };

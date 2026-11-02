@@ -16,6 +16,7 @@ export const PROGRESS_KEYS = {
   equippedOutfit: 'equippedOutfit',
   collection: 'collection',
   choices: 'choices',
+  seenDates: 'seenDates',
 } as const;
 
 // 환경 설정 (새 게임을 시작해도 유지)
@@ -103,9 +104,15 @@ export function isCollected(id: string) {
   return Object.values(loadCollection()).includes(id);
 }
 
-// 끝까지 본 에피소드를 그 회차 번호로 컬렉션에 기록
-export function markCollected(number: number, id: string) {
+// 끝까지 본 에피소드를 그 회차 번호로 컬렉션에 기록 (본 게임 날짜도 함께)
+export function markCollected(number: number, id: string, date: string) {
   save(PROGRESS_KEYS.collection, JSON.stringify({ ...loadCollection(), [number]: id }));
+  save(PROGRESS_KEYS.seenDates, JSON.stringify({ ...loadSeenDates(), [number]: date }));
+}
+
+// 회차 번호 → 그 에피소드를 본 게임 날짜 ('YYYY-MM-DD', 앨범·데이트 기록에 시기로 표시)
+export function loadSeenDates() {
+  return loadJSON<Record<string, string>>(PROGRESS_KEYS.seenDates, {});
 }
 
 // 에피소드 id → 끝까지 봤을 때 고른 선택지 번호들 (나온 순서대로, 다시 보기에서 그대로 재생)

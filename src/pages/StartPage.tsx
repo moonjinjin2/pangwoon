@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import backgroundImg from '../img/intro_background.png';
+import backgroundImg from '../img/background/intro_background.png';
 import minjiImg from '../img/character/minji_default.png';
 import siyeongImg from '../img/character/siyeong_default.png';
 import emilyImg from '../img/character/emily_default.png';
@@ -31,13 +31,13 @@ export default function StartPage({ onNewGame, onContinue }: Props) {
 
   const items = confirming
     ? [
-        { label: '새로 시작', onSelect: onNewGame },
-        { label: '취소', onSelect: closeConfirm },
-      ]
+      { label: '새로 시작', onSelect: onNewGame },
+      { label: '취소', onSelect: closeConfirm },
+    ]
     : [
-        { label: '새로 시작하기', onSelect: onContinue ? openConfirm : onNewGame },
-        { label: '이어하기', onSelect: onContinue },
-      ];
+      { label: '새로 시작하기', onSelect: onContinue ? openConfirm : onNewGame },
+      { label: '이어하기', onSelect: onContinue },
+    ];
   const enabled = items.map(({ onSelect }) => !!onSelect);
 
   // 방향키로 고르고 Enter로 실행 (막힌 항목은 건너뜀)

@@ -1964,6 +1964,21 @@ body {
   inset: 0;
   background-size: cover;
   background-position: center;
+  animation: episode-bg-in 0.6s ease;
+}
+
+@keyframes episode-bg-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 캐릭터끼리의 앞뒤 순서가 대사창·선택지 위로 올라가지 않게 따로 묶음 */
+.episode__cast {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .episode__character {
@@ -1975,9 +1990,19 @@ body {
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, 12px);
+  transform-origin: bottom center;
   transition:
+    left 0.35s ease-out,
     opacity 0.25s ease-out,
     transform 0.25s ease-out;
+  /* 대화 중에 새로 무대에 서는 캐릭터도 페이드인 */
+  animation: episode-character-in 0.25s ease-out;
+}
+
+@keyframes episode-character-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .episode__character--shown {
@@ -2416,9 +2441,29 @@ body {
 }
 
 .affection__value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-title);
   font-weight: 700;
+  white-space: nowrap;
   color: var(--hud-pink);
+}
+
+/* 호감도 게이지 (0~100) */
+.affection__bar {
+  width: 90px;
+  height: 8px;
+  overflow: hidden;
+  background: var(--hud-pink-soft);
+  border-radius: 999px;
+}
+
+.affection__bar span {
+  display: block;
+  height: 100%;
+  background: var(--hud-heart);
+  border-radius: inherit;
 }
 
 /* 선택지: 화면 가운데 위쪽 카드 */
@@ -4248,5 +4293,874 @@ button.inv__card--selected:hover {
   .illust__flash,
   .illust__sparkle {
     display: none;
+  }
+}
+/* Date records: 히로인별 데이트 기록 (본 데이트 다시 보기) */
+.dates {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 32px 28px;
+  color: var(--hud-ink);
+  background-size: cover;
+  background-position: center;
+}
+
+.dates .heart-mark,
+.album .heart-mark {
+  width: 1em;
+  height: 1em;
+}
+
+.page-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-top__back {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  color: var(--hud-pink);
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--hud-line),
+    0 4px 12px rgba(120, 50, 80, 0.12);
+  cursor: pointer;
+}
+
+.page-top__back .inv__glyph {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.6;
+}
+
+.page-top__back:hover {
+  background: #fff;
+}
+
+.page-top__back:active {
+  transform: translateY(1px);
+}
+
+/* 오른쪽 끝이 V자로 파인 리본 */
+.page-top__icon {
+  width: 1em;
+  height: 1em;
+}
+
+.page-top__ribbon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 40px 8px 22px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.35rem;
+  color: #b84a77;
+  background: rgba(255, 236, 244, 0.95);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%);
+}
+
+.dates__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: rgba(255, 248, 251, 0.85);
+  border: 2px solid #fff;
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 2px var(--hud-line),
+    0 12px 32px rgba(120, 50, 80, 0.16);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+
+.dates__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 2px solid var(--hud-line);
+}
+
+.dates__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.3rem;
+  color: #b84a77;
+}
+
+.dates__count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--hud-sub);
+}
+
+.dates__count b {
+  padding: 3px 14px;
+  font-size: 1rem;
+  color: #fff;
+  background: var(--hud-pink);
+  border-radius: 999px;
+}
+
+.dates__rows {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 24px 24px;
+  overflow: auto;
+}
+
+.dates__row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.5fr) minmax(0, 4fr);
+  gap: 20px;
+  min-height: 0;
+}
+
+.dates__profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 8px;
+  background: rgba(253, 236, 243, 0.8);
+  border-radius: 16px;
+}
+
+/* 캐릭터 그림을 크게 키워 얼굴 부분만 동그랗게 보여줌 (얼굴 위치는 DatePage FACES) */
+.dates__avatar {
+  position: relative;
+  width: min(100px, 70%);
+  aspect-ratio: 1;
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--hud-line);
+}
+
+.dates__avatar img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 230%;
+  user-select: none;
+  pointer-events: none;
+}
+
+.dates__name {
+  margin-top: 6px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.35rem;
+}
+
+.dates__progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--hud-sub);
+}
+
+.dates__progress .heart-mark {
+  width: 0.9em;
+  height: 0.9em;
+}
+
+.dates__cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.date-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--hud-line),
+    0 4px 12px rgba(120, 50, 80, 0.1);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.date-card:not(.date-card--locked):hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 2px #e4a3c0,
+    0 8px 18px rgba(120, 50, 80, 0.16);
+}
+
+.date-card__frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #f4e4eb;
+}
+
+.date-card__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  background: none;
+  border: none;
+  cursor: zoom-in;
+}
+
+.date-card__art .ep-card__illust {
+  object-position: center 20%;
+}
+
+.date-card__no {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  padding: 2px 12px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--hud-pink);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.date-card__replay {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: #fff;
+  background: var(--hud-pink);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 3px 8px rgba(120, 50, 80, 0.25);
+  cursor: pointer;
+}
+
+.date-card__replay svg {
+  width: 9px;
+  height: 9px;
+  fill: currentColor;
+}
+
+.date-card__replay:hover {
+  background: #b84a77;
+}
+
+.date-card__info {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+.date-card__title {
+  overflow: hidden;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.date-card__when {
+  flex-shrink: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.75rem;
+  color: var(--hud-sub);
+}
+
+/* 아직 안 본 데이트: 점선 테두리 + 빗금 */
+.date-card--locked {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.date-card--locked .date-card__frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 8px 8px 0;
+  /* 위쪽은 데이트 번호 라벨 자리 */
+  padding: 30px 8px 8px;
+  text-align: center;
+  background: repeating-linear-gradient(135deg, #fbeef4 0 10px, #fff7fa 10px 20px);
+  border: 2px dashed #e8b6cc;
+  border-radius: 10px;
+}
+
+.date-card--locked .date-card__no {
+  color: var(--hud-sub);
+}
+
+.date-card__lock {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--hud-line);
+}
+
+.date-card__lock svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--hud-pink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.date-card__lock-title {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #8a5a72;
+}
+
+.date-card__lock-sub {
+  font-size: 0.78rem;
+  color: var(--hud-sub);
+}
+
+.date-card--locked .date-card__title {
+  color: var(--hud-sub);
+}
+
+/* 낮은 화면에서는 잠긴 카드 안내 문구를 줄임 */
+@media (max-height: 760px) {
+  .date-card__lock {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 2px;
+  }
+
+  .date-card__lock-sub,
+  .date-card__lock-title {
+    display: none;
+  }
+
+  .dates__rows {
+    gap: 14px;
+    padding: 14px 18px 18px;
+  }
+}
+
+/* 좁은 화면: 히로인 프로필을 위에 한 줄로, 카드는 2칸씩, 목록은 스크롤 */
+@media (max-width: 760px) {
+  .dates {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .dates__head {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+
+  .dates__head h3 {
+    font-size: 1.1rem;
+  }
+
+  .dates__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .dates__row {
+    grid-template-columns: minmax(0, 1fr);
+    flex-shrink: 0;
+    gap: 10px;
+  }
+
+  .dates__profile {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .dates__avatar {
+    width: 48px;
+  }
+
+  .dates__name {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .dates__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .date-card__frame {
+    flex: none;
+    aspect-ratio: 4 / 3;
+  }
+
+  .date-card--locked .date-card__frame {
+    aspect-ratio: auto;
+    height: 120px;
+  }
+
+  .date-card__lock-sub {
+    display: none;
+  }
+
+  .date-card__replay {
+    right: 8px;
+    bottom: 8px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Episode album: 왼쪽 본 에피소드 목록 + 오른쪽 크게 보기 */
+.album {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 32px 28px;
+  color: var(--hud-ink);
+  background-size: cover;
+  background-position: center;
+}
+
+.album__body {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.62fr) minmax(0, 1.5fr);
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.album__list,
+.album__preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: rgba(255, 248, 251, 0.85);
+  border: 2px solid #fff;
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 2px var(--hud-line),
+    0 12px 32px rgba(120, 50, 80, 0.16);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+
+.album__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 2px solid var(--hud-line);
+}
+
+.album__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.3rem;
+  color: #b84a77;
+}
+
+.album__count {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--hud-sub);
+}
+
+
+
+
+
+.album__scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  scrollbar-color: var(--hud-line) transparent;
+}
+
+
+.album__group + .album__group {
+  margin-top: 14px;
+}
+
+/* '5월 ───' */
+.album__month {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--hud-sub);
+}
+
+.album__month::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--hud-line);
+}
+
+.album__items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.album__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 8px 12px 8px 8px;
+  color: inherit;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.85);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(120, 50, 80, 0.06);
+  cursor: pointer;
+}
+
+.album__item:hover {
+  background: #fff;
+}
+
+.album__item--on,
+.album__item--on:hover {
+  background: #fbe6ef;
+  border-color: #c95a86;
+}
+
+.album__thumb {
+  position: relative;
+  width: 112px;
+  aspect-ratio: 16 / 10;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #f4e4eb;
+  border-radius: 8px;
+}
+
+.album__thumb .ep-card__illust {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.album__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.album__no {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--hud-pink);
+}
+
+
+.album__title {
+  overflow: hidden;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+
+.album__preview {
+  padding: 18px;
+}
+
+.album__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #f4e4eb;
+  border: 3px solid #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 0 2px var(--hud-line);
+}
+
+.album__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  background: none;
+  border: none;
+  cursor: zoom-in;
+}
+
+.album__art--still {
+  cursor: default;
+}
+
+.album__art .ep-card__illust {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+/* 크게 보기에서는 대표 캐릭터를 상반신 정도로 */
+.album__art .ep-card__char {
+  top: 6%;
+  height: 160%;
+}
+
+.album__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 4px 14px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--hud-pink);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* 아래쪽에 제목·버튼 (그림 위라 글자가 보이도록 아래를 어둡게) */
+.album__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 60px 24px 22px;
+  background: linear-gradient(transparent, rgba(60, 20, 40, 0.55));
+  pointer-events: none;
+}
+
+.album__info {
+  min-width: 0;
+}
+
+
+
+
+.album__heading {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.4vw, 3.2rem);
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 8px rgba(60, 20, 40, 0.5);
+}
+
+.album__actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+
+.album__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 34px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--hud-pink);
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(60, 20, 40, 0.2);
+  cursor: pointer;
+}
+
+.album__btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.album__btn:hover {
+  background: #fff;
+}
+
+.album__btn--main {
+  color: #fff;
+  background: var(--hud-pink);
+}
+
+.album__btn--main svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.album__btn--main:hover {
+  background: #b84a77;
+}
+
+.album__btn:active {
+  transform: translateY(1px);
+}
+
+/* 낮거나 좁은 화면: 목록을 줄이고 버튼을 작게 */
+@media (max-height: 760px), (max-width: 1100px) {
+  .album {
+    gap: 12px;
+    padding: 16px 20px 20px;
+  }
+
+  .album__body {
+    grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.5fr);
+    gap: 16px;
+  }
+
+  .album__thumb {
+    width: 84px;
+  }
+
+  .album__preview {
+    padding: 12px;
+  }
+
+  .album__caption {
+    gap: 12px;
+    padding: 40px 16px 14px;
+  }
+
+  .album__actions {
+    gap: 8px;
+  }
+
+  .album__btn {
+    padding: 13px 24px;
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .album__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .album__preview {
+    flex: none;
+    order: -1;
+    height: 52vh;
+  }
+
+  .album__list {
+    flex: 1;
   }
 }

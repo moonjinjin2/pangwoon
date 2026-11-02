@@ -45,6 +45,11 @@ export function getMonthWeeks(date: string): Week[] {
   }));
 }
 
+// 'YYYY-MM-DD' → '5월 2주차' (본 에피소드·데이트의 시기 표시)
+export function formatWeekLabel(date: string) {
+  return `${Number(date.split('-')[1])}월 ${getWeekIndex(date) + 1}주차`;
+}
+
 // 게임 날짜가 몇 주차(0~3)인지
 export function getWeekIndex(date: string) {
   const day = toDate(date).getDate();

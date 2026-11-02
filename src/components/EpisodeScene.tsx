@@ -1,5 +1,5 @@
 import { useEffect, useState, type AnimationEvent, type ReactNode } from 'react';
-import backgroundImg from '../img/cafe.jpg';
+import backgroundImg from '../img/background/cafe.jpg';
 import desktopImg from '../img/windows.jpg';
 import Box from './Box';
 import ResultDialog from './ResultDialog';
@@ -73,16 +73,33 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 주인공은 이미지 없이 대사만 나오고 (showPlayer면 주인공 이미지도 보여줌),
   // 히로인 이미지는 주인공 대사·나레이션 중에도 유지해 번갈아 깜박이지 않게 함
   const portraitOf = (l: (typeof lines)[number]) => (l.speaker && (showPlayer || l.speaker !== 'player') ? l.speaker : undefined);
-  let shownSpeaker: Speaker | undefined;
-  for (let i = index; !shownSpeaker && i >= 0; i--) shownSpeaker = portraitOf(lines[i]);
-  // 이미 등장한 캐릭터가 있으면 이미지 없는 주인공 대사 중에도 계속 보여줌
-  const portraitVisible = !!shownSpeaker && !!speaker;
-  // 아직 아무도 등장하지 않았으면 처음 등장할 캐릭터를 투명하게 깔아둠 (첫 등장도 페이드인)
-  shownSpeaker ??= lines.map(portraitOf).find(Boolean);
+  // 이번 장면의 시작: 배경이 바뀌거나(장면 전환) 이미지를 내리는 대사. 그보다 앞에서 나온 캐릭터는 이어서 보여주지 않음
+  let sceneStart = index;
+  while (sceneStart > 0 && !lines[sceneStart].background && !lines[sceneStart].hidePortrait) sceneStart--;
+  // 이번 장면의 무대: 보통은 마지막으로 말한 캐릭터 1명
+  // 대사에 stage가 있으면 그 대사부터 지정한 캐릭터들을 같이 세우고,
+  // 그중 누가 말하는 동안 유지함 (무대에 없는 캐릭터가 말하면 다시 그 캐릭터 1명)
+  let stage: Speaker[] = [];
+  for (let i = sceneStart; i <= index; i++) {
+    const s = portraitOf(lines[i]);
+    if (s && !stage.includes(s)) stage = [s];
+    if (lines[i].stage) stage = lines[i].stage!;
+  }
+  // 이번 장면에 이미 등장한 캐릭터가 있으면 이미지 없는 주인공 대사 중에도 계속 보여줌
+  const portraitVisible = stage.length > 0 && !!speaker;
+  // 아직 아무도 등장하지 않았으면 다음에 등장할 캐릭터를 투명하게 깔아둠 (첫 등장도 페이드인)
+  const upcoming = lines.slice(index).map(portraitOf).find(Boolean);
+  const shownSpeakers = stage.length > 0 ? stage : upcoming ? [upcoming] : [];
+  // 1명이면 가운데, 2명이면 좌우, 3명이면 좌·중·우 (화면 너비 기준 %)
+  const stagePositions = [[50], [50], [30, 70], [28, 50, 72]][Math.min(shownSpeakers.length, 3)];
   const typing = typed < text.length;
   const choosing = !typing && !!line.choices;
   // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
   const systemError = line.effect === 'system-error';
+  // 장면 전환: 지금까지 나온 대사 중 마지막으로 지정된 배경 (없으면 에피소드 배경)
+  let lineBackground: string | undefined;
+  for (let i = index; !lineBackground && i >= 0; i--) lineBackground = lines[i].background;
+  const shownBackground = lineBackground ?? background;
 
   // 캐릭터 이미지를 미리 불러와서 처음 등장할 때 비어 보이지 않게 함
   useEffect(() => {
@@ -252,19 +269,24 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   return (
     <div className="episode" onClick={advance}>
-      {typeof background === 'string' ? (
-        <div className="episode__bg" style={{ backgroundImage: `url(${background})` }} />
+      {typeof shownBackground === 'string' ? (
+        // 배경이 바뀌면 새로 그려서 페이드인
+        <div key={shownBackground} className="episode__bg" style={{ backgroundImage: `url(${shownBackground})` }} />
       ) : (
-        background
+        shownBackground
       )}
 
-      {shownSpeaker && (
-        <img
-          className={`episode__character episode__character--${shownSpeaker}${portraitVisible ? ' episode__character--shown' : ''}`}
-          src={SPEAKERS[shownSpeaker].image}
-          alt=""
-        />
-      )}
+      <div className="episode__cast">
+        {shownSpeakers.map((s, i) => (
+          <img
+            key={s}
+            className={`episode__character episode__character--${s}${portraitVisible ? ' episode__character--shown' : ''}`}
+            style={{ left: `${stagePositions[i]}%` }}
+            src={SPEAKERS[s].image}
+            alt=""
+          />
+        ))}
+      </div>
 
       <section className="hud-card episode__status" onClick={(e) => e.stopPropagation()}>
         <header className="hud-card__head">

@@ -3,7 +3,7 @@ import StartPage from './pages/StartPage';
 import SetNamePage from './pages/SetNamePage';
 import MainPage from './pages/MainPage';
 import EpisodeScene from './components/EpisodeScene';
-import barImg from './img/bar_background.jpg';
+import barImg from './img/background/bar_background.jpg';
 import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
 import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
 import { DATE_KEY, NAME_KEY, clearProgress, load, markCollected, save } from './utils/storage';
@@ -52,7 +52,7 @@ function Game() {
   };
 
   const handlePrologueDone = () => {
-    markCollected(0, PROLOGUE.id);
+    markCollected(0, PROLOGUE.id, PROLOGUE_DATE);
     if (!fade) setFade('out');
   };
 

@@ -3,11 +3,6 @@ import { ACTIVITIES, type Activity } from '../utils/activity';
 import { getDayEvent, getWeekIndex } from '../utils/gameDate';
 import { getMonthEvent, getMonthEventLabel } from '../utils/monthEvent';
 
-const MONTH_NAMES = [
-  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
-];
-
 interface Props {
   gameDate: string;
   plans: Activity[];
@@ -30,7 +25,7 @@ export default function WeekCard({ gameDate, plans }: Props) {
     <section className="hud-card week-card">
       <header className="hud-card__head">
         <HeartMark />
-        <h3 className="hud-card__title">{MONTH_NAMES[month - 1]}</h3>
+        <h3 className="hud-card__title">{month}월</h3>
       </header>
       <div className="week-card__body">
         <span className="week-card__number">{week + 1}</span>
