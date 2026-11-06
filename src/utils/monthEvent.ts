@@ -1,4 +1,5 @@
 import { CONTESTS, type ContestType } from './contest';
+import { EVENT_DAY } from './gameDate';
 import { DATE_EPISODES, SPEAKERS, type Episode, type Heroine } from './episode';
 import { isCollected } from './storage';
 
@@ -29,6 +30,20 @@ export function getMonthEventLabel(event: MonthEvent) {
   if (event.kind === 'contest') return CONTESTS[event.contest].label;
   if (event.kind === 'date') return `${SPEAKERS[event.heroine].name} 데이트`;
   return '히로인 데이트';
+}
+
+// 오늘(이벤트 날 포함) 이후 열리는 대회와 남은 일수
+export function getUpcomingContests(date: string): { month: number; contest: ContestType; daysLeft: number }[] {
+  const [year, month, day] = date.split('-').map(Number);
+  const today = new Date(year, month - 1, day);
+  return Object.entries(MONTH_EVENTS)
+    .map(([m, event]) => ({ month: Number(m), event }))
+    .filter(({ month: m, event }) => event.kind === 'contest' && (m > month || (m === month && day <= EVENT_DAY)))
+    .map(({ month: m, event }) => ({
+      month: m,
+      contest: (event as { contest: ContestType }).contest,
+      daysLeft: Math.round((new Date(year, m - 1, EVENT_DAY).getTime() - today.getTime()) / 86400000),
+    }));
 }
 
 // 히로인의 아직 안 본 다음 데이트 (다 봤으면 undefined)

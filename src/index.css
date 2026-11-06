@@ -733,7 +733,80 @@ body {
   position: absolute;
   top: calc(120 * var(--u));
   right: calc(40 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(20 * var(--u));
   width: calc(420 * var(--u));
+}
+
+/* 다가오는 대회 카드 */
+.upcoming__icon {
+  width: calc(20 * var(--u));
+  height: calc(20 * var(--u));
+  flex-shrink: 0;
+  color: var(--hud-heart);
+}
+
+.upcoming {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(14 * var(--u));
+}
+
+.upcoming__item {
+  display: flex;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  padding: calc(14 * var(--u)) calc(18 * var(--u));
+  background: var(--contest-bg);
+  border: calc(2 * var(--u)) solid var(--contest-line);
+  border-radius: calc(16 * var(--u));
+}
+
+.upcoming__badge {
+  display: grid;
+  place-items: center;
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
+  flex-shrink: 0;
+  color: var(--contest-color);
+  background: #fff;
+  border-radius: calc(14 * var(--u));
+}
+
+.upcoming__badge .icon {
+  width: calc(28 * var(--u));
+  height: calc(28 * var(--u));
+}
+
+.upcoming__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--u));
+}
+
+.upcoming__label {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: calc(21 * var(--u));
+}
+
+.upcoming__month {
+  font-weight: 700;
+  font-size: calc(15 * var(--u));
+  color: var(--hud-sub);
+}
+
+.upcoming__dday {
+  padding: calc(6 * var(--u)) calc(16 * var(--u));
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: calc(21 * var(--u));
+  color: #fff;
+  background: var(--contest-color);
+  border-radius: calc(12 * var(--u));
 }
 
 .stats {
@@ -1307,9 +1380,118 @@ body {
   width: min(380px, 100%);
 }
 
-/* 히로인 선택 데이트 */
+/* 히로인 선택 데이트: 3명을 얼굴과 함께 한 줄로 */
 .modal__dialog.pick {
-  width: min(520px, 100%);
+  width: min(760px, 100%);
+}
+
+.pick__list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pick__card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 12px 18px;
+  color: var(--hud-ink);
+  background: #fff;
+  border: 2px solid var(--hud-line);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.pick__card--selected {
+  color: #fff;
+  background: var(--hud-pink);
+  border-color: var(--hud-pink);
+  box-shadow: 0 6px 16px rgba(201, 90, 134, 0.35);
+  transform: translateY(-4px);
+}
+
+.pick__card:disabled {
+  cursor: default;
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+.pick__face {
+  width: 112px;
+  height: 112px;
+  flex-shrink: 0;
+  background-color: var(--hud-pink-soft);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(107, 42, 74, 0.18);
+}
+
+.pick__name {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 24px;
+}
+
+.pick__info {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  word-break: keep-all;
+  color: var(--hud-sub);
+}
+
+.pick__card--selected .pick__info {
+  color: #fff;
+}
+
+.pick__key {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  min-width: 26px;
+  padding: 1px 8px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #a58596;
+  border: 2px solid #e2ccd7;
+  border-radius: 999px;
+}
+
+.pick__card--selected .pick__key {
+  color: #fff;
+  border-color: #fff;
+}
+
+@media (max-width: 560px) {
+  .pick__list {
+    gap: 8px;
+  }
+
+  .pick__card {
+    padding: 18px 6px 14px;
+  }
+
+  .pick__face {
+    width: 72px;
+    height: 72px;
+  }
+
+  .pick__name {
+    font-size: 18px;
+  }
+
+  .pick__info {
+    font-size: 11px;
+  }
 }
 
 /* Settings */

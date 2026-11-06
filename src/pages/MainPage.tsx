@@ -17,6 +17,7 @@ import RentNotice from '../components/RentNotice';
 import StatsBox, { clampStats, type StatKey, type Stats } from '../components/StatsBox';
 import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
+import UpcomingContests from '../components/UpcomingContests';
 import WeekCard from '../components/WeekCard';
 import CollectionPage from './CollectionPage';
 import DatePage from './DatePage';
@@ -267,6 +268,7 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
       />
       <div className="main__right">
         <StatsBox stats={stats} />
+        <UpcomingContests gameDate={gameDate} />
       </div>
       {/* 하단: 대화창 + 행동 선택 창 */}
       <div className="main__bottom">
