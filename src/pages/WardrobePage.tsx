@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import backgroundImg from '../img/background/main_background.jpg';
-import characterImg from '../img/character/hayeong_whole.png';
+import Backdrop from '../components/Backdrop';
+import characterImg from '../img/character/hayeong/hayeong_whole.png';
 import { HeartMark } from '../components/Icon';
 import { PROGRESS_KEYS, useStoredState } from '../utils/storage';
 import {
@@ -178,12 +179,8 @@ export default function WardrobePage({ coins, onSpend, onClose }: Props) {
   };
 
   return (
-    <div
-      className="wardrobe"
-      style={{
-        backgroundImage: `linear-gradient(rgba(255, 240, 246, 0.6), rgba(255, 240, 246, 0.6)), url(${backgroundImg})`,
-      }}
-    >
+    <div className="wardrobe">
+      <Backdrop src={backgroundImg} tint />
       <button className="wardrobe__back" onClick={onClose}>
         <Glyph grid={glyphs.prev} />
         BACK

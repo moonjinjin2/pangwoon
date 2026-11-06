@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import backgroundImg from '../img/background/intro_background.png';
-import minjiImg from '../img/character/minji_default.png';
-import siyeongImg from '../img/character/siyeong_default.png';
-import emilyImg from '../img/character/emily_default.png';
+import Backdrop from '../components/Backdrop';
+import minjiImg from '../img/character/minji/minji_default.png';
+import siyeongImg from '../img/character/siyeong/siyeong_default.png';
+import emilyImg from '../img/character/emily/emily_default.png';
 import { HeartMark } from '../components/Icon';
 import petalVideo from '../img/fall_pental.mp4';
 
@@ -70,7 +71,8 @@ export default function StartPage({ onNewGame, onContinue }: Props) {
   });
 
   return (
-    <div className="start" style={{ backgroundImage: `url(${backgroundImg})` }}>
+    <div className="start">
+      <Backdrop src={backgroundImg} />
       {/* 앞부분은 꽃잎이 덜 차 있어서 3초부터 재생하고, 반복할 때도 3초로 돌아감 */}
       <video
         className="start__petal-video"

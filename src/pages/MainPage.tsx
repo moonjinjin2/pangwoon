@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import backgroundImg from '../img/background/main_background.jpg';
-import hayeongImg from '../img/character/hayeong_default.png';
+import hayeongImg from '../img/character/hayeong/hayeong_default.png';
 import MonthPlan, { type Activity } from '../components/MonthPlan';
 import ActionBox from '../components/ActionBox';
+import Backdrop from '../components/Backdrop';
 import ActivityResult from '../components/ActivityResult';
 import ActivityScene from '../components/ActivityScene';
 import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/AffectionBox';
@@ -246,7 +247,8 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
     settingsOpen;
 
   return (
-    <div className="main" style={{ backgroundImage: `url(${backgroundImg})` }}>
+    <div className="main">
+      <Backdrop src={backgroundImg} />
       <div className="main__left">
         <div className="profile">
           <span className="profile__avatar" style={{ backgroundImage: `url(${hayeongImg})` }} aria-hidden />

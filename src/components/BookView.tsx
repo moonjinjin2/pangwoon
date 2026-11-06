@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import backgroundImg from '../img/background/main_background.jpg';
+import Backdrop from './Backdrop';
 import { Glyph, glyphs, useMediaQuery } from '../pages/WardrobePage';
 
 // 한 쪽에 카드 4장 (2x2)
@@ -37,12 +38,8 @@ export default function BookView({ title, badge, cardCount, renderCard, onClose 
   const pages = Array.from({ length: pagesPerSpread }, (_, i) => currentSpread * pagesPerSpread + i);
 
   return (
-    <div
-      className="collection"
-      style={{
-        backgroundImage: `linear-gradient(rgba(255, 240, 246, 0.6), rgba(255, 240, 246, 0.6)), url(${backgroundImg})`,
-      }}
-    >
+    <div className="collection">
+      <Backdrop src={backgroundImg} tint />
       <button className="wardrobe__back" onClick={onClose}>
         <Glyph grid={glyphs.prev} />
         BACK

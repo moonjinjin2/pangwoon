@@ -1962,8 +1962,10 @@ body {
 .episode__bg {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   animation: episode-bg-in 0.6s ease;
 }
 
@@ -5163,4 +5165,27 @@ button.inv__card--selected:hover {
   .album__list {
     flex: 1;
   }
+}
+
+/* 화면 전체 배경 그림 (components/Backdrop). 부모의 맨 뒤에 깔림 */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+.backdrop--tint {
+  background: rgba(255, 240, 246, 0.6);
+}
+
+/* 배경 그림(z-index: -1)이 화면 밖으로 빠지지 않게 쌓임 맥락을 만듦 */
+.start,
+.main,
+.ep-card__art {
+  isolation: isolate;
 }

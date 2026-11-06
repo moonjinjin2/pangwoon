@@ -4,7 +4,7 @@ import desktopImg from '../img/windows.jpg';
 import Box from './Box';
 import ResultDialog from './ResultDialog';
 import { HeartMark } from './Icon';
-import { SPEAKERS, getReplayLines, parseGameEnd, type Affection, type Choice, type Episode, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
+import { SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, parseGameEnd, type Affection, type Choice, type Episode, type Expression, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
 import type { Effect } from '../utils/activity';
 import { getWeekIndex } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
@@ -80,10 +80,13 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 대사에 stage가 있으면 그 대사부터 지정한 캐릭터들을 같이 세우고,
   // 그중 누가 말하는 동안 유지함 (무대에 없는 캐릭터가 말하면 다시 그 캐릭터 1명)
   let stage: Speaker[] = [];
+  // 캐릭터별 표정: 이번 장면에서 그 캐릭터가 마지막으로 말한 대사의 표정
+  const expressions: Partial<Record<Speaker, Expression>> = {};
   for (let i = sceneStart; i <= index; i++) {
     const s = portraitOf(lines[i]);
     if (s && !stage.includes(s)) stage = [s];
     if (lines[i].stage) stage = lines[i].stage!;
+    if (s) expressions[s] = lines[i].expression;
   }
   // 이번 장면에 이미 등장한 캐릭터가 있으면 이미지 없는 주인공 대사 중에도 계속 보여줌
   const portraitVisible = stage.length > 0 && !!speaker;
@@ -103,7 +106,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 캐릭터 이미지를 미리 불러와서 처음 등장할 때 비어 보이지 않게 함
   useEffect(() => {
-    for (const { image } of Object.values(SPEAKERS)) {
+    const images = [...Object.values(SPEAKERS).map((s) => s.image), ...Object.values(EXPRESSIONS).flatMap((e) => Object.values(e))];
+    for (const image of images) {
       const img = new Image();
       img.src = image;
       img.decode().catch(() => { });
@@ -271,7 +275,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
     <div className="episode" onClick={advance}>
       {typeof shownBackground === 'string' ? (
         // 배경이 바뀌면 새로 그려서 페이드인
-        <div key={shownBackground} className="episode__bg" style={{ backgroundImage: `url(${shownBackground})` }} />
+        <img key={shownBackground} className="episode__bg" src={shownBackground} alt="" aria-hidden />
       ) : (
         shownBackground
       )}
@@ -282,7 +286,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
             key={s}
             className={`episode__character episode__character--${s}${portraitVisible ? ' episode__character--shown' : ''}`}
             style={{ left: `${stagePositions[i]}%` }}
-            src={SPEAKERS[s].image}
+            src={portraitImage(s, expressions[s])}
             alt=""
           />
         ))}

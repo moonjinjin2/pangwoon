@@ -1,12 +1,16 @@
-import hayeongImg from '../img/character/hayeong_default.png';
-import minjiImg from '../img/character/minji_default.png';
-import siyeongImg from '../img/character/siyeong_default.png';
-import emilyImg from '../img/character/emily_default.png';
-import computerClassroomImg from '../img/background/computer_classroom.png';
-import campusSpringImg from '../img/background/campus_spring.jpg';
-import classroomImg from '../img/background/classroom.jpg';
-import corridorImg from '../img/background/corridor.jpg';
-import clubRoomImg from '../img/background/student_center.jpg';
+import hayeongImg from '../img/character/hayeong/hayeong_default.png';
+import minjiImg from '../img/character/minji/minji_default.png';
+import minjiSmileImg from '../img/character/minji/minji_smile.png';
+import minjiBigSmileImg from '../img/character/minji/minji_bigsmile.png';
+import minjiShySmileImg from '../img/character/minji/minji_shy_smile.png';
+import minjiLessImg from '../img/character/minji/minji_less.png';
+import minjiSurprisedSoftImg from '../img/character/minji/minji_surprised_soft.png';
+import siyeongImg from '../img/character/siyeong/siyeong_default.png';
+import emilyImg from '../img/character/emily/emily_default.png';
+import campusSpringImg from '../img/background/campus_spring.png';
+import classroomImg from '../img/background/classroom.png';
+import corridorImg from '../img/background/corridor.png';
+import clubRoomImg from '../img/background/club_room.png';
 import minji1Img from '../img/date_art/minji_1.png';
 import minji2Img from '../img/date_art/minji_2.png';
 import minji3Img from '../img/date_art/minji_3.png';
@@ -36,6 +40,24 @@ export const SPEAKERS: Record<Speaker, { name: string; image: string }> = {
   emily: { name: '에밀리', image: emilyImg },
 };
 
+// 표정 (없으면 기본 표정)
+export type Expression = 'smile' | 'bigsmile' | 'shy_smile' | 'less' | 'surprised_soft';
+
+// 캐릭터별 표정 이미지 (없는 표정은 기본 이미지로 보여줌)
+export const EXPRESSIONS: Partial<Record<Speaker, Partial<Record<Expression, string>>>> = {
+  minji: {
+    smile: minjiSmileImg,
+    bigsmile: minjiBigSmileImg,
+    shy_smile: minjiShySmileImg,
+    less: minjiLessImg,
+    surprised_soft: minjiSurprisedSoftImg,
+  },
+};
+
+// 이 캐릭터의 이 표정 이미지
+export const portraitImage = (speaker: Speaker, expression?: Expression) =>
+  (expression && EXPRESSIONS[speaker]?.[expression]) || SPEAKERS[speaker].image;
+
 export type Affection = Record<Heroine, number>;
 
 export interface Choice {
@@ -53,6 +75,10 @@ export interface EpisodeLine {
   name?: string;
   // {name} → 플레이어 이름
   text: string;
+  // 말하는 캐릭터의 표정. 없으면 기본 표정
+  // 'smile': 미소 · 'bigsmile': 활짝 웃음 · 'shy_smile': 수줍은 미소 · 'less': 시무룩 · 'surprised_soft': 살짝 놀람
+  // 같이 서 있는 다른 캐릭터는 자기가 마지막으로 말할 때의 표정을 유지함
+  expression?: Expression;
   // 있으면 이 대사부터 배경을 바꿈 (장면 전환)
   background?: string;
   // 있으면 이 대사부터 캐릭터 이미지를 내림 (다음에 히로인이 말하면 다시 등장)
@@ -132,22 +158,22 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'player', text: '(처음에는 대학생이 되면 뭔가 엄청난 일이 생길 줄 알았다.)' },
       { speaker: 'player', text: '(새로운 친구도 사귀고, 연애도 하고……. 뭐, 아무튼 그런 거.)' },
       { speaker: 'player', text: '(그런데 막상 대학에 와보니 생각보다 별거 없었다.)' },
-      { speaker: 'minji', text: '야아아! {name}!' },
+      { speaker: 'minji', text: '야아아! {name}!', expression: 'bigsmile' },
       { speaker: 'player', text: '아, 깜짝이야! 아침부터 왜 이렇게 시끄러워?' },
-      { speaker: 'minji', text: '뭐래ㅋㅋㅋ 아, 맞다. 너 이제 속은 괜찮냐?' },
+      { speaker: 'minji', text: '뭐래ㅋㅋㅋ 아, 맞다. 너 이제 속은 괜찮냐?', expression: 'smile' },
       { speaker: 'player', text: '……뭔 소리야?' },
-      { speaker: 'minji', text: '개강총회 때처럼 또 토할까 봐~ㅋㅋㅋㅋ' },
+      { speaker: 'minji', text: '개강총회 때처럼 또 토할까 봐~ㅋㅋㅋㅋ', expression: 'bigsmile' },
       { speaker: 'player', text: '야, 그 얘기 좀 그만해라.' },
-      { speaker: 'minji', text: 'ㅋㅋㅋㅋ 알았어, 알았어.' },
+      { speaker: 'minji', text: 'ㅋㅋㅋㅋ 알았어, 알았어.', expression: 'smile' },
       { text: '민지가 {name}의 어깨를 툭 친다.' },
       { speaker: 'minji', text: '아 맞다! 너 오늘 과제했냐?' },
       { speaker: 'player', text: '……무슨 과제?' },
-      { speaker: 'minji', text: '엥? 야ㅋㅋㅋ 너 진짜 몰라?' },
+      { speaker: 'minji', text: '엥? 야ㅋㅋㅋ 너 진짜 몰라?', expression: 'smile' },
       { speaker: 'minji', text: '교수님이 일주일 전에 공지했잖아.' },
       { speaker: 'player', text: '……. 아.' },
-      { speaker: 'minji', text: 'ㅋㅋㅋㅋㅋㅋㅋㅋ 야, 너 진짜 내가 없으면 어떻게 살래?' },
+      { speaker: 'minji', text: 'ㅋㅋㅋㅋㅋㅋㅋㅋ 야, 너 진짜 내가 없으면 어떻게 살래?', expression: 'bigsmile' },
       { speaker: 'player', text: '그러게. 큰일이네.' },
-      { speaker: 'minji', text: '에휴~ 내가 한 거 보여줄 테니까 빨리 와.' },
+      { speaker: 'minji', text: '에휴~ 내가 한 거 보여줄 테니까 빨리 와.', expression: 'smile' },
       { text: '민지가 앞서 걸어간다.' },
       { speaker: 'player', text: '(송민지. 고등학교 때부터 알고 지낸 친구다.)' },
       { speaker: 'player', text: '(맨날 놀리면서도 은근히 잘 챙겨주는 녀석.)' },
@@ -159,17 +185,17 @@ const EPISODES: Record<number, Episode> = {
             text: '역시 송민지밖에 없다니까? 오늘 점심 내가 살게.',
             affection: { minji: 5 },
             reply: [
-              { speaker: 'minji', text: '엥? 진짜? ㅋㅋㅋ 웬일이래?' },
+              { speaker: 'minji', text: '엥? 진짜? ㅋㅋㅋ 웬일이래?', expression: 'smile' },
               { speaker: 'player', text: '왜, 싫으면 말고.' },
-              { speaker: 'minji', text: '아니?! 완전 좋지!' },
-              { speaker: 'minji', text: '야, 약속했다? 도망가면 죽는다ㅋㅋㅋ' },
+              { speaker: 'minji', text: '아니?! 완전 좋지!', expression: 'bigsmile' },
+              { speaker: 'minji', text: '야, 약속했다? 도망가면 죽는다ㅋㅋㅋ', expression: 'smile' },
             ],
           },
           {
             text: 'ㅋㅋㅋ 너 없으면 나 진짜 졸업 못 하겠다.',
             affection: { minji: 2 },
             reply: [
-              { speaker: 'minji', text: '이제야 내 소중함을 아는구나?' },
+              { speaker: 'minji', text: '이제야 내 소중함을 아는구나?', expression: 'shy_smile' },
               { speaker: 'player', text: '어어, 알겠으니까 과제나 보여줘.' },
               { speaker: 'minji', text: '야ㅋㅋㅋㅋ 감동 다 깨졌잖아!' },
             ],
@@ -178,9 +204,9 @@ const EPISODES: Record<number, Episode> = {
             text: '야, 친구끼리 그 정도는 당연히 해줘야지.',
             affection: { minji: -3 },
             reply: [
-              { speaker: 'minji', text: '……뭐? 너 지금 내가 도와주는 게 당연하냐?' },
+              { speaker: 'minji', text: '……뭐? 너 지금 내가 도와주는 게 당연하냐?', expression: 'less' },
               { speaker: 'player', text: '아니ㅋㅋ 장난이지.' },
-              { speaker: 'minji', text: '흥, 다음부터는 알아서 해라!' },
+              { speaker: 'minji', text: '흥, 다음부터는 알아서 해라!', expression: 'less' },
               { speaker: 'player', text: '아 미안하다니까ㅋㅋㅋ' },
             ],
           },
@@ -197,9 +223,9 @@ const EPISODES: Record<number, Episode> = {
       { text: '드르륵.' },
       { speaker: 'player', text: '(……어?)' },
       { speaker: 'player', text: '(긴 은발에 차가운 눈매. 멀리서도 눈에 띄는 사람이 들어왔다.)' },
-      { speaker: 'minji', text: '야야, {name}.' },
+      { speaker: 'minji', text: '야야, {name}.', expression: 'surprised_soft' },
       { speaker: 'player', text: '왜?' },
-      { speaker: 'minji', text: '쟤 엄청 예쁘지 않냐?' },
+      { speaker: 'minji', text: '쟤 엄청 예쁘지 않냐?', expression: 'surprised_soft' },
       { speaker: 'player', text: '어, 그러네.' },
       { text: '그 순간, 그녀와 눈이 마주친다.' },
       { speaker: 'emily', text: '……뭘 봐?' },
@@ -207,10 +233,10 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'emily', text: '그럼 앞이나 봐.' },
       { speaker: 'player', text: '……어, 알았어.' },
       { text: '그녀가 {name}의 옆 빈자리에 앉는다.' },
-      { speaker: 'minji', text: '(속닥) 야ㅋㅋㅋ 너 바로 까였다.' },
+      { speaker: 'minji', text: '(속닥) 야ㅋㅋㅋ 너 바로 까였다.', expression: 'smile' },
       { speaker: 'player', text: '아니, 뭘 했어야 까이지.' },
       { speaker: 'emily', text: '……다 들리거든?' },
-      { speaker: 'minji', text: '앗.' },
+      { speaker: 'minji', text: '앗.', expression: 'surprised_soft' },
       { speaker: 'player', text: '……죄송합니다.' },
       { text: '그녀가 한숨을 쉰다.' },
       { text: '— 프로그래밍 실습 수업 —', hidePortrait: true },
@@ -354,20 +380,20 @@ const EPISODES: Record<number, Episode> = {
       { text: '{name}와(과) 시영이 동아리방에서 나온다.', background: corridorImg },
       { speaker: 'player', text: '그럼 다음 모임 때 보자.' },
       { speaker: 'siyeong', text: '네…….' },
-      { speaker: 'minji', text: '어? {name}! 야! 너 여기서 뭐 하냐?' },
+      { speaker: 'minji', text: '어? {name}! 야! 너 여기서 뭐 하냐?', expression: 'surprised_soft' },
       { speaker: 'player', text: '동아리 구경 왔지.' },
-      { speaker: 'minji', text: '엥? 혼자?' },
+      { speaker: 'minji', text: '엥? 혼자?', expression: 'surprised_soft' },
       { speaker: 'player', text: '어. 왜?' },
-      { speaker: 'minji', text: '와~ 우리 {name}, 혼자 동아리도 알아보고. 다 컸네ㅋㅋㅋㅋ' },
+      { speaker: 'minji', text: '와~ 우리 {name}, 혼자 동아리도 알아보고. 다 컸네ㅋㅋㅋㅋ', expression: 'bigsmile' },
       { speaker: 'player', text: '아, 진짜ㅋㅋㅋ' },
       { text: '민지가 시영을 발견한다.' },
-      { speaker: 'minji', text: '어? 안녕!', stage: ['siyeong', 'minji'] },
+      { speaker: 'minji', text: '어? 안녕!', expression: 'smile', stage: ['siyeong', 'minji'] },
       { speaker: 'siyeong', text: '아…… 안녕하세요…….' },
       { speaker: 'minji', text: '너도 게임콘텐츠학과야?' },
       { speaker: 'siyeong', text: '네…….' },
-      { speaker: 'minji', text: '헐! 우리 동기네! 난 송민지야!' },
+      { speaker: 'minji', text: '헐! 우리 동기네! 난 송민지야!', expression: 'bigsmile' },
       { speaker: 'siyeong', text: '서…… 서시영이에요.' },
-      { speaker: 'minji', text: '시영아! 앞으로 친하게 지내자!' },
+      { speaker: 'minji', text: '시영아! 앞으로 친하게 지내자!', expression: 'bigsmile' },
       { speaker: 'siyeong', text: '……네.' },
       { text: '시영이 작게 웃는다.' },
       { speaker: 'emily', text: '……시끄러워.' },
@@ -375,26 +401,26 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'emily', text: '……너 여기서 뭐 해?' },
       { speaker: 'player', text: '동아리 구경. 너도?' },
       { speaker: 'emily', text: '어. 게임 제작 동아리라길래 와봤어.' },
-      { speaker: 'minji', text: '오! 아까 강의실에 있던 애다! 나 송민지!', stage: ['emily', 'minji'] },
+      { speaker: 'minji', text: '오! 아까 강의실에 있던 애다! 나 송민지!', expression: 'smile', stage: ['emily', 'minji'] },
       { speaker: 'emily', text: '……에밀리.' },
       { speaker: 'minji', text: '와, 우리 다 같은 과네?' },
       { speaker: 'player', text: '그러게.' },
       { text: '네 사람이 서로를 바라본다.' },
-      { speaker: 'minji', text: '야야! 그럼 우리 넷이 같이 게임 만들어 보면 되겠다!' },
+      { speaker: 'minji', text: '야야! 그럼 우리 넷이 같이 게임 만들어 보면 되겠다!', expression: 'bigsmile' },
       { speaker: 'emily', text: '……뭐?' },
       { speaker: 'siyeong', text: '……네?' },
       { speaker: 'player', text: '아니, 잠깐. 그걸 왜 네 마음대로 정해?' },
       { speaker: 'minji', text: '왜! 재밌잖아! 에밀리는 프로그래밍 잘하고! 시영이는 그림 잘 그리고!' },
       { speaker: 'minji', text: '나는 기획하면 되잖아!' },
       { speaker: 'player', text: '……그럼 나는?' },
-      { speaker: 'minji', text: '…….' },
+      { speaker: 'minji', text: '…….', expression: 'less' },
       { text: '잠시 정적.' },
       { speaker: 'minji', text: '응원 담당?' },
       { speaker: 'player', text: '야.' },
       { speaker: 'emily', text: '풉.' },
       { speaker: 'siyeong', text: '……후훗.' },
       { speaker: 'player', text: '아니, 다들 웃지 마!' },
-      { speaker: 'minji', text: 'ㅋㅋㅋㅋ 농담이지! 너도 같이 만들면 되잖아!' },
+      { speaker: 'minji', text: 'ㅋㅋㅋㅋ 농담이지! 너도 같이 만들면 되잖아!', expression: 'bigsmile' },
 
       // SCENE 05. 우리, 게임 한번 만들어 볼까?
       { speaker: 'minji', text: '야, 근데 우리 진짜 같이 게임 만들어보는 거 어때?' },
@@ -436,9 +462,9 @@ const EPISODES: Record<number, Episode> = {
             text: '민지가 기획하면 재밌긴 하겠다ㅋㅋ',
             affection: { minji: 3 },
             reply: [
-              { speaker: 'minji', text: '그치?! 역시 넌 뭘 좀 안다니까!' },
+              { speaker: 'minji', text: '그치?! 역시 넌 뭘 좀 안다니까!', expression: 'bigsmile' },
               { speaker: 'player', text: '근데 제대로 만들 수는 있냐?' },
-              { speaker: 'minji', text: '야ㅋㅋㅋ 일단 해보는 거지!' },
+              { speaker: 'minji', text: '야ㅋㅋㅋ 일단 해보는 거지!', expression: 'smile' },
             ],
           },
           {
@@ -456,11 +482,11 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'emily', text: '……. 조건이 있어.' },
       { speaker: 'player', text: '뭔데?' },
       { speaker: 'emily', text: '시작할 거면 끝까지 제대로 하는 거야. 대충 만들다가 포기할 거면 난 안 해.' },
-      { speaker: 'minji', text: '오케이! 완전 좋지!' },
+      { speaker: 'minji', text: '오케이! 완전 좋지!', expression: 'bigsmile' },
       { speaker: 'siyeong', text: '저도…… 열심히 할게요…….' },
       { speaker: 'minji', text: '{name}은(는)?' },
       { speaker: 'player', text: '……. 뭐, 한번 해보지.' },
-      { speaker: 'minji', text: '좋아! 그럼 결정! 우리 넷 다 게임 제작 동아리에 가입하는 거다!' },
+      { speaker: 'minji', text: '좋아! 그럼 결정! 우리 넷 다 게임 제작 동아리에 가입하는 거다!', expression: 'bigsmile' },
       { speaker: 'player', text: '야ㅋㅋㅋ 결정 한번 빠르네.' },
       { speaker: 'minji', text: '이럴 때는 빨라야지!' },
       { text: '게임 제작 동아리방. 책상 위에 신입 부원 가입 신청서가 놓여 있다.', background: clubRoomImg },
@@ -469,7 +495,7 @@ const EPISODES: Record<number, Episode> = {
       { text: '네 사람이 차례대로 가입 신청서를 작성한다.' },
       { speaker: 'siyeong', text: '……. 저……. 앞으로 잘 부탁드려요…….' },
       { speaker: 'emily', text: '……나중에 후회하지나 마.' },
-      { speaker: 'minji', text: 'ㅋㅋㅋ 걱정하지 마! 우리가 얼마나 대단한 게임 만들 건데!' },
+      { speaker: 'minji', text: 'ㅋㅋㅋ 걱정하지 마! 우리가 얼마나 대단한 게임 만들 건데!', expression: 'smile' },
       { speaker: 'player', text: '아직 뭐 만들지도 안 정했잖아ㅋㅋㅋ' },
       { speaker: 'minji', text: '그건 지금부터 정하면 되지!' },
       { name: 'SYSTEM', text: '게임 제작 동아리에 가입했습니다.' },
@@ -489,10 +515,10 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'minji', text: '그럼! 지금부터 생각해야지!' },
       { speaker: 'emily', text: '……일단 뭐 만들 건지부터 정해.' },
       { speaker: 'siyeong', text: '저는…… 캐릭터가 많이 나오는 게임이면…… 좋겠어요…….' },
-      { speaker: 'minji', text: '오! 그럼 미연시 어때?' },
+      { speaker: 'minji', text: '오! 그럼 미연시 어때?', expression: 'smile' },
       { speaker: 'player', text: '……. 야, 우리가 지금 미연시 만들고 있는 거 아니냐?' },
       { text: '잠시 정적.' },
-      { speaker: 'minji', text: '……어?' },
+      { speaker: 'minji', text: '……어?', expression: 'surprised_soft' },
       { speaker: 'emily', text: '……무슨 소리야?' },
       { speaker: 'siyeong', text: '……네?' },
       { speaker: 'player', text: '아니, 아무것도 아니야.' },
@@ -500,12 +526,12 @@ const EPISODES: Record<number, Episode> = {
       { text: '잠시 정적.' },
       { speaker: 'minji', text: '아무튼! 다음 달에 신입생 MT 간다는데?!' },
       { speaker: 'player', text: 'MT?' },
-      { speaker: 'minji', text: '어! 우리 과에서 간대! 야, 우리 넷이 같이 가자!' },
+      { speaker: 'minji', text: '어! 우리 과에서 간대! 야, 우리 넷이 같이 가자!', expression: 'bigsmile' },
       { speaker: 'emily', text: '……귀찮아.' },
       { speaker: 'siyeong', text: '사람…… 많이 오겠죠……?' },
       { speaker: 'minji', text: '에이~ 다 같이 가면 재밌잖아! 야 {name}, 너도 갈 거지?' },
       { speaker: 'player', text: '음……. 뭐, 다들 가면 나도 가지.' },
-      { speaker: 'minji', text: 'ㅋㅋㅋ 역시!' },
+      { speaker: 'minji', text: 'ㅋㅋㅋ 역시!', expression: 'bigsmile' },
       { speaker: 'emily', text: '……난 아직 간다고 안 했거든.' },
       { speaker: 'siyeong', text: '저도…… 생각해 볼게요…….' },
       { text: '네 사람이 캠퍼스를 걸어간다.' },
@@ -520,7 +546,7 @@ const EPISODES: Record<number, Episode> = {
     id: 'month-5',
     title: '사라진 교수님',
     icon: '🎮',
-    background: computerClassroomImg,
+    background: classroomImg,
     lines: [
       // 프롤로그 — 사라진 교수님
       { text: '평범한 대학교 강의실. 게임콘텐츠학과 학생들은 오늘도 교수님의 수업을 듣고 있다.' },
@@ -894,7 +920,7 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
       id: 'date-siyeong-1',
       title: '우리, 조금 친해진 걸까요?',
       illust: siyeong1Img,
-      background: computerClassroomImg,
+      background: classroomImg,
       lines: [
         { text: '대학교 실습실. 오류 때문에 곤란해하던 {name}의 눈에 혼자 코딩하고 있는 시영이 들어온다.' },
         { speaker: 'player', text: '시영아, 혹시 이것 좀 봐줄 수 있어?' },
@@ -1079,7 +1105,7 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
       id: 'date-emily-1',
       title: '이 정도는 기본이거든?',
       illust: emily1Img,
-      background: computerClassroomImg,
+      background: classroomImg,
       lines: [
         { text: '대학교 실습실. 에밀리가 게임 캐릭터를 디자인하고 있다. 지나가다 모니터를 본 {name}의 발걸음이 멈춘다.' },
         { speaker: 'player', text: '와, 이거 네가 그린 거야?' },
@@ -1229,7 +1255,7 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
       id: 'date-emily-4',
       title: '완벽하지 않아도 괜찮아',
       illust: emily4Img,
-      background: computerClassroomImg,
+      background: classroomImg,
       time: '밤',
       lines: [
         { text: '게임 그래픽 공모전 마감 하루 전. 늦은 밤인데도 실습실에 불이 켜져 있다.' },

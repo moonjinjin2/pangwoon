@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import backgroundImg from '../img/background/main_background.jpg';
+import Backdrop from '../components/Backdrop';
 import EpisodeReplay from '../components/EpisodeReplay';
 import { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
@@ -104,12 +105,8 @@ export default function DatePage({ onClose }: Props) {
 
   return (
     <>
-      <div
-        className="dates"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255, 240, 246, 0.6), rgba(255, 240, 246, 0.6)), url(${backgroundImg})`,
-        }}
-      >
+      <div className="dates">
+        <Backdrop src={backgroundImg} tint />
         <header className="page-top">
           <button className="page-top__back" onClick={onClose} aria-label="뒤로">
             <Glyph grid={glyphs.prev} />

@@ -1,6 +1,7 @@
 import roomImg from '../img/background/main_background.jpg';
 import barImg from '../img/background/bar_background.jpg';
 import backgroundImg from '../img/background/main_background.jpg';
+import Backdrop from '../components/Backdrop';
 import { useEffect, useState } from 'react';
 import Box from '../components/Box';
 import EpisodeReplay from '../components/EpisodeReplay';
@@ -27,10 +28,8 @@ export function EpisodeArt({ episode, showIllust = true }: { episode: Episode; s
   if (showIllust && episode.illust) return <img className="ep-card__illust" src={episode.illust} alt="" />;
   const isPrologue = episode.id === PROLOGUE.id;
   return (
-    <div
-      className={isPrologue ? 'ep-card__art ep-card__art--night' : 'ep-card__art'}
-      style={{ backgroundImage: `url(${isPrologue ? barImg : episode.background ?? roomImg})` }}
-    >
+    <div className={isPrologue ? 'ep-card__art ep-card__art--night' : 'ep-card__art'}>
+      <Backdrop src={isPrologue ? barImg : episode.background ?? roomImg} />
       <img className="ep-card__char" src={SPEAKERS[getMainSpeaker(episode)].image} alt="" />
     </div>
   );
@@ -145,12 +144,8 @@ export default function CollectionPage({ onClose }: Props) {
 
   return (
     <>
-      <div
-        className="album"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255, 240, 246, 0.6), rgba(255, 240, 246, 0.6)), url(${backgroundImg})`,
-        }}
-      >
+      <div className="album">
+        <Backdrop src={backgroundImg} tint />
         <header className="page-top">
           <button className="page-top__back" onClick={onClose} aria-label="뒤로">
             <Glyph grid={glyphs.prev} />
