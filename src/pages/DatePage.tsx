@@ -18,7 +18,7 @@ interface Props {
 
 // 프로필 동그라미에 얼굴이 오도록 캐릭터 그림에서 얼굴 중심 위치 (그림 너비·높이 대비 비율)
 // size: 동그라미 대비 그림 너비 (%, 클수록 얼굴이 크게 보임, 없으면 230)
-const FACES: Record<Heroine, { x: number; y: number; size?: number }> = {
+export const FACES: Record<Heroine, { x: number; y: number; size?: number }> = {
   minji: { x: 0.5, y: 0.23, size: 180 },
   siyeong: { x: 0.5, y: 0.2 },
   emily: { x: 0.47, y: 0.19 },

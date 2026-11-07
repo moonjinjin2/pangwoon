@@ -5711,3 +5711,505 @@ button.inv__card--selected:hover {
   background: var(--hud-pink);
   border-radius: 999px;
 }
+
+/* Shop (상점): 왼쪽 선물 목록 + 오른쪽 선택한 선물 구매 */
+.shop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 32px 28px;
+  color: var(--hud-ink);
+}
+
+.shop .heart-mark {
+  width: 1em;
+  height: 1em;
+}
+
+.shop__coins {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding: 6px 20px 6px 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.35rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 2px var(--hud-line),
+    0 4px 12px rgba(120, 50, 80, 0.12);
+}
+
+.shop__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 27%);
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.shop__hint {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--hud-sub);
+}
+
+.shop__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(220px, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 20px 24px 24px;
+  overflow: auto;
+  list-style: none;
+}
+
+.shop__grid > li {
+  min-height: 0;
+}
+
+.shop-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: #fff;
+  border: none;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--hud-line),
+    0 4px 12px rgba(120, 50, 80, 0.1);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.shop-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 2px #e4a3c0,
+    0 8px 18px rgba(120, 50, 80, 0.16);
+}
+
+.shop-card--selected,
+.shop-card--selected:hover {
+  box-shadow:
+    0 0 0 3px #b84a77,
+    0 8px 18px rgba(120, 50, 80, 0.18);
+}
+
+/* 아이템 이미지 자리 (이미지가 없으면 빈 칸) */
+.shop-card__art {
+  flex: 1;
+  min-height: 0;
+  background: #f8edf2;
+}
+
+.shop-card__art img,
+.shop__detail-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shop__bonus {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--hud-pink);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+}
+
+.shop__bonus .heart-mark {
+  width: 0.8em;
+  height: 0.8em;
+}
+
+.shop-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+
+.shop-card__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shop-card__name {
+  overflow: hidden;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.shop__price {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: #b84a77;
+}
+
+.shop__price--short {
+  color: var(--hud-red);
+}
+
+.shop__dot {
+  width: 0.95em;
+  height: 0.95em;
+  background: radial-gradient(circle at 35% 30%, #ffe48a, #f2b62e 70%);
+  border-radius: 50%;
+}
+
+.shop-card__heroine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: #f6eef2;
+  border-radius: 999px;
+}
+
+.shop-card__label {
+  font-style: italic;
+  font-size: 0.72rem;
+  color: var(--hud-sub);
+}
+
+/* 히로인 얼굴만 동그랗게 (DatePage FACES 기준으로 위치) */
+.shop__face {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--hud-line);
+}
+
+.shop__face img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  user-select: none;
+  pointer-events: none;
+}
+
+.shop__detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 20px 22px;
+  overflow: auto;
+}
+
+.shop__detail-art {
+  flex-shrink: 0;
+  aspect-ratio: 3 / 2;
+  background: #f8e6ee;
+  border: 2px solid var(--hud-line);
+  border-radius: 14px;
+}
+
+.shop__detail-name {
+  margin-top: 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.shop__effect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: #f7e8ef;
+  border-radius: 999px;
+}
+
+.shop__effect .shop__face {
+  width: 34px;
+  height: 34px;
+}
+
+.shop__effect-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--hud-pink);
+}
+
+.shop__effect-value .heart-mark {
+  width: 0.75em;
+  height: 0.75em;
+}
+
+.shop__owned {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #8a5a72;
+  background: #f9eef3;
+  border: 2px solid #ecc6d7;
+  border-radius: 12px;
+}
+
+.shop__owned .shop__bag {
+  width: 18px;
+  height: 18px;
+  color: var(--hud-pink);
+}
+
+.shop__owned-count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: auto;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--hud-sub);
+}
+
+.shop__owned-count b {
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--hud-pink);
+}
+
+/* 보유 표시용 쇼핑백 선 아이콘 */
+.shop__bag {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 카드 왼쪽 위 보유 개수 배지 (미보유는 흰색, 보유 중은 분홍색) */
+.shop__owned-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 14px 4px 11px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--hud-sub);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1.5px var(--hud-line);
+}
+
+.shop__owned-badge--on {
+  color: #fff;
+  background: #b5587f;
+  box-shadow: 0 2px 6px rgba(120, 50, 80, 0.2);
+}
+
+/* 수량·합계·구매는 아래에 붙임 */
+.shop__order {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.shop__line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--hud-sub);
+}
+
+.shop__line--total {
+  padding-top: 14px;
+  border-top: 2px dashed var(--hud-line);
+}
+
+.shop__line--total .shop__price {
+  font-size: 1.1rem;
+}
+
+.shop__stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.shop__stepper b {
+  min-width: 2ch;
+  font-size: 1.2rem;
+  text-align: center;
+  color: var(--hud-ink);
+}
+
+.shop__stepper button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--hud-pink);
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--hud-line);
+  cursor: pointer;
+}
+
+.shop__stepper button:disabled {
+  color: #d9bfcb;
+  cursor: default;
+}
+
+.shop__buy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #fff;
+  background: #b5587f;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(120, 50, 80, 0.2);
+  cursor: pointer;
+}
+
+.shop__buy .heart-mark {
+  width: 0.8em;
+  height: 0.8em;
+  fill: currentColor;
+}
+
+.shop__buy:hover:not(:disabled) {
+  background: #a04870;
+}
+
+.shop__buy:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.shop__buy:disabled {
+  background: #d4b3c2;
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (max-height: 760px) {
+  .shop__grid {
+    grid-auto-rows: minmax(180px, 1fr);
+    gap: 12px;
+    padding: 14px 18px 18px;
+  }
+
+  .shop__detail-name {
+    margin-top: 0;
+    font-size: 1.4rem;
+  }
+}
+
+/* 좁은 화면: 구매 패널은 목록 아래로, 카드는 2칸씩, 전체 스크롤 */
+@media (max-width: 760px) {
+  .shop {
+    gap: 12px;
+    padding: 16px;
+    overflow: auto;
+  }
+
+  .shop__coins {
+    font-size: 1rem;
+  }
+
+  .shop__body {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+  }
+
+  .shop__hint {
+    display: none;
+  }
+
+  .shop__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 200px;
+    padding: 16px;
+    overflow: visible;
+  }
+
+  .shop__detail-art {
+    aspect-ratio: 2 / 1;
+  }
+}

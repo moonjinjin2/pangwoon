@@ -24,6 +24,7 @@ import WeekCard from '../components/WeekCard';
 import CollectionPage from './CollectionPage';
 import DevEpisodePage from './DevEpisodePage';
 import DatePage from './DatePage';
+import ShopPage from './ShopPage';
 import WardrobePage from './WardrobePage';
 import { getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
 import { HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
@@ -74,6 +75,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   // 이번 주차 5일치 성공/실패 (진행하기 누를 때 정함)
   const [days, setDays] = useState<Grade[]>([]);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [affectionOpen, setAffectionOpen] = useState(false);
@@ -279,6 +281,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     !!rentResult ||
     fundsAlert ||
     wardrobeOpen ||
+    shopOpen ||
     collectionOpen ||
     affectionOpen ||
     settingsOpen ||
@@ -302,6 +305,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
       <TopMenu
         coins={coins}
         onWardrobe={() => setWardrobeOpen(true)}
+        onShop={() => setShopOpen(true)}
         onCollection={() => setCollectionOpen(true)}
         onAffection={() => setAffectionOpen(true)}
         onSettings={() => setSettingsOpen(true)}
@@ -382,6 +386,9 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
           onSpend={(amount) => setCoins((prev) => prev - amount)}
           onClose={() => setWardrobeOpen(false)}
         />
+      )}
+      {shopOpen && (
+        <ShopPage coins={coins} onSpend={(amount) => setCoins((prev) => prev - amount)} onClose={() => setShopOpen(false)} />
       )}
       {affectionOpen && (
         <AffectionBox

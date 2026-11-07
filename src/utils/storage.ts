@@ -14,6 +14,7 @@ export const PROGRESS_KEYS = {
   revealed: 'revealed',
   ownedOutfits: 'ownedOutfits',
   equippedOutfit: 'equippedOutfit',
+  gifts: 'gifts',
   collection: 'collection',
   choices: 'choices',
   seenDates: 'seenDates',
