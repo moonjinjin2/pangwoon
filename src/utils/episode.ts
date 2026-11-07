@@ -11,6 +11,10 @@ import campusSpringImg from '../img/background/campus_spring.png';
 import classroomImg from '../img/background/classroom.png';
 import corridorImg from '../img/background/corridor.png';
 import clubRoomImg from '../img/background/club_room.png';
+import universityGateImg from '../img/background/university_gate.png';
+import gameDevRoomImg from '../img/background/game_dev_room.png';
+import lakeTrailImg from '../img/background/lake_trail.png';
+import libraryImg from '../img/background/library.png';
 import minji1Img from '../img/date_art/minji_1.png';
 import minji2Img from '../img/date_art/minji_2.png';
 import minji3Img from '../img/date_art/minji_3.png';
@@ -1160,8 +1164,7 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
       id: 'date-siyeong-1',
       title: '어색한 두 사람',
       illust: siyeong1Img,
-      // 도서관 배경 이미지가 생기면 바꾸기
-      background: classroomImg,
+      background: libraryImg,
       time: '오후',
       lines: [
         // SCENE 1. 두 번째 만남 — 도서관
@@ -1649,7 +1652,7 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
       id: 'date-emily-1',
       title: '마음에 안 드는 스케치',
       illust: emily1Img,
-      background: classroomImg,
+      background: gameDevRoomImg,
       time: '오후',
       lines: [
         // SCENE 1. 마음에 안 드는 그림 — 실습실
@@ -1766,12 +1769,11 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
         { speaker: 'emily', text: '(…생각보다 괜찮은 애네.)' },
       ],
     },
-    // 비 오는 거리 배경 이미지가 생기면 바꾸기
     {
       id: 'date-emily-2',
       title: '우산은 하나뿐',
       illust: emily2Img,
-      background: campusSpringImg,
+      background: universityGateImg,
       time: '늦은 오후',
       lines: [
         // SCENE 1. 갑작스러운 비 — 건물 입구
@@ -1896,12 +1898,12 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
         { speaker: 'emily', text: '(…다음에도 비가 오면 좋겠네.)' },
       ],
     },
-    // 축제 배경 이미지가 생기면 바꾸기
+    // 축제 배경 이미지가 생기면 바꾸기 (지금은 저녁 분위기의 호수 산책로)
     {
       id: 'date-emily-3',
       title: '내기에서 이기면 소원 하나',
       illust: emily3Img,
-      background: campusSpringImg,
+      background: lakeTrailImg,
       time: '저녁',
       lines: [
         // SCENE 1. 축제에서의 승부 — 사격 부스
@@ -2036,7 +2038,7 @@ export const DATE_EPISODES: Record<Heroine, Episode[]> = {
       id: 'date-emily-4',
       title: '너한테만 부탁하는 거야',
       illust: emily4Img,
-      background: clubRoomImg,
+      background: gameDevRoomImg,
       time: '오후',
       lines: [
         // SCENE 1. 동아리실의 소동 — 동아리방
@@ -2214,6 +2216,13 @@ export const EPISODE_CATALOG: Episode[] = [
   ...Object.values(EPISODES),
   DEFAULT_EPISODE,
   ...HEROINES.flatMap((h) => DATE_EPISODES[h]),
+];
+
+// 개발자 모드 에피소드 선택 화면에 보여줄 메인 에피소드 (프롤로그, 달별, 기본)
+export const MAIN_EPISODE_LIST: { label: string; episode: Episode }[] = [
+  { label: '프롤로그', episode: PROLOGUE },
+  ...Object.entries(EPISODES).map(([month, episode]) => ({ label: `${month}월`, episode })),
+  { label: '기본', episode: DEFAULT_EPISODE },
 ];
 
 // 다시 보기용 대사: 고른 선택지를 주인공 대사로 바꾸고 그 답변을 바로 이어 붙임

@@ -17,12 +17,15 @@ export const PROGRESS_KEYS = {
   collection: 'collection',
   choices: 'choices',
   seenDates: 'seenDates',
+  dangerWarned: 'dangerWarned',
 } as const;
 
 // 환경 설정 (새 게임을 시작해도 유지)
 export const SETTINGS_KEYS = {
   bgmVolume: 'bgmVolume',
   textSpeed: 'textSpeed',
+  // 설정의 개발자 모드 (에피소드 바로 보기 등 테스트 기능)
+  devMode: 'devMode',
 } as const;
 
 // 대사 한 글자가 나오는 간격(ms)

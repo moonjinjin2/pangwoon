@@ -6,7 +6,7 @@ import EpisodeScene from './components/EpisodeScene';
 import barImg from './img/background/bar_background.jpg';
 import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
 import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
-import { DATE_KEY, NAME_KEY, clearProgress, load, markCollected, save } from './utils/storage';
+import { DATE_KEY, NAME_KEY, clearProgress, load, markCollected, remove, save } from './utils/storage';
 import LoadingScreen from './components/LoadingScreen';
 import { CORE_IMAGES, useMinLoading, usePreload } from './utils/preload';
 
@@ -70,6 +70,16 @@ function Game() {
   // 진행 상황은 그대로 두고 시작 화면으로 (이어하기로 돌아올 수 있음)
   const handleExit = () => setScreen('start');
 
+  // 엔딩을 보면 게임이 끝나므로 진행 상황을 모두 지우고 시작 화면으로 (이어하기 불가)
+  const handleGameOver = () => {
+    clearProgress();
+    remove(NAME_KEY);
+    remove(DATE_KEY);
+    setName(null);
+    setGameDate(START_GAME_DATE);
+    setScreen('start');
+  };
+
   const handleProceed = () => {
     const next = getNextWeekDate(gameDate);
     save(DATE_KEY, next);
@@ -97,7 +107,7 @@ function Game() {
     );
   return (
     <>
-      <MainPage name={name ?? ''} gameDate={gameDate} onExit={handleExit} onProceed={handleProceed} />
+      <MainPage name={name ?? ''} gameDate={gameDate} onExit={handleExit} onGameOver={handleGameOver} onProceed={handleProceed} />
       {fadeOverlay}
     </>
   );

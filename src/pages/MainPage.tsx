@@ -14,12 +14,15 @@ import HeroinePick from '../components/HeroinePick';
 import { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
 import RentNotice from '../components/RentNotice';
-import StatsBox, { clampStats, type StatKey, type Stats } from '../components/StatsBox';
+import StatsBox, { DANGER_KINDS, clampStats, isDanger, isGameOver, type DangerKind, type StatKey, type Stats } from '../components/StatsBox';
+import DangerWarning, { DangerAlert } from '../components/DangerWarning';
+import BadEnding from '../components/BadEnding';
 import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
 import UpcomingContests from '../components/UpcomingContests';
 import WeekCard from '../components/WeekCard';
 import CollectionPage from './CollectionPage';
+import DevEpisodePage from './DevEpisodePage';
 import DatePage from './DatePage';
 import WardrobePage from './WardrobePage';
 import { getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
@@ -34,6 +37,8 @@ interface Props {
   gameDate: string;
   // 설정의 게임 종료: 시작 화면으로
   onExit: () => void;
+  // 엔딩 후 처음으로: 진행 상황을 지우고 시작 화면으로
+  onGameOver: () => void;
   onProceed?: () => void;
 }
 
@@ -43,10 +48,12 @@ const initialStats: Stats = { health: 100, strength: 0, intellect: 0, stress: 0 
 
 const initialAffection: Affection = { minji: 0, siyeong: 0, emily: 0 };
 
+const initialDangerWarned: Record<DangerKind, boolean> = { stress: false, health: false };
+
 // 호감도는 비공개, 골드를 내야 볼 수 있음
 const initialRevealed: Record<Heroine, boolean> = { minji: false, siyeong: false, emily: false };
 
-export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
+export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed }: Props) {
   // 진행 상황은 새로고침해도 유지되도록 저장
   const [plans, setPlans] = useStoredState(PROGRESS_KEYS.plans, initialPlans);
   const [stats, setStats] = useStoredState(PROGRESS_KEYS.stats, initialStats);
@@ -78,6 +85,12 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   const [dateEpisode, setDateEpisode] = useState<{ partner: Heroine; episode: Episode; number: number } | null>(null);
   // 데이트를 끝내고 공개하는 일러스트
   const [illustEpisode, setIllustEpisode] = useState<Episode | null>(null);
+  // 스탯이 경고 수치에 닿은 걸 이미 알렸는지 (벗어났다 다시 닿으면 또 알림)
+  const [dangerWarned, setDangerWarned] = useStoredState(PROGRESS_KEYS.dangerWarned, initialDangerWarned);
+  const [dangerAlert, setDangerAlert] = useState<DangerKind | null>(null);
+  const [devMode, setDevMode] = useStoredState(SETTINGS_KEYS.devMode, false);
+  // 개발자 모드: 에피소드를 골라 바로 보는 테스트 화면
+  const [devEpisodesOpen, setDevEpisodesOpen] = useState(false);
   const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
   const [textSpeed, setTextSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
 
@@ -180,6 +193,29 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
 
   // 그 달 월세를 아직 안 냈으면 메인 화면에 들어온 뒤 RENT_DELAY_MS 후 납부 (게임 시작 직후, 말일 에피소드 후 다음 달 1일)
   // 자금이 모자라면 미납: 자금은 그대로, 스트레스 증가, 연속 미납 횟수 증가
+  // 스트레스 최대치면 과로사, 체력 0이면 건강 악화 엔딩
+  const ending = DANGER_KINDS.find((kind) => isGameOver(kind, stats)) ?? null;
+  const stressDanger = isDanger('stress', stats);
+  const healthDanger = isDanger('health', stats);
+
+  // 활동·장면·결과창이 끝나 메인 화면으로 돌아온 뒤에 경고·엔딩을 띄움
+  const busy = playing || showResult || !!dateEpisode || !!illustEpisode || pickOpen || !!rentResult;
+
+  useEffect(() => {
+    const danger: Record<DangerKind, boolean> = { stress: stressDanger, health: healthDanger };
+    // 경고 수치에서 벗어난 스탯은 다시 닿으면 또 알림
+    const recovered = DANGER_KINDS.filter((kind) => dangerWarned[kind] && !danger[kind]);
+    if (recovered.length > 0) {
+      setDangerWarned((prev) => ({ ...prev, ...Object.fromEntries(recovered.map((kind) => [kind, false])) }));
+      return;
+    }
+    if (ending || busy || dangerAlert) return;
+    const next = DANGER_KINDS.find((kind) => danger[kind] && !dangerWarned[kind]);
+    if (!next) return;
+    setDangerWarned((prev) => ({ ...prev, [next]: true }));
+    setDangerAlert(next);
+  }, [stressDanger, healthDanger, ending, busy, dangerAlert, dangerWarned, setDangerWarned]);
+
   const currentMonth = gameDate.slice(0, 7);
   const rentDue = rentMonth !== currentMonth;
 
@@ -201,10 +237,10 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
   chargeRentRef.current = chargeRent;
 
   useEffect(() => {
-    if (!rentDue) return;
+    if (!rentDue || ending) return;
     const timer = window.setTimeout(() => chargeRentRef.current(), RENT_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [rentDue, currentMonth]);
+  }, [rentDue, ending, currentMonth]);
 
   const proceed = () => {
     // 월세 내기 전에 진행하기를 누르면 월세부터
@@ -245,11 +281,15 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
     wardrobeOpen ||
     collectionOpen ||
     affectionOpen ||
-    settingsOpen;
+    settingsOpen ||
+    devEpisodesOpen ||
+    !!dangerAlert ||
+    !!ending;
 
   return (
     <div className="main">
       <Backdrop src={backgroundImg} />
+      {(stressDanger || healthDanger) && <DangerWarning />}
       <div className="main__left">
         <div className="profile">
           <span className="profile__avatar" style={{ backgroundImage: `url(${hayeongImg})` }} aria-hidden />
@@ -352,13 +392,24 @@ export default function MainPage({ name, gameDate, onExit, onProceed }: Props) {
           onClose={() => setAffectionOpen(false)}
         />
       )}
+      {devEpisodesOpen && (
+        <DevEpisodePage name={name} gameDate={gameDate} onClose={() => setDevEpisodesOpen(false)} />
+      )}
       {collectionOpen && <CollectionPage onClose={() => setCollectionOpen(false)} />}
+      {dangerAlert && !ending && <DangerAlert kind={dangerAlert} stats={stats} onClose={() => setDangerAlert(null)} />}
+      {ending && !busy && <BadEnding kind={ending} name={name} gameDate={gameDate} onRestart={onGameOver} />}
       {settingsOpen && (
         <SettingsModal
           volume={volume}
           onChangeVolume={setVolume}
           textSpeed={textSpeed}
           onChangeTextSpeed={setTextSpeed}
+          devMode={devMode}
+          onChangeDevMode={setDevMode}
+          onOpenDevEpisodes={() => {
+            setSettingsOpen(false);
+            setDevEpisodesOpen(true);
+          }}
           onExit={onExit}
           onClose={() => setSettingsOpen(false)}
         />
