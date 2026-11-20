@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { HeartMark } from '../components/Icon';
+import backgroundImg from '../img/background/intro.png';
+import Backdrop from '../components/Backdrop';
+import Panel from '../components/ui/Panel';
+import Button from '../components/ui/Button';
 
 const MAX_NAME_LENGTH = 10;
 
@@ -17,15 +20,11 @@ export default function SetNamePage({ onSubmit }: Props) {
 
   return (
     <div className="setname">
-      <section className="setname__card">
-        <header className="setname__head">
-          <HeartMark />
-          <h2 className="setname__title">Name</h2>
-        </header>
+      <Backdrop src={backgroundImg} />
+      <Panel className="setname__card" title="입학 원서" icon="crest">
         <form className="setname__form" onSubmit={handleSubmit} autoComplete="off">
           <p className="setname__label">이름을 입력하세요</p>
           <div className="setname__field">
-            <HeartMark className="setname__mark" />
             <input
               id="hero-tag"
               name="hero-tag"
@@ -47,12 +46,11 @@ export default function SetNamePage({ onSubmit }: Props) {
               {name.length} / {MAX_NAME_LENGTH}
             </span>
           </div>
-          <button className="setname__submit" type="submit" disabled={!name}>
-            <HeartMark />
+          <Button className="setname__submit" type="submit" disabled={!name}>
             확인
-          </button>
+          </Button>
         </form>
-      </section>
+      </Panel>
     </div>
   );
 }

@@ -1,39 +1,28 @@
-import { HeartMark } from './Icon';
-import { ACTIVITIES, type Activity } from '../utils/activity';
-import { getDayEvent, getWeekIndex } from '../utils/gameDate';
-import { getMonthEvent, getMonthEventLabel } from '../utils/monthEvent';
+import moonImg from '../img/background/red_moon.jpg';
+import Ribbon from './ui/Ribbon';
+import { getWeekIndex } from '../utils/gameDate';
 
 interface Props {
   gameDate: string;
-  plans: Activity[];
 }
 
-// 이번 달 이름과 지금이 몇 주차인지 크게 보여주는 카드
-export default function WeekCard({ gameDate, plans }: Props) {
+const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+// 이번 달과 지금이 몇 주차인지 크게 보여주는 진홍 띠
+export default function WeekCard({ gameDate }: Props) {
   const month = Number(gameDate.split('-')[1]);
   const week = getWeekIndex(gameDate);
-  const dayEvent = getDayEvent(gameDate);
-  // 이벤트·말일 에피소드 날은 이번 주 활동 대신 그날 일정
-  const subtitle =
-    dayEvent === 'episode'
-      ? '오늘 · 메인 에피소드'
-      : dayEvent === 'event'
-        ? `오늘 · ${getMonthEventLabel(getMonthEvent(gameDate))}`
-        : `이번 주 · ${ACTIVITIES[plans[week]].label}`;
 
   return (
-    <section className="hud-card week-card">
-      <header className="hud-card__head">
-        <HeartMark />
-        <h3 className="hud-card__title">{month}월</h3>
-      </header>
-      <div className="week-card__body">
-        <span className="week-card__number">{week + 1}</span>
-        <div className="week-card__text">
-          <strong className="week-card__week">주차</strong>
-          <span className="week-card__sub">{subtitle}</span>
-        </div>
-      </div>
-    </section>
+    <Ribbon variant="tag" className="g-date">
+      {/* 숫자 뒤에 은은하게 비치는 붉은 달 */}
+      <span className="g-date__moon" style={{ backgroundImage: `url(${moonImg})` }} aria-hidden />
+      <span className="g-date__day">
+        <span className="g-date__month">{month}</span>
+        <span className="g-date__name">/{MONTH_NAMES[month - 1]}</span>
+      </span>
+      <span className="g-date__divider" aria-hidden />
+      <strong className="g-date__week">{week + 1}주차</strong>
+    </Ribbon>
   );
 }

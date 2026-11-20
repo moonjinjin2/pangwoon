@@ -1,6 +1,8 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import Box from './Box';
 import DayMarks from './DayMarks';
+import { ACTIVITY_ICONS } from './Icon';
+import Button from './ui/Button';
+import Panel from './ui/Panel';
 import { ACTIVITIES, DAYS_PER_WEEK, type Activity, type Grade } from '../utils/activity';
 
 const FRAME_MS = 400;
@@ -48,24 +50,26 @@ export default function ActivityScene({ weekLabel, activity, days, onFinish }: P
   }, [onFinish]);
 
   return (
-    <div className="scene" style={{ '--scene-color': info.color, '--scene-duration': `${PLAY_MS}ms` } as CSSProperties}>
-      <Box title={`${weekLabel} · ${info.label}`} className="scene__window">
-        <div className="scene__stage">
-          {info.animation ? (
-            <img className="scene__animation" src={info.animation} alt={info.label} />
-          ) : (
-            <span className="scene__frame" aria-hidden>{info.frames[frame]}</span>
-          )}
-        </div>
-        <DayMarks days={days} revealed={revealed} />
-        <div className="scene__progress" aria-hidden>
-          <div className="scene__progress-fill" />
-        </div>
-      </Box>
-      <button className="scene__skip" onClick={onFinish}>
+    <div className="g-scene" style={{ '--scene-duration': `${PLAY_MS}ms` } as CSSProperties}>
+      <div className="g-scene__window">
+        <Panel title={`${weekLabel} · ${info.label}`} icon={ACTIVITY_ICONS[activity]}>
+          <div className="g-scene__stage">
+            {info.animation ? (
+              <img className="g-scene__animation" src={info.animation} alt={info.label} />
+            ) : (
+              <span className="g-scene__frame" aria-hidden>{info.frames[frame]}</span>
+            )}
+          </div>
+          <DayMarks days={days} revealed={revealed} />
+          <div className="g-scene__progress" aria-hidden>
+            <div className="g-scene__progress-fill" />
+          </div>
+        </Panel>
+      </div>
+      <Button className="g-scene__skip" onClick={onFinish}>
         <span>SKIP ▶▶</span>
-        <span className="scene__skip-hint">Space / Enter</span>
-      </button>
+        <span className="g-scene__skip-hint">Space / Enter</span>
+      </Button>
     </div>
   );
 }

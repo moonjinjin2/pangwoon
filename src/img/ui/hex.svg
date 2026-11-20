@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 196" preserveAspectRatio="none">
+<defs>
+  <radialGradient id="velvet" cx="50%" cy="40%" r="65%">
+    <stop offset="0" stop-color="#3d1222"/><stop offset=".6" stop-color="#220810"/><stop offset="1" stop-color="#100307"/>
+  </radialGradient>
+  <linearGradient id="metal" x1="0" y1="0" x2=".35" y2="1">
+    <stop offset="0" stop-color="#f6e2c2"/><stop offset=".22" stop-color="#c99a6c"/><stop offset=".48" stop-color="#5e3d24"/>
+    <stop offset=".7" stop-color="#e8c49c"/><stop offset="1" stop-color="#5e3d24"/>
+  </linearGradient>
+  <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff9fb0"/><stop offset=".45" stop-color="#b3173a"/><stop offset="1" stop-color="#3e0612"/>
+  </linearGradient>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/>
+    <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/>
+    <feComposite in2="SourceGraphic" operator="in"/>
+  </filter>
+  <clipPath id="inner"><polygon points="75,7 143.5,46.410958904109584 143.5,149.58904109589042 75,189 6.5,149.58904109589042 6.5,46.410958904109584"/></clipPath>
+</defs>
+<!-- 바깥 금속 테 -->
+<polygon points="75,2 148,44 148,152 75,194 2,152 2,44" fill="url(#metal)"/>
+<!-- 안쪽 벨벳 -->
+<polygon points="75,5.5 145,45.773972602739725 145,150.22602739726028 75,190.5 5,150.22602739726028 5,45.773972602739725" fill="#0b0205"/>
+<polygon points="75,7 143.5,46.410958904109584 143.5,149.58904109589042 75,189 6.5,149.58904109589042 6.5,46.410958904109584" fill="url(#velvet)"/>
+<polygon points="75,7 143.5,46.410958904109584 143.5,149.58904109589042 75,189 6.5,149.58904109589042 6.5,46.410958904109584" fill="#000" filter="url(#grain)" opacity=".5"/>
+<!-- 안쪽 그림자 + 윗면 광택 -->
+<g clip-path="url(#inner)">
+  <polygon points="75,7 143.5,46.410958904109584 143.5,149.58904109589042 75,189 6.5,149.58904109589042 6.5,46.410958904109584" fill="none" stroke="#000" stroke-opacity=".55" stroke-width="12"/>
+  <ellipse cx="75" cy="30" rx="52" ry="22" fill="#fff" opacity=".05"/>
+</g>
+<polygon points="75,14 137,49.671232876712324 137,146.32876712328766 75,182 13,146.32876712328766 13,49.671232876712324" fill="none" stroke="#c99a6c" stroke-opacity=".3" stroke-width=".8"/>
+<!-- 장식 소용돌이 -->
+<g fill="none" stroke="url(#metal)" stroke-width="1.1" stroke-linecap="round" opacity=".55">
+  <path d="M75 21 c -9 0 -17 3 -22 9 c -2 3 0 6 3 5 c 2.5 -1 2 -4 -0.5 -4"/><path d="M75 21 c 9 0 17 3 22 9 c 2 3 0 6 -3 5 c -2.5 -1 -2 -4 0.5 -4"/>
+  <path d="M75 176 c -9 0 -17 -3 -22 -9 c -2 -3 0 -6 3 -5 c 2.5 1 2 4 -0.5 4"/><path d="M75 176 c 9 0 17 -3 22 -9 c 2 -3 0 -6 -3 -5 c -2.5 1 -2 4 0.5 4"/>
+</g>
+<!-- 꼭짓점 징 -->
+<g fill="url(#metal)" stroke="#0b0205" stroke-width=".6">
+  <circle cx="143" cy="47" r="2"/><circle cx="143" cy="149" r="2"/><circle cx="7" cy="149" r="2"/><circle cx="7" cy="47" r="2"/>
+</g>
+<!-- 위·아래 보석 -->
+<g stroke="url(#metal)" stroke-width="1.4">
+  <polygon points="75,3 81,11 75,19 69,11" fill="url(#gem)"/>
+  <polygon points="75,180 79,185.5 75,191 71,185.5" fill="url(#gem)"/>
+</g>
+<polygon points="75,5.5 78,10 75,10.5 72,10" fill="#fff" opacity=".45"/>
+</svg>

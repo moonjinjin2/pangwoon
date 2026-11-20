@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
 
-// 앱 시작 때 미리 불러올 이미지 (데이트 일러스트는 용량이 커서 컬렉션·데이트 화면을 열 때 필요한 것만 불러옴)
+// 앱 시작 때 게임에서 쓰는 이미지를 모두 미리 불러옴 (데이트 일러스트·아이템 아이콘 포함, 이후 화면에서는 따로 기다리지 않음)
 // 지금 쓰지 않는 이미지도 빼서 받지 않게 함 (새 이미지를 안 쓰게 되면 여기에도 추가)
 export const CORE_IMAGES = Object.values(
   import.meta.glob<string>(
     [
       '../img/**/*.{png,jpg,jpeg,gif,webp}',
-      '!../img/date_art/**',
       '!../img/logo.png',
-      '!../img/room3.png',
-      '!../img/character/hayeong/hayeong.png',
-      '!../img/character/emily/emily.png',
+      '!../img/study.gif',
+      '!../img/background/cafe.jpg',
+      '!../img/background/cafeteria.png',
+      '!../img/background/rooftop.png',
+      '!../img/background/ballet_studio.png',
+      '!../img/background/ballet_theater.png',
+      '!../img/background/intro_background.png',
+      '!../img/background/room_test.jpg',
       '!../img/character/minji/minji.png',
+      '!../img/character/emily/emily.png',
+      '!../img/character/hayeong/hayeong.png',
+      '!../img/character/hayeong/hayeong_whole.png',
+      '!../img/character/hayeong/hayeong_default.png',
     ],
     { eager: true, query: '?url', import: 'default' },
   ),

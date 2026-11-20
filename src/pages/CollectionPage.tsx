@@ -1,15 +1,13 @@
-import roomImg from '../img/background/main_background.jpg';
+import roomImg from '../img/background/room.png';
 import barImg from '../img/background/bar_background.jpg';
-import backgroundImg from '../img/background/main_background.jpg';
+import backgroundImg from '../img/background/room.png';
 import Backdrop from '../components/Backdrop';
 import { useEffect, useState } from 'react';
 import Box from '../components/Box';
 import EpisodeReplay from '../components/EpisodeReplay';
 import Icon, { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
-import LoadingScreen from '../components/LoadingScreen';
-import { Glyph, glyphs } from './WardrobePage';
-import { usePreload } from '../utils/preload';
+import { Glyph, glyphs } from '../components/Glyph';
 import {
   DATE_EPISODES,
   EPISODE_CATALOG,
@@ -129,10 +127,6 @@ export default function CollectionPage({ onClose }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, replaying, viewing, logEpisode]);
-
-  // 목록 썸네일·미리보기에 쓸 데이트 일러스트를 다 불러온 뒤에 보여줌
-  const { done, progress } = usePreload(entries.flatMap((e) => e.episode.illust ?? []));
-  if (!done) return <LoadingScreen progress={progress} />;
 
   // 같은 달끼리 묶음 (최근 것부터 정렬돼 있으므로 순서대로 이어 붙이면 됨)
   const groups: { month: number; items: Entry[] }[] = [];

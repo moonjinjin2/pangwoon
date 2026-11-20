@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import backgroundImg from '../img/background/main_background.jpg';
+import backgroundImg from '../img/background/room.png';
 import Backdrop from '../components/Backdrop';
 import EpisodeReplay from '../components/EpisodeReplay';
 import { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
-import LoadingScreen from '../components/LoadingScreen';
-import { usePreload } from '../utils/preload';
 import { EpisodeArt } from './CollectionPage';
-import { Glyph, glyphs } from './WardrobePage';
+import { Glyph, glyphs } from '../components/Glyph';
 import { DATE_EPISODES, HEROINES, SPEAKERS, type Episode, type Heroine } from '../utils/episode';
 import { formatWeekLabel } from '../utils/gameDate';
 import { getCollectedNumber, isCollected, loadSeenDates } from '../utils/storage';
@@ -33,8 +31,6 @@ export default function DatePage({ onClose }: Props) {
   const [replaying, setReplaying] = useState<Episode | null>(null);
   const seen = loadSeenDates();
   const allDates = HEROINES.flatMap((h) => DATE_EPISODES[h]);
-  // 본 데이트 카드에 보일 일러스트를 다 불러온 뒤에 보여줌
-  const { done: illustsReady, progress } = usePreload(allDates.flatMap((episode) => (isCollected(episode.id) && episode.illust) || []));
   const doneCount = allDates.filter((episode) => isCollected(episode.id)).length;
 
   useEffect(() => {
@@ -46,8 +42,6 @@ export default function DatePage({ onClose }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, replaying, viewing]);
-
-  if (!illustsReady) return <LoadingScreen progress={progress} />;
 
   const renderCard = (partner: Heroine, episode: Episode, order: number) => {
     const no = `데이트 ${order}`;

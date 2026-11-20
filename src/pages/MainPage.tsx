@@ -1,36 +1,35 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import backgroundImg from '../img/background/main_background.jpg';
-import hayeongImg from '../img/character/hayeong/hayeong_default.png';
+import { useCallback, useEffect, useState } from 'react';
+import backgroundImg from '../img/background/room.png';
+import hayeongImg from '../img/character/hayeong/hayeong_main.png';
 import MonthPlan, { type Activity } from '../components/MonthPlan';
 import ActionBox from '../components/ActionBox';
 import Backdrop from '../components/Backdrop';
 import ActivityResult from '../components/ActivityResult';
 import ActivityScene from '../components/ActivityScene';
 import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/AffectionBox';
-import ContestScene from '../components/ContestScene';
 import EpisodeScene from '../components/EpisodeScene';
 import FundsAlert from '../components/FundsAlert';
+import GuideTour from '../components/GuideTour';
 import HeroinePick from '../components/HeroinePick';
-import { HeartMark } from '../components/Icon';
+import Icon from '../components/Icon';
 import IllustView from '../components/IllustView';
-import RentNotice from '../components/RentNotice';
-import StatsBox, { DANGER_KINDS, clampStats, isDanger, isGameOver, type DangerKind, type StatKey, type Stats } from '../components/StatsBox';
+import StatsBox, { DANGER_KINDS, INITIAL_STATS, clampStats, isDanger, isGameOver, type DangerKind, type EndingKind, type StatKey } from '../components/StatsBox';
 import DangerWarning, { DangerAlert } from '../components/DangerWarning';
 import BadEnding from '../components/BadEnding';
 import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
-import UpcomingContests from '../components/UpcomingContests';
 import WeekCard from '../components/WeekCard';
+import TalkBox from '../components/ui/TalkBox';
 import CollectionPage from './CollectionPage';
 import DevEpisodePage from './DevEpisodePage';
 import DatePage from './DatePage';
 import ShopPage from './ShopPage';
-import WardrobePage from './WardrobePage';
-import { getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
+import { MAIN_GUIDE } from '../utils/guide';
+import { ACTIVITIES, getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
+import type { Item } from '../utils/gacha';
 import { HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
 import { getDayEvent, getWeekIndex } from '../utils/gameDate';
-import { getMonthEvent, getMonthEventLabel, getNextDate } from '../utils/monthEvent';
-import { RENT, RENT_DELAY_MS, START_COINS, UNPAID_STRESS } from '../utils/rent';
+import { getDateMinAffection, getMonthEvent, getMonthEventLabel, getNextDate } from '../utils/monthEvent';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
 
 interface Props {
@@ -43,28 +42,27 @@ interface Props {
   onProceed?: () => void;
 }
 
-const initialPlans: Activity[] = ['gym', 'study', 'job', 'rest'];
+const initialPlans: Activity[] = ['job', 'gym', 'meditate', 'tanning'];
 
-const initialStats: Stats = { health: 100, strength: 0, intellect: 0, stress: 0 };
+// 시작 자금
+const START_COINS = 0;
 
 const initialAffection: Affection = { minji: 0, siyeong: 0, emily: 0 };
 
-const initialDangerWarned: Record<DangerKind, boolean> = { stress: false, health: false };
+const initialDangerWarned: Record<DangerKind, boolean> = { health: false };
 
 // 호감도는 비공개, 골드를 내야 볼 수 있음
 const initialRevealed: Record<Heroine, boolean> = { minji: false, siyeong: false, emily: false };
 
 export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed }: Props) {
   // 진행 상황은 새로고침해도 유지되도록 저장
-  const [plans, setPlans] = useStoredState(PROGRESS_KEYS.plans, initialPlans);
-  const [stats, setStats] = useStoredState(PROGRESS_KEYS.stats, initialStats);
+  const [storedPlans, setPlans] = useStoredState(PROGRESS_KEYS.plans, initialPlans);
+  // 예전 저장에 지금은 없는 활동(공부·쉬기 등)이 남아 있으면 그 주는 기본 활동으로
+  const plans = storedPlans.map((plan, i) => (plan in ACTIVITIES ? plan : initialPlans[i]));
+  const [stats, setStats] = useStoredState(PROGRESS_KEYS.stats, INITIAL_STATS);
   const [coins, setCoins] = useStoredState(PROGRESS_KEYS.coins, START_COINS);
-  // 월세 연속 미납 횟수 (HOMELESS_MONTHS 번이면 노숙자 엔딩)
-  const [unpaidRent, setUnpaidRent] = useStoredState(PROGRESS_KEYS.unpaidRent, 0);
-  // 월세를 마지막으로 처리한 달 ('YYYY-MM')
-  const [rentMonth, setRentMonth] = useStoredState(PROGRESS_KEYS.rentMonth, '');
-  // 새 달이 시작될 때 띄우는 월세 납부/미납 결과창
-  const [rentResult, setRentResult] = useState<{ paid: boolean; streak: number; before: number } | null>(null);
+  // 에피소드 위험도가 100에 닿아 정체가 들킴 (배드 엔딩)
+  const [exposed, setExposed] = useStoredState(PROGRESS_KEYS.exposed, false);
   // 이번 주 활동 비용이 모자라 진행하지 못할 때 띄우는 알림
   const [fundsAlert, setFundsAlert] = useState(false);
   const [affection, setAffection] = useStoredState(PROGRESS_KEYS.affection, initialAffection);
@@ -74,11 +72,11 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   const [showResult, setShowResult] = useState(false);
   // 이번 주차 5일치 성공/실패 (진행하기 누를 때 정함)
   const [days, setDays] = useState<Grade[]>([]);
-  const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  // 프롤로그 직후 첫 방문 가이드 (끝까지 보거나 건너뛰면 다시 안 뜸, 설정에서 다시 보기)
+  const [guideOpen, setGuideOpen] = useStoredState(PROGRESS_KEYS.guidePending, false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
-  const [affectionOpen, setAffectionOpen] = useState(false);
   // 본 데이트를 다시 보는 데이트 앨범
   const [dateAlbumOpen, setDateAlbumOpen] = useState(false);
   // 히로인 선택 데이트 달: 데이트 상대를 고르는 창
@@ -100,6 +98,8 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   const month = Number(gameDate.split('-')[1]);
   const dayEvent = getDayEvent(gameDate);
   const monthEvent = getMonthEvent(gameDate);
+  // 이 달 데이트에 필요한 호감도 (11월: 80)
+  const minAffection = getDateMinAffection(gameDate);
 
   const changePlan = (week: number, activity: Activity) => {
     setPlans((prev) => prev.map((p, i) => (i === week ? activity : p)));
@@ -150,11 +150,16 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     onProceed?.();
   };
 
-  // 15일 대회가 끝나면 결과를 반영하고 3주차로
-  const finishContest = (effect: Effect) => {
-    applyEffect(effect);
-    setPlaying(false);
-    onProceed?.();
+  // 상점에서 아이템을 사용하면 스탯과 (선물 세트는) 히로인 호감도를 올림
+  const applyItems = (items: Item[]) => {
+    for (const item of items) applyEffect(item.stats);
+    setAffection((prev) => {
+      const next = { ...prev };
+      for (const { gift } of items) {
+        if (gift) next[gift.heroine] = Math.min(MAX_AFFECTION, next[gift.heroine] + gift.affection);
+      }
+      return next;
+    });
   };
 
   // 15일 데이트가 끝나면 3주차로. 일러스트가 있으면 끝나자마자 공개
@@ -179,13 +184,11 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     if (next.episode.illust) new Image().src = next.episode.illust;
   };
 
-  // 15일 이달의 이벤트 시작: 대회 / 정해진 히로인과 데이트 / 데이트 상대 고르기
+  // 15일 이달의 이벤트 시작: 정해진 히로인과 데이트 / 데이트 상대 고르기
   const startMonthEvent = () => {
-    if (monthEvent.kind === 'contest') {
-      setPlaying(true);
-    } else if (monthEvent.kind === 'date') {
+    if (monthEvent.kind === 'date') {
       startDate(monthEvent.heroine);
-    } else if (HEROINES.some((h) => getNextDate(h))) {
+    } else if (HEROINES.some((h) => getNextDate(h) && affection[h] >= minAffection)) {
       setPickOpen(true);
     } else {
       // 남은 데이트가 없으면 이벤트 없이 3주차로
@@ -193,18 +196,22 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     }
   };
 
-  // 그 달 월세를 아직 안 냈으면 메인 화면에 들어온 뒤 RENT_DELAY_MS 후 납부 (게임 시작 직후, 말일 에피소드 후 다음 달 1일)
-  // 자금이 모자라면 미납: 자금은 그대로, 스트레스 증가, 연속 미납 횟수 증가
-  // 스트레스 최대치면 과로사, 체력 0이면 건강 악화 엔딩
-  const ending = DANGER_KINDS.find((kind) => isGameOver(kind, stats)) ?? null;
-  const stressDanger = isDanger('stress', stats);
+  // 에피소드에서 들키면 정체 발각, 체력 0이면 사망 엔딩
+  const ending: EndingKind | null = exposed ? 'exposed' : (DANGER_KINDS.find((kind) => isGameOver(kind, stats)) ?? null);
   const healthDanger = isDanger('health', stats);
 
+  // 들키면 에피소드를 닫고 바로 엔딩
+  const expose = useCallback(() => {
+    setExposed(true);
+    setPlaying(false);
+    setDateEpisode(null);
+  }, [setExposed]);
+
   // 활동·장면·결과창이 끝나 메인 화면으로 돌아온 뒤에 경고·엔딩을 띄움
-  const busy = playing || showResult || !!dateEpisode || !!illustEpisode || pickOpen || !!rentResult;
+  const busy = playing || showResult || !!dateEpisode || !!illustEpisode || pickOpen;
 
   useEffect(() => {
-    const danger: Record<DangerKind, boolean> = { stress: stressDanger, health: healthDanger };
+    const danger: Record<DangerKind, boolean> = { health: healthDanger };
     // 경고 수치에서 벗어난 스탯은 다시 닿으면 또 알림
     const recovered = DANGER_KINDS.filter((kind) => dangerWarned[kind] && !danger[kind]);
     if (recovered.length > 0) {
@@ -216,40 +223,9 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     if (!next) return;
     setDangerWarned((prev) => ({ ...prev, [next]: true }));
     setDangerAlert(next);
-  }, [stressDanger, healthDanger, ending, busy, dangerAlert, dangerWarned, setDangerWarned]);
-
-  const currentMonth = gameDate.slice(0, 7);
-  const rentDue = rentMonth !== currentMonth;
-
-  const chargeRent = () => {
-    setRentMonth(currentMonth);
-    if (coins >= RENT) {
-      setCoins((prev) => prev - RENT);
-      setUnpaidRent(0);
-      setRentResult({ paid: true, streak: 0, before: coins });
-    } else {
-      applyEffect({ stress: UNPAID_STRESS });
-      setUnpaidRent(unpaidRent + 1);
-      setRentResult({ paid: false, streak: unpaidRent + 1, before: coins });
-    }
-  };
-
-  // 타이머가 끝날 때의 최신 자금으로 계산하도록 ref로 호출
-  const chargeRentRef = useRef(chargeRent);
-  chargeRentRef.current = chargeRent;
-
-  useEffect(() => {
-    if (!rentDue || ending) return;
-    const timer = window.setTimeout(() => chargeRentRef.current(), RENT_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [rentDue, ending, currentMonth]);
+  }, [healthDanger, ending, busy, dangerAlert, dangerWarned, setDangerWarned]);
 
   const proceed = () => {
-    // 월세 내기 전에 진행하기를 누르면 월세부터
-    if (rentDue) {
-      chargeRent();
-      return;
-    }
     if (dayEvent === 'event') {
       startMonthEvent();
       return;
@@ -270,69 +246,60 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     setRevealed({ ...revealed, [heroine]: true });
   };
 
-  // 메인 화면 위에 다른 화면·창이 떠 있으면 진행하기/데이트 단축키를 막음
-  const overlayOpen =
-    playing ||
-    showResult ||
-    !!dateEpisode ||
-    !!illustEpisode ||
-    pickOpen ||
-    dateAlbumOpen ||
-    !!rentResult ||
-    fundsAlert ||
-    wardrobeOpen ||
-    shopOpen ||
-    collectionOpen ||
-    affectionOpen ||
-    settingsOpen ||
-    devEpisodesOpen ||
-    !!dangerAlert ||
-    !!ending;
-
   return (
     <div className="main">
       <Backdrop src={backgroundImg} />
-      {(stressDanger || healthDanger) && <DangerWarning />}
+      {/* 밝은 배경 위에 어두운 막을 덮어 고딕풍 HUD가 잘 보이게 */}
+      <div className="main__shade" aria-hidden />
+      {healthDanger && <DangerWarning />}
       <div className="main__left">
-        <div className="profile">
-          <span className="profile__avatar" style={{ backgroundImage: `url(${hayeongImg})` }} aria-hidden />
-          <span className="profile__name">{name}</span>
+        <div className="school">
+          <span className="school__crest">
+            <Icon name="crest" />
+          </span>
+          <span className="school__text">
+            <strong className="school__name">{name}</strong>
+            <span className="school__en">PANGWOON UNIVERSITY</span>
+          </span>
         </div>
-        <WeekCard gameDate={gameDate} plans={plans} />
+        <WeekCard gameDate={gameDate} />
         <MonthPlan gameDate={gameDate} plans={plans} onChangePlan={changePlan} />
       </div>
       <img className="main__hero" src={hayeongImg} alt="하영" />
       <TopMenu
         coins={coins}
-        onWardrobe={() => setWardrobeOpen(true)}
         onShop={() => setShopOpen(true)}
         onCollection={() => setCollectionOpen(true)}
-        onAffection={() => setAffectionOpen(true)}
         onSettings={() => setSettingsOpen(true)}
       />
       <div className="main__right">
         <StatsBox stats={stats} />
-        <UpcomingContests gameDate={gameDate} />
+        <AffectionBox affection={affection} revealed={revealed} coins={coins} onReveal={revealAffection} />
       </div>
       {/* 하단: 대화창 + 행동 선택 창 */}
       <div className="main__bottom">
-        <div className="talk main__talk">
-          <span className="talk__speaker">
-            <HeartMark />
-            {name}
-          </span>
-          <p className="talk__line">오늘은 어떤 걸 해볼까?</p>
-          <HeartMark className="talk__next" />
-        </div>
+        <TalkBox className="main__talk" speaker={name}>
+          오늘은 어떤 걸 해볼까?
+        </TalkBox>
         <div className="main__action">
-          {/* 이벤트 날·말일 에피소드 날 안내 */}
-          {dayEvent === 'episode' && <span className="main__bubble">메인 에피소드 발생!</span>}
-          {dayEvent === 'event' && (
-            <span className="main__bubble">
-              {monthEvent.kind === 'contest' ? `${getMonthEventLabel(monthEvent)} 개최!` : `💗 ${getMonthEventLabel(monthEvent)}`}
-            </span>
-          )}
-          <ActionBox keysEnabled={!overlayOpen} onProceed={proceed} onDate={() => setDateAlbumOpen(true)} />
+          <ActionBox
+            onProceed={proceed}
+            onDate={() => setDateAlbumOpen(true)}
+            // 이벤트 날·말일 에피소드 날 안내
+            notice={
+              dayEvent === 'episode' ? (
+                <>
+                  <Icon name="sparkle" />
+                  메인 에피소드 발생!
+                </>
+              ) : dayEvent === 'event' ? (
+                <>
+                  <Icon name="heart" />
+                  {getMonthEventLabel(monthEvent)}
+                </>
+              ) : undefined
+            }
+          />
         </div>
       </div>
       {playing &&
@@ -343,12 +310,11 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
             number={getNextEpisodeNumber()}
             date={gameDate}
             playerName={name}
+            stats={stats}
+            onExposed={expose}
             onDone={finishEpisode}
+            onExit={onExit}
           />
-        ) : dayEvent === 'event' ? (
-          monthEvent.kind === 'contest' && (
-            <ContestScene type={monthEvent.contest} month={month} stats={stats} onDone={finishContest} />
-          )
         ) : (
           <ActivityScene weekLabel={`${month}월 ${week + 1}주`} activity={plans[week]} days={days} onFinish={finishActivity} />
         ))}
@@ -359,7 +325,10 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
           number={dateEpisode.number}
           date={gameDate}
           playerName={name}
+          stats={stats}
+          onExposed={expose}
           onDone={finishDate}
+          onExit={onExit}
         />
       )}
       {illustEpisode?.illust && (
@@ -371,38 +340,25 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
           onClose={() => setIllustEpisode(null)}
         />
       )}
-      {pickOpen && <HeroinePick onPick={startDate} />}
+      {pickOpen && <HeroinePick minAffection={minAffection} affection={affection} onPick={startDate} />}
       {dateAlbumOpen && <DatePage onClose={() => setDateAlbumOpen(false)} />}
       {showResult && <ActivityResult activity={plans[week]} days={days} onConfirm={finishWeek} />}
-      {rentResult && (
-        <RentNotice {...rentResult} gameDate={gameDate} onConfirm={() => setRentResult(null)} />
-      )}
       {fundsAlert && (
         <FundsAlert activity={plans[week]} cost={getWeekCost(plans[week])} coins={coins} onClose={() => setFundsAlert(false)} />
       )}
-      {wardrobeOpen && (
-        <WardrobePage
+      {shopOpen && (
+        <ShopPage
           coins={coins}
           onSpend={(amount) => setCoins((prev) => prev - amount)}
-          onClose={() => setWardrobeOpen(false)}
-        />
-      )}
-      {shopOpen && (
-        <ShopPage coins={coins} onSpend={(amount) => setCoins((prev) => prev - amount)} onClose={() => setShopOpen(false)} />
-      )}
-      {affectionOpen && (
-        <AffectionBox
-          affection={affection}
-          revealed={revealed}
-          coins={coins}
-          onReveal={revealAffection}
-          onClose={() => setAffectionOpen(false)}
+          onUseItems={applyItems}
+          onClose={() => setShopOpen(false)}
         />
       )}
       {devEpisodesOpen && (
         <DevEpisodePage name={name} gameDate={gameDate} onClose={() => setDevEpisodesOpen(false)} />
       )}
       {collectionOpen && <CollectionPage onClose={() => setCollectionOpen(false)} />}
+      {guideOpen && <GuideTour steps={MAIN_GUIDE} onClose={() => setGuideOpen(false)} />}
       {dangerAlert && !ending && <DangerAlert kind={dangerAlert} stats={stats} onClose={() => setDangerAlert(null)} />}
       {ending && !busy && <BadEnding kind={ending} name={name} gameDate={gameDate} onRestart={onGameOver} />}
       {settingsOpen && (
@@ -416,6 +372,10 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
           onOpenDevEpisodes={() => {
             setSettingsOpen(false);
             setDevEpisodesOpen(true);
+          }}
+          onOpenGuide={() => {
+            setSettingsOpen(false);
+            setGuideOpen(true);
           }}
           onExit={onExit}
           onClose={() => setSettingsOpen(false)}

@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
 import { HeartMark } from './Icon';
-import { HEROINES, SPEAKERS, type Heroine } from '../utils/episode';
+import { HEROINES, SPEAKERS, type Affection, type Heroine } from '../utils/episode';
 import { getNextDate } from '../utils/monthEvent';
 
 interface Props {
+  // 이 달 데이트에 필요한 호감도 (못 미치는 히로인은 고를 수 없음)
+  minAffection?: number;
+  affection?: Affection;
   onPick: (heroine: Heroine) => void;
 }
 
 // 히로인 선택 데이트 달: 3명을 얼굴과 함께 한 줄로 보여주고 데이트할 1명을 고름
-// 데이트를 다 본 히로인은 자리는 남기고 고를 수 없게 함
-export default function HeroinePick({ onPick }: Props) {
-  const options = HEROINES.map((heroine) => ({ heroine, next: getNextDate(heroine) }));
+// 데이트를 다 봤거나 호감도가 모자란 히로인은 자리는 남기고 고를 수 없게 함
+export default function HeroinePick({ minAffection = 0, affection, onPick }: Props) {
+  const options = HEROINES.map((heroine) => {
+    const lacking = (affection?.[heroine] ?? 0) < minAffection;
+    return { heroine, lacking, next: lacking ? undefined : getNextDate(heroine) };
+  });
   const firstOpen = Math.max(0, options.findIndex((o) => o.next));
   const [selected, setSelected] = useState(firstOpen);
 
@@ -59,7 +65,7 @@ export default function HeroinePick({ onPick }: Props) {
           <h3 className="hud-card__title">누구와 데이트할까?</h3>
         </header>
         <ul className="pick__list">
-          {options.map(({ heroine, next }, i) => (
+          {options.map(({ heroine, lacking, next }, i) => (
             <li key={heroine}>
               <button
                 className={`pick__card${selected === i && next ? ' pick__card--selected' : ''}`}
@@ -71,7 +77,7 @@ export default function HeroinePick({ onPick }: Props) {
                 <kbd className="pick__key">{i + 1}</kbd>
                 <span className={`pick__face face face--${heroine}`} style={{ backgroundImage: `url(${SPEAKERS[heroine].image})` }} aria-hidden />
                 <span className="pick__name">{SPEAKERS[heroine].name}</span>
-                <span className="pick__info">{next ? `데이트 ${next.order} · ${next.episode.title}` : '데이트 완료'}</span>
+                <span className="pick__info">{next ? `데이트 ${next.order} · ${next.episode.title}` : lacking ? `호감도 ${minAffection} 필요` : '데이트 완료'}</span>
               </button>
             </li>
           ))}

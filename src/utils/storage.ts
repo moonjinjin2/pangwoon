@@ -8,17 +8,17 @@ export const PROGRESS_KEYS = {
   plans: 'plans',
   stats: 'stats',
   coins: 'coins',
-  unpaidRent: 'unpaidRent',
-  rentMonth: 'rentMonth',
   affection: 'affection',
   revealed: 'revealed',
-  ownedOutfits: 'ownedOutfits',
-  equippedOutfit: 'equippedOutfit',
-  gifts: 'gifts',
+  // 상점 가챠로 뽑은 아이템 보관함
+  items: 'items',
   collection: 'collection',
   choices: 'choices',
   seenDates: 'seenDates',
   dangerWarned: 'dangerWarned',
+  exposed: 'exposed',
+  // 메인 화면 가이드를 아직 안 봤음 (프롤로그를 마치면 true로 저장)
+  guidePending: 'guidePending',
 } as const;
 
 // 환경 설정 (새 게임을 시작해도 유지)
@@ -130,13 +130,28 @@ export function saveChoices(id: string, picks: number[]) {
   save(PROGRESS_KEYS.choices, JSON.stringify({ ...loadJSON<ChoiceRecord>(PROGRESS_KEYS.choices, {}), [id]: picks }));
 }
 
+// 같은 키를 쓰는 다른 화면(예: 메인 화면과 에피소드 화면의 설정)에 바뀐 값을 알리는 이벤트
+const STORED_STATE_EVENT = 'stored-state';
+
 // useState와 같지만 값이 바뀔 때마다 localStorage에 저장해 새로고침해도 유지됨
+// 같은 키를 쓰는 다른 컴포넌트와도 값이 맞춰짐
 export function useStoredState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => loadJSON(key, initial));
 
   useEffect(() => {
     save(key, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent(STORED_STATE_EVENT, { detail: { key, value } }));
   }, [key, value]);
+
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<{ key: string; value: T }>).detail;
+      // 같은 값이면 그대로 둬서 서로 다시 알리며 도는 일이 없게 함
+      if (detail.key === key) setValue((prev) => (Object.is(prev, detail.value) ? prev : detail.value));
+    };
+    window.addEventListener(STORED_STATE_EVENT, onChange);
+    return () => window.removeEventListener(STORED_STATE_EVENT, onChange);
+  }, [key]);
 
   return [value, setValue] as const;
 }

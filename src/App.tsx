@@ -6,7 +6,7 @@ import EpisodeScene from './components/EpisodeScene';
 import barImg from './img/background/bar_background.jpg';
 import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
 import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
-import { DATE_KEY, NAME_KEY, clearProgress, load, markCollected, remove, save } from './utils/storage';
+import { DATE_KEY, NAME_KEY, PROGRESS_KEYS, clearProgress, load, markCollected, remove, save } from './utils/storage';
 import LoadingScreen from './components/LoadingScreen';
 import { CORE_IMAGES, useMinLoading, usePreload } from './utils/preload';
 
@@ -53,6 +53,8 @@ function Game() {
 
   const handlePrologueDone = () => {
     markCollected(0, PROLOGUE.id, PROLOGUE_DATE);
+    // 메인 화면에 처음 들어가면 가이드를 보여줌
+    save(PROGRESS_KEYS.guidePending, 'true');
     if (!fade) setFade('out');
   };
 

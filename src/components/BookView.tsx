@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
-import backgroundImg from '../img/background/main_background.jpg';
+import backgroundImg from '../img/background/room.png';
 import Backdrop from './Backdrop';
-import { Glyph, glyphs, useMediaQuery } from '../pages/WardrobePage';
+import { Glyph, glyphs } from './Glyph';
+import { useMediaQuery } from '../utils/media';
 
 // 한 쪽에 카드 4장 (2x2)
 export const CARDS_PER_PAGE = 4;

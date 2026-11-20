@@ -1,30 +1,30 @@
 import { useEffect, useState } from 'react';
 import { formatFullDate } from '../utils/gameDate';
-import type { DangerKind } from './StatsBox';
+import type { EndingKind } from './StatsBox';
 
 interface Props {
-  // stress: 과로사, health: 건강 악화
-  kind: DangerKind;
+  // health: 건강 악화(체력 0), exposed: 정체 발각(에피소드 위험도 100)
+  kind: EndingKind;
   name: string;
   gameDate: string;
   onRestart: () => void;
 }
 
-const ENDINGS: Record<DangerKind, { title: string; story: (name: string) => string[] }> = {
-  stress: {
-    title: '과로사',
-    story: (name) => ['쉬지 않고 달려온 나날들.', '쌓이고 쌓인 피로를 끝내 이기지 못하고,', `${name}은(는) 그대로 쓰러져 다시 일어나지 못했다...`],
-  },
+const ENDINGS: Record<EndingKind, { title: string; story: (name: string) => string[] }> = {
   health: {
     title: '건강 악화',
     story: (name) => ['몸을 돌보지 않고 버텨온 나날들.', '바닥난 체력은 결국 한계를 넘었고,', `${name}은(는) 병상에서 다시 일어나지 못했다...`],
+  },
+  exposed: {
+    title: '정체 발각',
+    story: (name) => ['끝까지 숨겨왔던 비밀.', '드러난 송곳니와 붉게 빛나는 눈동자 앞에서,', `${name}의 평범한 대학 생활은 그날로 끝이 났다...`],
   },
 };
 
 // 연출 단계: 붉게 번쩍 → 심전도가 멈춤 → 화면이 어두워지며 엔딩 문구 → 처음으로 버튼
 const PHASE_TIMES = [1600, 3000, 4600];
 
-// 스트레스 최대치·체력 0이면 보는 배드 엔딩 (게임 끝)
+// 체력이 0이 되거나 정체가 들키면 보는 배드 엔딩 (게임 끝)
 export default function BadEnding({ kind, name, gameDate, onRestart }: Props) {
   const [phase, setPhase] = useState(0);
   const done = phase >= 3;

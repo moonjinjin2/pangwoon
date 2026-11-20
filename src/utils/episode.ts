@@ -1,4 +1,4 @@
-import hayeongImg from '../img/character/hayeong/hayeong_default.png';
+import hayeongImg from '../img/character/hayeong/hayeong_main.png';
 import minjiImg from '../img/character/minji/minji_default.png';
 import minjiSmileImg from '../img/character/minji/minji_smile.png';
 import minjiBigSmileImg from '../img/character/minji/minji_bigsmile.png';
@@ -28,6 +28,7 @@ import emily2Img from '../img/date_art/emily_2.png';
 import emily3Img from '../img/date_art/emily_3.png';
 import emily4Img from '../img/date_art/emily_4.png';
 import type { Effect } from './activity';
+import type { Risk } from './storyStats';
 
 // 히로인
 export type Heroine = 'minji' | 'siyeong' | 'emily';
@@ -92,6 +93,10 @@ export interface EpisodeLine {
   stage?: Speaker[];
   // 대사창 대신 화면 효과로 보여줌 ('system-error': 대사마다 붉은 오류 창을 새로 띄움)
   effect?: 'system-error';
+  // 있으면 이 대사가 나올 때 에피소드 위험도가 오름 (위장도만큼 줄고, 흥분 위험은 정신력으로 피할 수 있음)
+  // 예: { amount: 40, kind: 'excite' } (비키니를 봄) · { amount: 30, kind: 'bleed' } (손가락을 베임)
+  // 선택지의 답변 대사에 넣으면 그 선택지를 골랐을 때만 오름
+  risk?: Risk;
   // 있으면 이 대사 후 선택지 표시
   choices?: Choice[];
   // 있으면 이 대사 후 화면 전환과 함께 쯔꾸르 게임 실행 (public 아래 폴더 이름, 예: 'hayeong')
@@ -104,9 +109,9 @@ export interface EpisodeLine {
 
 // 쯔꾸르 게임이 끝날 때 게임 쪽에서 보내는 메시지
 // 게임 이벤트의 스크립트 명령으로 호출:
-//   window.parent.postMessage({ type: 'game-end', ending: 'A', stats: { strength: 10, stress: 20 } }, '*')
+//   window.parent.postMessage({ type: 'game-end', ending: 'A', stats: { charm: 10, mental: -20 } }, '*')
 // ending: 'A'(예정된 승리) · 'B'(끝나지 않은 악몽) · 'C'(마왕님의 남편)
-// stats: 게임에서 얻은 스탯 변화량 (health·strength·intellect·stress, 자금은 coins)
+// stats: 게임에서 얻은 스탯 변화량 (health·charm·mental·disguise, 자금은 coins)
 export const GAME_END_TYPE = 'game-end';
 
 export interface GameEnd {
@@ -114,7 +119,7 @@ export interface GameEnd {
   stats?: Effect;
 }
 
-const EFFECT_KEYS: (keyof Effect)[] = ['health', 'strength', 'intellect', 'stress', 'coins'];
+const EFFECT_KEYS: (keyof Effect)[] = ['health', 'charm', 'mental', 'disguise', 'coins'];
 
 // 게임이 보낸 메시지를 읽음 (게임 끝 메시지가 아니면 null, 'game-end' 문자열만 와도 인정)
 export function parseGameEnd(data: unknown): GameEnd | null {
@@ -131,6 +136,13 @@ export function parseGameEnd(data: unknown): GameEnd | null {
     }
   }
   return end;
+}
+
+// 대사 목록(선택지 답변·게임 엔딩 대사 포함)에 위험도가 오르는 대사가 있는지
+export function hasRisk(lines: EpisodeLine[]): boolean {
+  return lines.some(
+    (l) => !!l.risk || l.choices?.some((c) => hasRisk(c.reply)) || Object.values(l.gameEndings ?? {}).some(hasRisk),
+  );
 }
 
 export interface Episode {
@@ -2179,34 +2191,34 @@ export function getDateLabel(episode: Episode) {
   }
 }
 
-// 이름 입력 직후 한 번 보는 프롤로그 (신입생 OT)
+// 이름 입력 직후 한 번 보는 프롤로그 (오프닝)
 export const PROLOGUE_DATE = '2026-03-02';
 
 export const PROLOGUE: Episode = {
   id: 'prologue',
-  title: '신입생 OT',
-  icon: '🍺',
+  title: '오프닝',
+  icon: '📮',
   time: '저녁',
   lines: [
-    { text: '3월의 첫 주. 학교 앞 호프집이 신입생과 선배들로 북적인다.' },
-    { text: '"자, 신입생들 다 왔지? 우리 과 OT에 온 걸 환영한다!"' },
-    { speaker: 'player', text: '(드디어 대학생이다… 여기서 {name}의 캠퍼스 라이프가 시작되는 거야!)' },
-    { text: '"자기소개 끝난 사람은 한 잔씩! 원샷! 원샷!"' },
-    { speaker: 'player', text: '아, 저 술은 별로… 아니, 네! 마시겠습니다!' },
-    { text: '한 잔이 두 잔이 되고, 두 잔이 다섯 잔이 되었다.' },
-    { text: '"오~ {name} 잘 마시네! 한 잔 더 가자!"' },
-    { speaker: 'player', text: '하하… 저 아직… 괜찮… 은데요…?' },
-    { text: '세상이 천천히 빙글빙글 돌기 시작했다.' },
-    { speaker: 'player', text: '(어… 이거 좀… 위험한데…?)' },
-    { text: '…' },
-    { text: '우웨에에엑—!!!' },
-    { text: '순식간에 테이블 주변이 조용해졌다. 모두의 시선이 {name}에게 꽂혔다.' },
-    { text: '"…야, 누가 휴지 좀 가져와."' },
-    { speaker: 'player', text: '죄, 죄송합니다…!' },
-    { text: '그날 밤, {name}의 이름은 과 단톡방에 빠르게 퍼져나갔다.' },
-    { speaker: 'player', text: '(입학하자마자 OT에서 토한 신입생… 이제 다들 날 그렇게 기억하겠지…)' },
-    { speaker: 'player', text: '(앞으로의 학교생활… 괜찮을까…?)' },
-    { text: '이렇게 {name}의 파란만장한 대학 생활이 시작되었다.' },
+    { speaker: 'player', text: '내 이름은 {name}, 23살.' },
+    { speaker: 'player', text: '평범한 남중을 나와 특성화 남고에 진학했다.' },
+    { speaker: 'player', text: '만나본 여자는 0명, 대화해본 여자도… 손에 꼽는다.' },
+    { speaker: 'player', text: '특성화고를 졸업한 뒤 3년 동안 뼈 빠지게 회사에 다니며 재직 기간을 채웠다.' },
+    { speaker: 'player', text: '그리고 드디어, 재직자 특별전형으로 대학교 원서를 넣을 수 있게 되었다.' },
+    { speaker: 'player', text: '...거기까지는 좋았다.' },
+    { text: '"{name} 씨, 오늘부터 일이 좀 많을 것 같아. 사정 알지? 조금만 고생해 줘."' },
+    { text: '원서 접수 3개월 전, 친하게 지내던 동기들이 줄줄이 퇴사했고 팀장님은 육아휴직에 들어갔다.' },
+    { text: '회사는 요즘은 AI로 대체할 수 있다며 사람을 아예 뽑지 않았고, 모든 업무가 나한테 떨어졌다.' },
+    { speaker: 'player', text: '(인수인계 없이 사라진 동기, 2년 육아휴직을 떠난 팀장님, 하루 10번씩 30분짜리 담배 타임을 즐기는 대리님… 이 회사는 답이 없다. 빨리 탈출해야겠다.)' },
+    { text: '그리고 그 결과는 하나였다.' },
+    { text: '일에 치이다가 대학교 원서 접수 기간을 전부 놓쳤다.' },
+    { text: '남은 건 이름도 처음 들어보는 입시 사이트에 딱 하나 떠 있던 모집 공고뿐.' },
+    { text: '『야간 단과대학 신입생 추가 모집』' },
+    { speaker: 'player', text: '1년을 더 기다려…? 다니면서 편입하기엔 돈이 없는데.' },
+    { text: '『전원 기숙사 전형 · 4년간 숙식비 전액 무료』' },
+    { speaker: 'player', text: '(4년간 숙식비가... 무료?)' },
+    { text: '나는 그날 바로 지옥 같은 회사에 사표를 내고, 대학 생활에 올인하기로 했다.' },
+    { text: '…그렇게 아무 생각 없이 입학하는 게 아니었다.' },
   ],
 };
 

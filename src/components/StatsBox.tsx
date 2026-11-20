@@ -1,69 +1,83 @@
-import type { CSSProperties } from 'react';
-import { HeartMark } from './Icon';
+import Icon, { type IconName } from './Icon';
+import Panel from './ui/Panel';
+import ProgressBar from './ui/ProgressBar';
 
-export type StatKey = 'health' | 'strength' | 'intellect' | 'stress';
+export type StatKey = 'health' | 'charm' | 'mental' | 'disguise';
 
 export type Stats = Record<StatKey, number>;
 
-// 기획서 4.1 스탯 규칙: 각 스탯 0 ~ 300
-export const MAX_STAT = 300;
+// 스탯별 최대치 (0 ~ 최대치). 위장도는 아이템으로만 오름
+const STAT_MAX: Record<StatKey, number> = {
+  health: 100,
+  charm: 100,
+  mental: 100,
+  disguise: 100,
+};
 
-// 스트레스는 100이 되면 번아웃이라 100까지만
-export const MAX_STRESS = 100;
+// 시작 스탯: 체력 100, 나머지 0
+export const INITIAL_STATS: Stats = { health: 100, charm: 0, mental: 0, disguise: 0 };
 
-// 스트레스가 이만큼 쌓이면 과로사 경고 (MAX_STRESS가 되면 과로사 엔딩)
-export const STRESS_WARNING = 70;
+// 체력이 이 값 미만이면 경고 (0이 되면 즉시 사망)
+export const DANGER_WARNING = 30;
 
-// 체력이 이 값 미만이면 건강 악화 경고 (0이 되면 건강 악화 엔딩)
-export const HEALTH_WARNING = 30;
+// 위험 수치에 다가가면 경고하고, 0이 되면 배드 엔딩으로 끝나는 스탯
+export type DangerKind = 'health';
 
-// 위험 수치에 다가가면 경고하고, 한계에 닿으면 배드 엔딩으로 끝나는 스탯
-export type DangerKind = 'stress' | 'health';
+export const DANGER_KINDS: DangerKind[] = ['health'];
 
-export const DANGER_KINDS: DangerKind[] = ['stress', 'health'];
+// 배드 엔딩: 체력 0(사망) / 에피소드 위험도 100(정체 발각)
+export type EndingKind = DangerKind | 'exposed';
 
 export function isDanger(kind: DangerKind, stats: Stats) {
-  return kind === 'stress' ? stats.stress >= STRESS_WARNING : stats.health < HEALTH_WARNING;
+  return stats[kind] < DANGER_WARNING;
 }
 
 export function isGameOver(kind: DangerKind, stats: Stats) {
-  return kind === 'stress' ? stats.stress >= MAX_STRESS : stats.health <= 0;
+  return stats[kind] <= 0;
 }
 
 const DANGER_BADGES: Record<DangerKind, string> = {
-  stress: '⚠ 과로 위험',
   health: '⚠ 건강 위험',
 };
 
-// 체력 최대치는 100에서 시작해 근력 2당 1씩 늘어남 (근력 300이면 250)
-const BASE_HEALTH = 100;
-
-export function getMaxHealth(stats: Stats) {
-  return Math.min(MAX_STAT, BASE_HEALTH + Math.floor(stats.strength / 2));
-}
-
-export function getStatMax(key: StatKey, stats: Stats) {
-  if (key === 'health') return getMaxHealth(stats);
-  if (key === 'stress') return MAX_STRESS;
-  return MAX_STAT;
+export function getStatMax(key: StatKey) {
+  return STAT_MAX[key];
 }
 
 // 스탯을 각자의 범위(0 ~ 최대치) 안으로
 export function clampStats(stats: Stats): Stats {
   const next = { ...stats };
-  // 체력 최대치가 근력에 따라 바뀌므로 근력부터
-  for (const key of ['strength', 'intellect', 'stress', 'health'] as StatKey[]) {
-    next[key] = Math.max(0, Math.min(getStatMax(key, next), next[key]));
-  }
+  for (const key of STAT_KEYS) next[key] = Math.max(0, Math.min(STAT_MAX[key], next[key] ?? 0));
   return next;
 }
 
-const statMeta: { key: StatKey; label: string; color: string }[] = [
-  { key: 'health', label: '체력', color: '#d9668f' },
-  { key: 'strength', label: '근력', color: '#eb9a78' },
-  { key: 'intellect', label: '지성', color: '#a597e8' },
-  { key: 'stress', label: '스트레스', color: '#b4aacb' },
+const statMeta: { key: StatKey; label: string; icon: IconName; color: string }[] = [
+  { key: 'health', label: '체력', icon: 'heart', color: '#d8475f' },
+  { key: 'charm', label: '매력', icon: 'sparkle', color: '#e07aa6' },
+  { key: 'mental', label: '정신력', icon: 'moon', color: '#7f74d6' },
+  { key: 'disguise', label: '위장도', icon: 'mask', color: '#9a8fa8' },
 ];
+
+export const STAT_KEYS = statMeta.map(({ key }) => key);
+
+// 경고 수치에 닿은 스탯의 막대 색
+const DANGER_COLOR = '#ff4d6a';
+
+export type StatGrade = 'S' | 'A' | 'B' | 'C' | 'D';
+
+// 최대치 대비 비율로 매기는 등급 (높은 등급부터, 이 비율 이상이면 그 등급)
+const GRADES: { grade: StatGrade; ratio: number }[] = [
+  { grade: 'S', ratio: 0.8 },
+  { grade: 'A', ratio: 0.6 },
+  { grade: 'B', ratio: 0.4 },
+  { grade: 'C', ratio: 0.2 },
+  { grade: 'D', ratio: 0 },
+];
+
+export function getStatGrade(key: StatKey, stats: Stats): StatGrade {
+  const ratio = Math.max(0, Math.min(1, stats[key] / STAT_MAX[key]));
+  return GRADES.find(({ ratio: min }) => ratio >= min)!.grade;
+}
 
 export const STAT_LABELS = Object.fromEntries(statMeta.map(({ key, label }) => [key, label])) as Record<StatKey, string>;
 
@@ -73,37 +87,30 @@ interface Props {
 
 export default function StatsBox({ stats }: Props) {
   return (
-    <section className="hud-card">
-      <header className="hud-card__head">
-        <HeartMark />
-        <h3 className="hud-card__title">Status</h3>
-      </header>
-      <ul className="stats">
-        {statMeta.map(({ key, label, color }) => {
-          const max = getStatMax(key, stats);
+    <Panel title="상태 정보" icon="sparkle">
+      <ul className="g-stats">
+        {statMeta.map(({ key, label, icon, color }) => {
+          const max = STAT_MAX[key];
           const value = Math.max(0, Math.min(max, stats[key]));
           // 경고 수치에 닿은 스탯은 경고 원인임을 알 수 있게 붉게 표시
-          const danger = (key === 'stress' || key === 'health') && isDanger(key, stats);
+          const danger = key === 'health' && isDanger(key, stats);
+          const grade = getStatGrade(key, stats);
           return (
-            <li
-              key={key}
-              className={danger ? 'stat stat--danger' : 'stat'}
-              style={{ '--stat-color': color } as CSSProperties}
-            >
-              <span className="stat__label">
+            <li key={key} className={danger ? 'g-stat g-stat--danger' : 'g-stat'}>
+              <Icon name={icon} className="g-stat__icon" />
+              <span className="g-stat__label">
                 {label}
-                {danger && <span className="stat__warn">{DANGER_BADGES[key]}</span>}
+                {danger && <span className="g-stat__warn">{DANGER_BADGES[key]}</span>}
               </span>
-              <span className="stat__value">
+              <span className="g-stat__value">
                 {value} / {max}
               </span>
-              <div className="stat__bar">
-                <div className="stat__fill" style={{ width: `${(value / max) * 100}%` }} />
-              </div>
+              <span className={`g-stat__grade g-stat__grade--${grade.toLowerCase()}`}>{grade}</span>
+              <ProgressBar className="g-stat__bar" value={value} max={max} color={danger ? DANGER_COLOR : color} />
             </li>
           );
         })}
       </ul>
-    </section>
+    </Panel>
   );
 }

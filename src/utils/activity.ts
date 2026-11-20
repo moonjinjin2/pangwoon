@@ -1,10 +1,9 @@
-import type { StatKey, Stats } from '../components/StatsBox';
-import studyGif from '../img/study.gif';
+import { getStatMax, type StatKey, type Stats } from '../components/StatsBox';
 import exerciseGif from '../img/exercise.gif';
 import workGif from '../img/work.gif';
 import restGif from '../img/rest.gif';
 
-export type Activity = 'gym' | 'study' | 'job' | 'rest';
+export type Activity = 'job' | 'blood' | 'gym' | 'meditate' | 'tanning';
 
 // 스탯·자금 변화량 (coins = 자금, 원 단위)
 export type Effect = Partial<Record<StatKey | 'coins', number>>;
@@ -23,81 +22,87 @@ interface ActivityInfo {
   animation?: string;
   // 움짤이 없을 때 대신 순서대로 반복되는 컷
   frames: string[];
-  // 하루(칸) 비용 (원). 판정과 상관없이 매일 나감
+  // 하루 비용 (원). 판정과 상관없이 매일 나감
   cost: number;
-  // 하루(칸) 판정별 변화량
+  // 하루 판정별 변화량
   perDay: Record<Grade, Effect>;
-  // 판정 확률을 정하는 관련 스탯 (여러 개면 평균, 없으면 보통 구간 확률)
-  relatedStats: StatKey[];
 }
 
-// 기획서 4.1 활동별 효과(칸당), 4.2 한 주(5칸) 결과 범위 기준
+// 활동별 효과(하루 기준). 위장도는 활동으로 오르지 않고 아이템으로만 오름 (기획서: 밸런스 요약 2)
 export const ACTIVITIES: Record<Activity, ActivityInfo> = {
-  study: {
-    label: '공부',
-    icon: '📖',
-    color: '#a99cf5',
-    message: '열심히 공부를 합니다...',
-    animation: studyGif,
-    frames: ['📖', '✏️', '📝'],
-    cost: 5000,
+  job: {
+    label: '학사 알바',
+    icon: '💼',
+    color: '#8fd8f5',
+    message: '학사 사무실에서 알바를 합니다...',
+    animation: workGif,
+    frames: ['💼', '☕', '💰'],
+    cost: 0,
     perDay: {
-      fail: { intellect: 2, stress: 8 },
-      normal: { intellect: 3, stress: 6 },
-      success: { intellect: 4, stress: 4 },
+      fail: { coins: 4000, health: -6 },
+      normal: { coins: 8000, health: -4 },
+      success: { coins: 12000, health: -3 },
     },
-    relatedStats: ['intellect'],
+  },
+  blood: {
+    label: '피 뽑기',
+    icon: '🩸',
+    color: '#d8475f',
+    message: '헌혈의 집에서 피를 뽑습니다...',
+    frames: ['🩸', '💉', '💰'],
+    cost: 0,
+    perDay: {
+      fail: { coins: 20000, health: -16 },
+      normal: { coins: 45000, health: -14 },
+      success: { coins: 60000, health: -12 },
+    },
   },
   gym: {
-    label: '헬스',
+    label: '운동',
     icon: '🏋️',
     color: '#f5a98a',
     message: '열심히 운동을 합니다...',
     animation: exerciseGif,
     frames: ['🏋️', '💪', '🏃'],
-    cost: 10000,
-    perDay: {
-      fail: { strength: 2, health: -8 },
-      normal: { strength: 3, health: -6 },
-      success: { strength: 4, health: -4 },
-    },
-    relatedStats: ['strength'],
-  },
-  job: {
-    label: '알바',
-    icon: '💼',
-    color: '#8fd8f5',
-    message: '열심히 알바를 합니다...',
-    animation: workGif,
-    frames: ['💼', '☕', '💰'],
     cost: 0,
     perDay: {
-      fail: { coins: 60000, health: -6, stress: 5 },
-      normal: { coins: 90000, health: -5, stress: 4 },
-      success: { coins: 120000, health: -4, stress: 3 },
+      fail: { health: -2 },
+      normal: { health: 4 },
+      success: { health: 8 },
     },
-    relatedStats: ['strength', 'intellect'],
   },
-  rest: {
-    label: '쉬기',
-    icon: '🛏️',
-    color: '#9fe39a',
-    message: '푹 쉬고 있습니다...',
+  meditate: {
+    label: '명상',
+    icon: '🕯️',
+    color: '#a99cf5',
+    message: '조용히 명상을 합니다...',
     animation: restGif,
-    frames: ['🛏️', '💤', '😴'],
+    frames: ['🕯️', '🌙', '🧘'],
     cost: 0,
     perDay: {
-      fail: { health: 10, stress: -8 },
-      normal: { health: 12, stress: -10 },
-      success: { health: 15, stress: -12 },
+      fail: { mental: -1, health: -1 },
+      normal: {},
+      success: { mental: 1 },
     },
-    relatedStats: [],
+  },
+  tanning: {
+    label: '화이트태닝',
+    icon: '✨',
+    color: '#f5c6dc',
+    message: '창백하고 매혹적인 피부를 가꿉니다...',
+    frames: ['🧴', '✨', '🪞'],
+    cost: 0,
+    perDay: {
+      fail: { health: -2 },
+      normal: {},
+      success: { charm: 1 },
+    },
   },
 };
 
-export const ACTIVITY_ORDER: Activity[] = ['study', 'gym', 'job', 'rest'];
+export const ACTIVITY_ORDER: Activity[] = ['job', 'blood', 'gym', 'meditate', 'tanning'];
 
-// 한 주차는 5일(5칸)치를 한 번에 진행
+// 한 주차는 월~금 5일치를 한 번에 진행
 export const DAYS_PER_WEEK = 5;
 
 // 한 주 활동 비용 (진행 전에 이만큼 있어야 함)
@@ -105,38 +110,35 @@ export function getWeekCost(activity: Activity) {
   return ACTIVITIES[activity].cost * DAYS_PER_WEEK;
 }
 
-// 기획서 4.1 활동 결과 판정 확률 (관련 스탯 구간별 ✕ / △ / ○)
-const GRADE_RATES: { min: number; rates: Record<Grade, number> }[] = [
-  { min: 120, rates: { fail: 0.1, normal: 0.3, success: 0.6 } },
-  { min: 60, rates: { fail: 0.2, normal: 0.4, success: 0.4 } },
-  { min: 0, rates: { fail: 0.4, normal: 0.4, success: 0.2 } },
-];
+// 하루 판정 확률 ✕ / △ / ○ (기획서 평균: 20일 중 실패 3일·보통 5일·성공 12일)
+export const GRADE_RATES: Record<Grade, number> = { fail: 0.15, normal: 0.25, success: 0.6 };
 
-// 관련 스탯이 없는 활동(쉬기)은 보통 구간(60~119) 확률
-const DEFAULT_STAT = 60;
-
-export function getGradeRates(activity: Activity, stats: Stats) {
-  const keys = ACTIVITIES[activity].relatedStats;
-  const value = keys.length ? keys.reduce((sum, key) => sum + stats[key], 0) / keys.length : DEFAULT_STAT;
-  return GRADE_RATES.find(({ min }) => value >= min)!.rates;
+function rollGrade(): Grade {
+  let r = Math.random();
+  for (const grade of GRADES) {
+    r -= GRADE_RATES[grade];
+    if (r < 0) return grade;
+  }
+  return 'success';
 }
 
 // 하루마다 ✕/△/○를 랜덤으로 정함
+// 체력이 0이 되면 즉시 사망하므로 그날까지만 진행하고 남은 요일은 진행하지 않음
 export function rollDays(activity: Activity, stats: Stats): Grade[] {
-  const rates = getGradeRates(activity, stats);
-  return Array.from({ length: DAYS_PER_WEEK }, () => {
-    let r = Math.random();
-    for (const grade of GRADES) {
-      r -= rates[grade];
-      if (r < 0) return grade;
-    }
-    return 'success';
-  });
+  const { perDay } = ACTIVITIES[activity];
+  const days: Grade[] = [];
+  let health = stats.health;
+  while (days.length < DAYS_PER_WEEK && health > 0) {
+    const grade = rollGrade();
+    days.push(grade);
+    health = Math.min(getStatMax('health'), health + (perDay[grade].health ?? 0));
+  }
+  return days;
 }
 
-// 스트레스는 줄어드는 쪽이 좋은 변화
-export function isGoodChange(key: keyof Effect, value: number) {
-  return key === 'stress' ? value < 0 : value > 0;
+// 모든 스탯·자금은 오르는 쪽이 좋은 변화
+export function isGoodChange(_key: keyof Effect, value: number) {
+  return value > 0;
 }
 
 // 5일치 판정 결과를 합친 한 주 변화량 (비용 포함)
@@ -157,10 +159,11 @@ export function getWeekResult(activity: Activity, days: Grade[]): Effect {
 
 // 계획표에 보여줄 활동별 주요 효과 (실제 수치의 부수 효과·비용은 빼고 핵심만)
 const EFFECT_SUMMARY: Record<Activity, [keyof Effect, 'up' | 'down'][]> = {
-  job: [['coins', 'up'], ['health', 'down'], ['stress', 'up']],
-  study: [['intellect', 'up'], ['stress', 'up']],
-  gym: [['strength', 'up'], ['health', 'down']],
-  rest: [['health', 'up'], ['stress', 'down']],
+  job: [['coins', 'up'], ['health', 'down']],
+  blood: [['coins', 'up'], ['health', 'down']],
+  gym: [['health', 'up']],
+  meditate: [['mental', 'up']],
+  tanning: [['charm', 'up']],
 };
 
 // 활동이 올리고 내리는 항목

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import Box from './Box';
+import Button from './ui/Button';
+import Dialog from './ui/Dialog';
 import { STAT_LABELS } from './StatsBox';
 import { isGoodChange, type Effect } from '../utils/activity';
 
@@ -20,32 +21,28 @@ export default function ResultDialog({ title, children, changes, onConfirm }: Pr
   const items = Object.entries(changes) as [keyof Effect, number][];
 
   return (
-    <div className="modal" onClick={(e) => e.stopPropagation()}>
-      <div className="modal__dialog">
-        <Box title="Result" onClose={onConfirm}>
-          <div className="result">
-            <h3 className="result__title">{title}</h3>
-            {children}
-            <ul className="result__list">
-              {items.map(([key, value]) => {
-                const good = isGoodChange(key, value);
-                return (
-                  <li key={key} className="result__item">
-                    <span>{effectLabel(key)}</span>
-                    <span className={good ? 'result__value result__value--good' : 'result__value result__value--bad'}>
-                      {value >= 0 ? '+' : ''}
-                      {value.toLocaleString()}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-            <button className="result__confirm" onClick={onConfirm} autoFocus>
-              확인
-            </button>
-          </div>
-        </Box>
+    <Dialog title="결과" icon="sparkle" onClose={onConfirm} className="g-result-dialog">
+      <div className="g-result">
+        <h3 className="g-result__title">{title}</h3>
+        {children}
+        <ul className="g-result__list">
+          {items.map(([key, value]) => {
+            const good = isGoodChange(key, value);
+            return (
+              <li key={key} className="g-result__item">
+                <span>{effectLabel(key)}</span>
+                <span className={good ? 'g-result__value g-result__value--good' : 'g-result__value g-result__value--bad'}>
+                  {value >= 0 ? '+' : ''}
+                  {value.toLocaleString()}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <Button className="g-result__confirm" onClick={onConfirm} autoFocus>
+          확인
+        </Button>
       </div>
-    </div>
+    </Dialog>
   );
 }
