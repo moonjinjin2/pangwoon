@@ -927,120 +927,6 @@ body {
   width: min(380px, 100%);
 }
 
-/* 히로인 선택 데이트: 3명을 얼굴과 함께 한 줄로 */
-.modal__dialog.pick {
-  width: min(760px, 100%);
-}
-
-.pick__list {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.pick__card {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 22px 12px 18px;
-  color: var(--g-text);
-  background: rgba(30, 9, 18, 0.92);
-  border: 2px solid var(--g-line);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: transform 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
-}
-
-.pick__card--selected {
-  color: #fff;
-  background: var(--g-crimson);
-  border-color: var(--g-line-strong);
-  box-shadow: 0 6px 16px var(--g-line);
-  transform: translateY(-4px);
-}
-
-.pick__card:disabled {
-  cursor: default;
-  opacity: 0.45;
-  filter: grayscale(0.8);
-}
-
-.pick__face {
-  width: 112px;
-  height: 112px;
-  flex-shrink: 0;
-  background-color: var(--g-row);
-  border: 3px solid var(--g-line);
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.54);
-}
-
-.pick__name {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-style: normal;
-  font-size: 24px;
-}
-
-.pick__info {
-  font-family: var(--font-serif);
-  font-size: 13px;
-  line-height: 1.4;
-  text-align: center;
-  word-break: keep-all;
-  color: var(--g-sub);
-}
-
-.pick__card--selected .pick__info {
-  color: #fff;
-}
-
-.pick__key {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  min-width: 26px;
-  padding: 1px 8px;
-  font-family: var(--font-serif);
-  font-size: 12px;
-  color: var(--g-sub);
-  border: 2px solid var(--g-line);
-  border-radius: 3px;
-}
-
-.pick__card--selected .pick__key {
-  color: #fff;
-  border-color: var(--g-line);
-}
-
-@media (max-width: 560px) {
-  .pick__list {
-    gap: 8px;
-  }
-
-  .pick__card {
-    padding: 18px 6px 14px;
-  }
-
-  .pick__face {
-    width: 72px;
-    height: 72px;
-  }
-
-  .pick__name {
-    font-size: 18px;
-  }
-
-  .pick__info {
-    font-size: 11px;
-  }
-}
-
 /* Settings: 고딕풍 설정 창 (Dialog 안) */
 .settings {
   display: flex;
@@ -4135,7 +4021,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px 0;
-  margin: 0 20px 14px;
+  margin: 0 20px 30px;
   padding: 6px 0;
   list-style: none;
   font-family: var(--font-serif);
@@ -4644,13 +4530,15 @@ body {
   }
 }
 
-/* 획득 가능 아이템 열기 (가챠 패널 오른쪽 아래, 밑줄 링크) */
+/* 획득 가능 아이템 열기 (상자 무대 오른쪽 위, 밑줄 링크) */
 .gacha__catalog-link {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 6px;
-  align-self: flex-end;
-  margin: 0 20px 20px;
   padding: 2px 0;
   font-family: var(--font-serif);
   font-weight: 700;
@@ -4863,7 +4751,8 @@ body {
   }
 
   .gacha__catalog-link {
-    margin: 0 10px 6px;
+    top: 6px;
+    right: 10px;
     font-size: 0.78rem;
   }
 }

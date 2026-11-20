@@ -660,7 +660,7 @@ export function getEpisode(month: number) {
   return EPISODES[month] ?? DEFAULT_EPISODE;
 }
 
-// 데이트(호감도 이벤트). 매달 15일 이벤트로 히로인별 순서대로 진행 (utils/monthEvent)
+// 데이트 에피소드 (히로인별 순서대로)
 export const DATE_EPISODES: Record<Heroine, Episode[]> = {
   // 첫 만남(4월) → 9~11월 히로인 선택 데이트: 기획 고민 → 축제의 질투 → 모교 타임캡슐
   minji: [

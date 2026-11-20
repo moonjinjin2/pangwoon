@@ -149,6 +149,10 @@ export default function ShopPage({ coins, onSpend, onUseItems, onClose }: Props)
 
           <div className="gacha__stage">
             <img className="gacha__chest" src={chestImg} alt="비밀의 상자" />
+            <button type="button" className="gacha__catalog-link" onClick={() => setCatalogOpen(true)}>
+              획득 가능 아이템
+              <Glyph grid={glyphs.next} />
+            </button>
           </div>
 
           <ul className="gacha__rates" aria-label="등급별 확률">
@@ -159,11 +163,6 @@ export default function ShopPage({ coins, onSpend, onUseItems, onClose }: Props)
               </li>
             ))}
           </ul>
-
-          <button type="button" className="gacha__catalog-link" onClick={() => setCatalogOpen(true)}>
-            획득 가능 아이템
-            <Glyph grid={glyphs.next} />
-          </button>
 
           <div className="gacha__buttons">
             <PullButton label="1회 뽑기" price={PULL_PRICE} disabled={coins < PULL_PRICE} onClick={() => pull(1, PULL_PRICE)} />

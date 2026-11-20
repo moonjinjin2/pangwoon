@@ -10,9 +10,7 @@ import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/Affecti
 import EpisodeScene from '../components/EpisodeScene';
 import FundsAlert from '../components/FundsAlert';
 import GuideTour from '../components/GuideTour';
-import HeroinePick from '../components/HeroinePick';
 import Icon from '../components/Icon';
-import IllustView from '../components/IllustView';
 import StatsBox, { DANGER_KINDS, INITIAL_STATS, clampStats, isDanger, isGameOver, type DangerKind, type EndingKind, type StatKey } from '../components/StatsBox';
 import DangerWarning, { DangerAlert } from '../components/DangerWarning';
 import BadEnding from '../components/BadEnding';
@@ -27,9 +25,8 @@ import ShopPage from './ShopPage';
 import { MAIN_GUIDE } from '../utils/guide';
 import { ACTIVITIES, getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
 import type { Item } from '../utils/gacha';
-import { HEROINES, SPEAKERS, getDateLabel, getEpisode, type Affection, type Episode, type Heroine } from '../utils/episode';
-import { getDayEvent, getWeekIndex } from '../utils/gameDate';
-import { getDateMinAffection, getMonthEvent, getMonthEventLabel, getNextDate } from '../utils/monthEvent';
+import { HEROINES, getEpisode, type Affection, type Heroine } from '../utils/episode';
+import { getWeekIndex, isEpisodeDay } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
 
 interface Props {
@@ -79,12 +76,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   const [collectionOpen, setCollectionOpen] = useState(false);
   // 본 데이트를 다시 보는 데이트 앨범
   const [dateAlbumOpen, setDateAlbumOpen] = useState(false);
-  // 히로인 선택 데이트 달: 데이트 상대를 고르는 창
-  const [pickOpen, setPickOpen] = useState(false);
-  // 이달의 이벤트로 진행 중인 데이트 에피소드
-  const [dateEpisode, setDateEpisode] = useState<{ partner: Heroine; episode: Episode; number: number } | null>(null);
-  // 데이트를 끝내고 공개하는 일러스트
-  const [illustEpisode, setIllustEpisode] = useState<Episode | null>(null);
   // 스탯이 경고 수치에 닿은 걸 이미 알렸는지 (벗어났다 다시 닿으면 또 알림)
   const [dangerWarned, setDangerWarned] = useStoredState(PROGRESS_KEYS.dangerWarned, initialDangerWarned);
   const [dangerAlert, setDangerAlert] = useState<DangerKind | null>(null);
@@ -96,10 +87,8 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
 
   const week = getWeekIndex(gameDate);
   const month = Number(gameDate.split('-')[1]);
-  const dayEvent = getDayEvent(gameDate);
-  const monthEvent = getMonthEvent(gameDate);
-  // 이 달 데이트에 필요한 호감도 (11월: 80)
-  const minAffection = getDateMinAffection(gameDate);
+  // 말일은 메인 에피소드 날
+  const episodeDay = isEpisodeDay(gameDate);
 
   const changePlan = (week: number, activity: Activity) => {
     setPlans((prev) => prev.map((p, i) => (i === week ? activity : p)));
@@ -162,40 +151,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     });
   };
 
-  // 15일 데이트가 끝나면 3주차로. 일러스트가 있으면 끝나자마자 공개
-  const finishDate = (changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
-    if (!dateEpisode) return;
-    completeEpisode(dateEpisode.number, dateEpisode.episode.id, changes, gameStats, picks);
-    setDateEpisode(null);
-    if (dateEpisode.episode.illust) setIllustEpisode(dateEpisode.episode);
-    onProceed?.();
-  };
-
-  // 히로인의 다음 데이트를 시작 (무료). 그 히로인 데이트를 다 봤으면 이벤트 없이 3주차로
-  const startDate = (partner: Heroine) => {
-    setPickOpen(false);
-    const next = getNextDate(partner);
-    if (!next) {
-      onProceed?.();
-      return;
-    }
-    setDateEpisode({ partner, episode: next.episode, number: getNextEpisodeNumber() });
-    // 끝나고 공개할 일러스트를 데이트 도중에 미리 불러둠 (용량이 커서 공개 순간에 비어 보이지 않게)
-    if (next.episode.illust) new Image().src = next.episode.illust;
-  };
-
-  // 15일 이달의 이벤트 시작: 정해진 히로인과 데이트 / 데이트 상대 고르기
-  const startMonthEvent = () => {
-    if (monthEvent.kind === 'date') {
-      startDate(monthEvent.heroine);
-    } else if (HEROINES.some((h) => getNextDate(h) && affection[h] >= minAffection)) {
-      setPickOpen(true);
-    } else {
-      // 남은 데이트가 없으면 이벤트 없이 3주차로
-      onProceed?.();
-    }
-  };
-
   // 에피소드에서 들키면 정체 발각, 체력 0이면 사망 엔딩
   const ending: EndingKind | null = exposed ? 'exposed' : (DANGER_KINDS.find((kind) => isGameOver(kind, stats)) ?? null);
   const healthDanger = isDanger('health', stats);
@@ -204,11 +159,10 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   const expose = useCallback(() => {
     setExposed(true);
     setPlaying(false);
-    setDateEpisode(null);
   }, [setExposed]);
 
   // 활동·장면·결과창이 끝나 메인 화면으로 돌아온 뒤에 경고·엔딩을 띄움
-  const busy = playing || showResult || !!dateEpisode || !!illustEpisode || pickOpen;
+  const busy = playing || showResult;
 
   useEffect(() => {
     const danger: Record<DangerKind, boolean> = { health: healthDanger };
@@ -226,11 +180,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   }, [healthDanger, ending, busy, dangerAlert, dangerWarned, setDangerWarned]);
 
   const proceed = () => {
-    if (dayEvent === 'event') {
-      startMonthEvent();
-      return;
-    }
-    if (!dayEvent) {
+    if (!episodeDay) {
       if (coins < getWeekCost(plans[week])) {
         setFundsAlert(true);
         return;
@@ -285,17 +235,12 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
           <ActionBox
             onProceed={proceed}
             onDate={() => setDateAlbumOpen(true)}
-            // 이벤트 날·말일 에피소드 날 안내
+            // 말일 에피소드 날 안내
             notice={
-              dayEvent === 'episode' ? (
+              episodeDay ? (
                 <>
                   <Icon name="sparkle" />
                   메인 에피소드 발생!
-                </>
-              ) : dayEvent === 'event' ? (
-                <>
-                  <Icon name="heart" />
-                  {getMonthEventLabel(monthEvent)}
                 </>
               ) : undefined
             }
@@ -303,7 +248,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
         </div>
       </div>
       {playing &&
-        (dayEvent === 'episode' ? (
+        (episodeDay ? (
           <EpisodeScene
             label={`${month}월 에피소드`}
             episode={getEpisode(month)}
@@ -318,29 +263,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
         ) : (
           <ActivityScene weekLabel={`${month}월 ${week + 1}주`} activity={plans[week]} days={days} onFinish={finishActivity} />
         ))}
-      {dateEpisode && (
-        <EpisodeScene
-          label={`데이트 · ${SPEAKERS[dateEpisode.partner].name}`}
-          episode={{ icon: '💗', ...dateEpisode.episode }}
-          number={dateEpisode.number}
-          date={gameDate}
-          playerName={name}
-          stats={stats}
-          onExposed={expose}
-          onDone={finishDate}
-          onExit={onExit}
-        />
-      )}
-      {illustEpisode?.illust && (
-        <IllustView
-          mode="reveal"
-          illust={illustEpisode.illust}
-          title={illustEpisode.title}
-          caption={getDateLabel(illustEpisode)}
-          onClose={() => setIllustEpisode(null)}
-        />
-      )}
-      {pickOpen && <HeroinePick minAffection={minAffection} affection={affection} onPick={startDate} />}
       {dateAlbumOpen && <DatePage onClose={() => setDateAlbumOpen(false)} />}
       {showResult && <ActivityResult activity={plans[week]} days={days} onConfirm={finishWeek} />}
       {fundsAlert && (
