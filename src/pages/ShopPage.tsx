@@ -4,7 +4,7 @@ import chestImg from '../img/gacha/chest.png';
 import Backdrop from '../components/Backdrop';
 import GachaScene from '../components/GachaScene';
 import ItemCatalog from '../components/ItemCatalog';
-import { Glyph, glyphs } from '../components/Glyph';
+import { Glyph, glyphs } from '../components/DecoFrame';
 import Icon from '../components/Icon';
 import ItemCard from '../components/ItemCard';
 import Plate from '../components/ui/Plate';

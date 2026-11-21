@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import backgroundImg from '../img/background/room.png';
 import Backdrop from './Backdrop';
-import { Glyph, glyphs } from './Glyph';
+import { Glyph, glyphs } from './DecoFrame';
 import { useMediaQuery } from '../utils/media';
 
 // 한 쪽에 카드 4장 (2x2)

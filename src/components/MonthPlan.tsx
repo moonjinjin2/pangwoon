@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import ActivityModal from './ActivityModal';
+import { ActivityModal } from './Activity';
 import Icon, { ACTIVITY_ICONS } from './Icon';
 import Panel from './ui/Panel';
-import { effectLabel } from './ResultDialog';
+import { effectLabel } from './Activity';
 import { formatMonthDay, getMonthWeeks, getWeekIndex, isWeekDone } from '../utils/gameDate';
 import { ACTIVITIES, getEffectDirections, type Activity } from '../utils/activity';
 

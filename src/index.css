@@ -4909,36 +4909,189 @@ body {
 
 .gacha-result__grid>li {
   animation: gacha-card-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) backwards;
+  animation-delay: var(--delay, 0ms);
 }
 
-.gacha-tile {
+/* 여러 개 결과의 카드: 뒷면으로 주르륵 깔리고(--delay), 누르면 3D로 뒤집히며 등급 색 이펙트가 터짐 */
+.gacha-card {
   position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  font-family: var(--font-serif);
+  color: var(--g-text);
+  background: none;
+  border: none;
+  perspective: 900px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.gacha-card:hover,
+.gacha-card:focus-visible {
+  outline: none;
+  transform: translateY(-3px);
+}
+
+.gacha-card__inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+.gacha-card--open .gacha-card__inner {
+  transform: rotateY(180deg);
+}
+
+.gacha-card__back,
+.gacha-card__front {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 뒷면: 핏빛 벨벳 + 은은한 금빛 마름모 격자 + 가운데가 밝은 비네팅 */
+.gacha-card__back {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 45%, color-mix(in srgb, var(--rarity) 18%, rgba(150, 30, 60, 0.35)), transparent 75%),
+    repeating-linear-gradient(45deg, rgba(234, 217, 176, 0.07) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(-45deg, rgba(234, 217, 176, 0.07) 0 1px, transparent 1px 11px),
+    linear-gradient(165deg, #3a0c1c, #1a050d 55%, #0e0307);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.55),
+    0 0 12px color-mix(in srgb, var(--rarity) 35%, transparent);
+  transition: box-shadow 0.2s;
+}
+
+.gacha-card:not(.gacha-card--open):hover .gacha-card__back,
+.gacha-card:not(.gacha-card--open):focus-visible .gacha-card__back {
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.6),
+    0 0 24px color-mix(in srgb, var(--rarity) 70%, transparent);
+}
+
+/* SSR·SSS는 뒷면 빛이 맥박처럼 일렁임 */
+.gacha-card--SSR:not(.gacha-card--open) .gacha-card__back,
+.gacha-card--SSS:not(.gacha-card--open) .gacha-card__back {
+  animation: gacha-card-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes gacha-card-pulse {
+  50% {
+    box-shadow:
+      0 6px 14px rgba(0, 0, 0, 0.55),
+      0 0 30px color-mix(in srgb, var(--rarity) 85%, transparent);
+  }
+}
+
+/* 금선 두 겹 테두리 + 계단식 모서리 + 모서리 꺾쇠 */
+.card-back__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #d9bd84;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.card-back__frame * {
+  vector-effect: non-scaling-stroke;
+}
+
+.card-back__frame .card-back__soft {
+  stroke: rgba(234, 217, 176, 0.35);
+  stroke-width: 1;
+}
+
+.card-back__corner {
+  stroke: #f0d9a4;
+  stroke-width: 2;
+}
+
+/* 가운데 문장: 빛살 + 두 겹 원 + 초승달 + 별, 아래 보석은 등급 색 */
+.card-back__crest {
+  position: relative;
+  width: 46%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 0 6px rgba(240, 210, 154, 0.35));
+}
+
+.card-back__rays,
+.card-back__ring {
+  fill: none;
+  stroke: #d9bd84;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+.card-back__ring.card-back__soft {
+  stroke: rgba(234, 217, 176, 0.45);
+  stroke-width: 0.7;
+}
+
+.card-back__moon,
+.card-back__star {
+  fill: #f0d9a4;
+}
+
+.card-back__gem {
+  fill: var(--rarity);
+  stroke: #f0d9a4;
+  stroke-width: 0.6;
+  filter: drop-shadow(0 0 3px var(--rarity));
+}
+
+/* 앞면: 아이템 그림 + 이름 */
+.gacha-card__front {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  width: 100%;
   padding: 6px 6px 8px;
-  font-family: var(--font-serif);
-  color: var(--g-text);
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   border: 1px solid color-mix(in srgb, var(--rarity) 60%, transparent);
-  cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  transform: rotateY(180deg);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.gacha-tile:hover {
-  transform: translateY(-2px);
+/* 열리는 순간 등급 색으로 달아올랐다가 식으며 살짝 튀어 오름 (뒤집기 중간쯤부터) */
+.gacha-card--open .gacha-card__front {
+  animation: gacha-card-heat 0.9s ease-out 0.18s backwards;
+}
+
+@keyframes gacha-card-heat {
+  0%,
+  15% {
+    transform: rotateY(180deg) scale(1.1);
+    border-color: color-mix(in srgb, var(--rarity) 70%, #fff);
+    box-shadow: 0 0 36px color-mix(in srgb, var(--rarity) 95%, transparent), inset 0 0 30px color-mix(in srgb, var(--rarity) 70%, transparent);
+  }
+  35% {
+    transform: rotateY(180deg) scale(0.97);
+  }
+}
+
+.gacha-card--open:hover .gacha-card__front {
   box-shadow: 0 0 12px color-mix(in srgb, var(--rarity) 50%, transparent);
 }
 
-.gacha-tile img {
+.gacha-card__front img {
   width: 100%;
-  aspect-ratio: 1;
+  min-height: 0;
+  flex: 1;
   object-fit: contain;
 }
 
-.gacha-tile__name {
+.gacha-card__name {
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.25;
@@ -4946,13 +5099,149 @@ body {
   word-break: keep-all;
 }
 
-.gacha-tile--on {
+/* 파바방: 섬광(::before) + 퍼지는 고리(::after) + 사방으로 튀는 별 조각(i) */
+.gacha-card__burst {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  --spread: 95px;
+}
+
+/* 카드 전체가 한 번 하얗게 번쩍 (열 때만. 별 조각까지 같이 흐려지지 않게 앞면 쪽에 따로 둠) */
+.gacha-card--open .gacha-card__front::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 250, 235, 0.95), color-mix(in srgb, var(--rarity) 70%, transparent) 55%, transparent 85%);
+  opacity: 0;
+  animation: gacha-burst-cover 0.5s ease-out 0.18s both;
+}
+
+@keyframes gacha-burst-cover {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.gacha-card--SSR .gacha-card__burst,
+.gacha-card--SSS .gacha-card__burst {
+  --spread: 150px;
+}
+
+.gacha-card__burst::before,
+.gacha-card__burst::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  border-radius: 50%;
+  opacity: 0;
+  animation-delay: 0.18s;
+  animation-fill-mode: both;
+}
+
+.gacha-card__burst::before {
+  width: 240%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rarity) 70%, #fff) 0%, color-mix(in srgb, var(--rarity) 45%, transparent) 30%, transparent 62%);
+  animation-name: gacha-burst-flash;
+  animation-duration: 0.65s;
+  animation-timing-function: ease-out;
+}
+
+.gacha-card__burst::after {
+  width: 70%;
+  aspect-ratio: 1;
+  border: 3px solid color-mix(in srgb, var(--rarity) 60%, #fff);
+  box-shadow: 0 0 16px var(--rarity), inset 0 0 12px var(--rarity);
+  animation-name: gacha-burst-ring;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes gacha-burst-flash {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes gacha-burst-ring {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.8);
+  }
+}
+
+/* 별 조각: 가운데에서 --angle 방향으로 튀어 나가며 사라짐 */
+.gacha-card__burst i {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  background: color-mix(in srgb, var(--rarity) 55%, #fff6dc);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  filter: drop-shadow(0 0 6px var(--rarity)) drop-shadow(0 0 2px #fff);
+  opacity: 0;
+  animation: gacha-burst-spark 0.85s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+  animation-delay: 0.22s;
+}
+
+.gacha-card__burst i:nth-child(even) {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  /* 작은 조각은 덜 멀리 */
+  --spread: 65px;
+}
+
+.gacha-card--SSR .gacha-card__burst i:nth-child(even),
+.gacha-card--SSS .gacha-card__burst i:nth-child(even) {
+  --spread: 100px;
+}
+
+@keyframes gacha-burst-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(0) scale(1.4);
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(calc(-1 * var(--spread))) scale(0.5);
+  }
+}
+
+/* 다 열기 전: 모두 열기 버튼 하나만 한 줄 전체 */
+.gacha-result__actions--open {
+  grid-template-columns: 1fr;
+}
+
+/* 바로 사용으로 고른 카드 */
+.gacha-card--on .gacha-card__front {
   background: rgba(122, 22, 48, 0.45);
   border-color: #f0d29a;
   box-shadow: 0 0 0 1px #f0d29a, 0 0 14px rgba(240, 210, 154, 0.45);
 }
 
-.gacha-tile__mark {
+.gacha-card__mark {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -4977,50 +5266,100 @@ body {
   grid-column: 1 / -1;
 }
 
+/* 결과 창 버튼: 상점 뽑기 버튼과 같은 금속 테 + 벨벳 (img/ui/pull*_plain.svg)
+   가로로 긴 버튼에서도 찌그러지지 않게 border-image로 좌우 끝(소용돌이 장식 포함, 34)과 위아래(13)는 원래 비율 그대로,
+   가운데만 늘림. 테 두께는 버튼 높이에 맞춰 원본(높이 104)과 같은 배율로 계산. 늘어나면 안 되는 가운데 보석은 ::after로 따로 얹음 */
 .gacha-result__btn {
-  min-height: 52px;
-  padding: 6px 10px;
-  font-family: var(--font-serif);
+  --h: 58px;
+  --fv: calc(var(--h) * 13 / 104);
+  --fh: calc(var(--h) * 34 / 104);
+  position: relative;
+  isolation: isolate;
+  height: var(--h);
+  padding: 0 4px;
+  font-family: var(--font-heading);
   font-weight: 700;
-  font-size: 1rem;
-  color: #f0d29a;
-  background: #1f0a10;
-  border: 1.5px solid #b8864a;
-  border-radius: 4px;
-  box-shadow: inset 0 0 0 3px #1f0a10, inset 0 0 0 4px rgba(184, 134, 74, 0.45);
+  font-size: 1.05rem;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: #f3dcb6;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  background: none;
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--fv) var(--fh);
+  border-image: url('./img/ui/pull_plain.svg') 13 34 fill / var(--fv) var(--fh) stretch;
   cursor: pointer;
-  transition: filter 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, filter 0.15s, color 0.15s;
+}
+
+/* 마우스를 올리면 진홍 판으로 서서히 바뀜 (같은 모양의 진홍 그림을 위에 겹침) */
+.gacha-result__btn::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--fv)) calc(-1 * var(--fh));
+  z-index: -1;
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--fv) var(--fh);
+  border-image: url('./img/ui/pull_active_plain.svg') 13 34 fill / var(--fv) var(--fh) stretch;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+/* 위·아래 가운데 보석 (늘어나지 않게 따로) */
+.gacha-result__btn::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--fv) - var(--h) * 1 / 104) calc(-1 * var(--fh));
+  pointer-events: none;
+  background:
+    url('./img/ui/pull_gem.svg') center top / calc(var(--h) * 13 / 104) no-repeat,
+    url('./img/ui/pull_gem.svg') center bottom / calc(var(--h) * 11 / 104) no-repeat;
 }
 
 .gacha-result__btn:hover:not(:disabled),
 .gacha-result__btn:focus-visible {
   outline: none;
-  filter: brightness(1.15);
-  box-shadow: inset 0 0 0 3px #1f0a10, inset 0 0 0 4px rgba(240, 210, 154, 0.7), 0 0 12px rgba(240, 210, 154, 0.35);
+  color: #fff3ef;
+  filter: drop-shadow(0 0 8px var(--g-glow));
+  transform: translateY(-2px);
+}
+
+.gacha-result__btn:hover:not(:disabled)::before,
+.gacha-result__btn:focus-visible::before {
+  opacity: 1;
+}
+
+.gacha-result__btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .gacha-result__btn-sub {
   display: block;
+  font-family: var(--font-serif);
   font-size: 0.72rem;
   font-weight: 700;
-  opacity: 0.8;
+  letter-spacing: 0;
+  color: #f3dcb6;
+  opacity: 0.85;
 }
 
 .gacha-result__btn:disabled {
-  opacity: 0.45;
   cursor: default;
+  filter: grayscale(0.6) brightness(0.65);
 }
 
+/* 강조 버튼(모두 열기 · 사용): 처음부터 진홍 판 */
 .gacha-result__btn--primary {
   color: #fff3ef;
-  background: #7a1630;
-  border-color: #f0d29a;
-  box-shadow: inset 0 0 0 3px #7a1630, inset 0 0 0 4px rgba(240, 210, 154, 0.55), 0 0 14px var(--g-glow);
+  border-image-source: url('./img/ui/pull_active_plain.svg');
+  filter: drop-shadow(0 0 6px var(--g-glow));
 }
 
 .gacha-result__btn--primary:hover:not(:disabled),
 .gacha-result__btn--primary:focus-visible {
-  box-shadow: inset 0 0 0 3px #7a1630, inset 0 0 0 4px rgba(240, 210, 154, 0.8), 0 0 22px var(--g-glow);
+  filter: drop-shadow(0 0 14px var(--g-glow)) brightness(1.1);
 }
 
 @media (max-width: 760px) {
@@ -5048,23 +5387,31 @@ body {
     gap: 6px;
   }
 
-  .gacha-tile__name,
+  .gacha-card__name,
   .gacha-result__hint {
     display: none;
   }
 
-  .gacha-tile {
+  /* 낮은 화면: 카드를 정사각형으로 줄이고 칸 전체 너비도 좁힘 */
+  .gacha-result--many .gacha-result__grid {
+    width: min(100%, 440px);
+  }
+
+  .gacha-card {
+    aspect-ratio: 1;
+  }
+
+  .gacha-card__front {
     padding: 4px;
   }
 
-  .gacha-tile img {
-    width: auto;
-    height: 64px;
+  .gacha-result__btn {
+    --h: 44px;
+    font-size: 0.85rem;
   }
 
-  .gacha-result__btn {
-    min-height: 38px;
-    font-size: 0.85rem;
+  .gacha-result__btn-sub {
+    font-size: 0.64rem;
   }
 }
 

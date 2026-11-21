@@ -9,7 +9,7 @@ export const CORE_IMAGES = Object.values(
       '!../img/logo.png',
       '!../img/study.gif',
       '!../img/background/cafe.jpg',
-      '!../img/background/cafeteria.png',
+      '!../img/background/bar.png',
       '!../img/background/rooftop.png',
       '!../img/background/ballet_studio.png',
       '!../img/background/ballet_theater.png',
@@ -35,7 +35,7 @@ function loadImage(url: string) {
   // 실패해도 로딩 화면에서 멈추지 않게 그냥 넘어감
   return img.decode().then(
     () => void loaded.set(url, img),
-    () => {},
+    () => { },
   );
 }
 

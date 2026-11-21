@@ -37,6 +37,32 @@ function Center() {
   );
 }
 
+// 버튼용 선 글리프 (12x12)
+export const glyphs = {
+  close: 'M3 3l6 6M9 3l-6 6',
+  prev: 'M7.5 2.5 4 6l3.5 3.5',
+  next: 'M4.5 2.5 8 6l-3.5 3.5',
+  star: 'M6 1.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1L6 8.6l-2.8 1.5.6-3.1-2.3-2.2 3.1-.4z',
+};
+
+export function Glyph({ grid }: { grid: string }) {
+  return (
+    <svg className="inv__glyph" viewBox="0 0 12 12" aria-hidden>
+      <path d={grid} />
+    </svg>
+  );
+}
+
+// 금색 네 갈래 별 장식 (가운데 붉은 마름모)
+export function Sparkle({ className }: { className: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" aria-hidden>
+      <path d="M10 1 11.2 8.8 19 10 11.2 11.2 10 19 8.8 11.2 1 10 8.8 8.8z" />
+      <path d="M10 7.6 12.4 10 10 12.4 7.6 10z" className="sparkle__gem" />
+    </svg>
+  );
+}
+
 export default function DecoFrame() {
   return (
     <span className="deco" aria-hidden>

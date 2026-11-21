@@ -5,7 +5,7 @@ import EpisodeReplay from '../components/EpisodeReplay';
 import { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
 import { EpisodeArt } from './CollectionPage';
-import { Glyph, glyphs } from '../components/Glyph';
+import { Glyph, glyphs } from '../components/DecoFrame';
 import { DATE_EPISODES, HEROINES, SPEAKERS, type Episode, type Heroine } from '../utils/episode';
 import { formatWeekLabel } from '../utils/gameDate';
 import { getCollectedNumber, isCollected, loadSeenDates } from '../utils/storage';

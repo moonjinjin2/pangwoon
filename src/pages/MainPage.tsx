@@ -1,22 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import backgroundImg from '../img/background/room.png';
 import hayeongImg from '../img/character/hayeong/hayeong_main.png';
 import MonthPlan, { type Activity } from '../components/MonthPlan';
-import ActionBox from '../components/ActionBox';
 import Backdrop from '../components/Backdrop';
-import ActivityResult from '../components/ActivityResult';
-import ActivityScene from '../components/ActivityScene';
+import { ActivityResult, ActivityScene } from '../components/Activity';
 import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/AffectionBox';
 import EpisodeScene from '../components/EpisodeScene';
 import FundsAlert from '../components/FundsAlert';
 import GuideTour from '../components/GuideTour';
-import Icon from '../components/Icon';
+import Icon, { type IconName } from '../components/Icon';
 import StatsBox, { DANGER_KINDS, INITIAL_STATS, clampStats, isDanger, isGameOver, type DangerKind, type EndingKind, type StatKey } from '../components/StatsBox';
 import DangerWarning, { DangerAlert } from '../components/DangerWarning';
 import BadEnding from '../components/BadEnding';
 import SettingsModal from '../components/SettingsModal';
 import TopMenu from '../components/TopMenu';
 import WeekCard from '../components/WeekCard';
+import HexButton from '../components/ui/HexButton';
 import TalkBox from '../components/ui/TalkBox';
 import CollectionPage from './CollectionPage';
 import DevEpisodePage from './DevEpisodePage';
@@ -306,6 +305,44 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
           onClose={() => setSettingsOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+interface ActionBoxProps {
+  onProceed: () => void;
+  // 본 데이트 다시 보기 (데이트 앨범)
+  onDate: () => void;
+  // 일정 진행 버튼 위에 띄우는 말풍선 (이벤트·에피소드 날 안내)
+  notice?: ReactNode;
+}
+
+const ACTION_ITEMS: { label: string; icon: IconName }[] = [
+  { label: '일정 진행', icon: 'calendar' },
+  { label: '데이트', icon: 'heart' },
+];
+
+// 일정 진행·데이트 버튼 (클릭으로만 실행, 단축키 없음)
+function ActionBox({ onProceed, onDate, notice }: ActionBoxProps) {
+  // 0: 일정 진행, 1: 데이트 (마우스를 올린 버튼이 빛남)
+  const [selected, setSelected] = useState(0);
+
+  const run = (index: number) => (index === 0 ? onProceed() : onDate());
+
+  return (
+    <div className="g-actions">
+      {ACTION_ITEMS.map(({ label, icon }, i) => (
+        <div key={i} className="g-actions__item">
+          {i === 0 && notice && <span className="main__bubble">{notice}</span>}
+          <HexButton
+            icon={icon}
+            label={label}
+            selected={selected === i}
+            onSelect={() => setSelected(i)}
+            onClick={() => run(i)}
+          />
+        </div>
+      ))}
     </div>
   );
 }

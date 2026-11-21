@@ -13,7 +13,7 @@ const ALERTS: Record<DangerKind, { title: string; label: string; value: (stats: 
     label: '체력',
     value: (stats) => `${stats.health} / ${getStatMax('health')}`,
     ending: '체력이 0이 되면',
-    hint: '운동으로 체력을 회복해주세요.',
+    hint: '침대에서 뒹굴거리며 체력을 회복해주세요.',
   },
 };
 

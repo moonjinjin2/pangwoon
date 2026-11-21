@@ -6,7 +6,7 @@ import Box from '../components/Box';
 import EpisodeReplay from '../components/EpisodeReplay';
 import Icon, { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
-import { Glyph, glyphs } from '../components/Glyph';
+import { Glyph, glyphs } from '../components/DecoFrame';
 import {
   DATE_EPISODES,
   EPISODE_CATALOG,

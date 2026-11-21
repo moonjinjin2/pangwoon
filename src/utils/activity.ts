@@ -39,9 +39,9 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     frames: ['💼', '☕', '💰'],
     cost: 0,
     perDay: {
-      fail: { coins: 4000, health: -6 },
-      normal: { coins: 8000, health: -4 },
-      success: { coins: 12000, health: -3 },
+      fail: { coins: 4000, health: -9 },
+      normal: { coins: 8000, health: -8 },
+      success: { coins: 12000, health: -6 },
     },
   },
   blood: {
@@ -52,23 +52,23 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     frames: ['🩸', '💉', '💰'],
     cost: 0,
     perDay: {
-      fail: { coins: 20000, health: -16 },
-      normal: { coins: 45000, health: -14 },
-      success: { coins: 60000, health: -12 },
+      fail: { coins: 20000, health: -18 },
+      normal: { coins: 45000, health: -16 },
+      success: { coins: 60000, health: -14 },
     },
   },
   gym: {
-    label: '운동',
-    icon: '🏋️',
+    label: '침대에서 뒹굴거리기',
+    icon: '🛏️',
     color: '#f5a98a',
-    message: '열심히 운동을 합니다...',
+    message: '침대에서 뒹굴거리며 쉽니다...',
     animation: exerciseGif,
-    frames: ['🏋️', '💪', '🏃'],
+    frames: ['🛏️', '💤', '😪'],
     cost: 0,
     perDay: {
-      fail: { health: -2 },
-      normal: { health: 4 },
-      success: { health: 8 },
+      fail: { health: 10 },
+      normal: { health: 15 },
+      success: { health: 20 },
     },
   },
   meditate: {
@@ -80,9 +80,9 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     frames: ['🕯️', '🌙', '🧘'],
     cost: 0,
     perDay: {
-      fail: { mental: -1, health: -1 },
-      normal: {},
-      success: { mental: 1 },
+      fail: { mental: 1, health: -9 },
+      normal: { mental: 2, health: -8 },
+      success: { mental: 3, health: -6 },
     },
   },
   tanning: {
@@ -93,9 +93,9 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     frames: ['🧴', '✨', '🪞'],
     cost: 0,
     perDay: {
-      fail: { health: -2 },
-      normal: {},
-      success: { charm: 1 },
+      fail: { health: -14 },
+      normal: { charm: 1, health: -12 },
+      success: { charm: 1, health: -10 },
     },
   },
 };
@@ -110,8 +110,8 @@ export function getWeekCost(activity: Activity) {
   return ACTIVITIES[activity].cost * DAYS_PER_WEEK;
 }
 
-// 하루 판정 확률 ✕ / △ / ○ (기획서 평균: 20일 중 실패 3일·보통 5일·성공 12일)
-export const GRADE_RATES: Record<Grade, number> = { fail: 0.15, normal: 0.25, success: 0.6 };
+// 하루 판정 확률 ✕ / △ / ○
+export const GRADE_RATES: Record<Grade, number> = { fail: 0.25, normal: 0.55, success: 0.2 };
 
 function rollGrade(): Grade {
   let r = Math.random();

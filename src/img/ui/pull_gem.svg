@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14">
+<defs>
+  <linearGradient id="metal" x1="0" y1="0" x2=".25" y2="1">
+    <stop offset="0" stop-color="#f6e2c2"/><stop offset=".22" stop-color="#c99a6c"/><stop offset=".48" stop-color="#5e3d24"/>
+    <stop offset=".7" stop-color="#e8c49c"/><stop offset="1" stop-color="#5e3d24"/>
+  </linearGradient>
+  <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff9fb0"/><stop offset=".45" stop-color="#b3173a"/><stop offset="1" stop-color="#3e0612"/>
+  </linearGradient>
+</defs>
+<!-- 결과 창 버튼 위·아래 가운데 보석 (pull*_plain.svg 위에 원래 크기로 얹음) -->
+<polygon points="7,1 13,7 7,13 1,7" fill="url(#gem)" stroke="url(#metal)" stroke-width="1.3"/>
+<polygon points="7,3.5 10,6.5 7,7 4,6.5" fill="#fff" opacity=".45"/>
+</svg>

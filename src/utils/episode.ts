@@ -9,12 +9,15 @@ import siyeongImg from '../img/character/siyeong/siyeong_default.png';
 import emilyImg from '../img/character/emily/emily_default.png';
 import campusSpringImg from '../img/background/campus_spring.png';
 import classroomImg from '../img/background/classroom.png';
+import barImg from '../img/background/bar.png';
 import corridorImg from '../img/background/corridor.png';
 import clubRoomImg from '../img/background/club_room.png';
 import universityGateImg from '../img/background/university_gate.png';
 import gameDevRoomImg from '../img/background/game_dev_room.png';
 import lakeTrailImg from '../img/background/lake_trail.png';
 import libraryImg from '../img/background/library.png';
+import roomImg from '../img/background/room.png';
+import ballroomImg from '../img/background/ballroom.png';
 import minji1Img from '../img/date_art/minji_1.png';
 import minji2Img from '../img/date_art/minji_2.png';
 import minji3Img from '../img/date_art/minji_3.png';
@@ -162,6 +165,9 @@ export interface Episode {
   lines: EpisodeLine[];
 }
 
+// 뱀파이어 테마에 맞춰 준비된 배경 (나머지 그림 배경은 EpisodeScene에서 임시로 school.jpg로 보여줌)
+export const READY_BACKGROUNDS = new Set<string>([roomImg, ballroomImg]);
+
 // 임시 에피소드. 달(1~12)별로 지정하고, 없는 달은 DEFAULT_EPISODE
 const EPISODES: Record<number, Episode> = {
   // EP 1. 개강총회 (가면무도회)
@@ -171,7 +177,7 @@ const EPISODES: Record<number, Episode> = {
     icon: '🎭',
     time: '밤',
     lines: [
-      { text: '문자가 날아왔다.' },
+      { text: '문자가 날아왔다.', background: roomImg },
       { name: 'SYSTEM', text: '[신입생 개강총회 안내] 오랜 전통에 따라 이번 개강총회는 가면무도회로 진행됩니다.' },
       { name: 'SYSTEM', text: '참석자는 각자 어울리는 가면을 착용하고 오시기 바랍니다. — 학생회 —' },
       { speaker: 'player', text: '(과연 뱀파이어 대학다운 모습이다.)' },
@@ -179,19 +185,19 @@ const EPISODES: Record<number, Episode> = {
       { text: '근처 문구점에서 가면을 사서 무도회장으로 갔다.' },
 
       // 무도회장
-      { speaker: 'player', text: '(대학교에 이런 장소가….?)' },
+      { speaker: 'player', text: '(대학교에 이런 장소가….?)', background: ballroomImg },
       { text: '위대한 개츠비도 이런 성대한 파티를 열 수 없을 것 같은 파티가 열리고 있었다.' },
       { text: '사람들은 하나같이 화려한 가면을 쓰고 잔을 부딪치고 있었다.' },
       { text: '자세히 보니 잔에 담긴 붉은 액체가 조금씩 색이 다르다.' },
       { speaker: 'player', text: '(저거 다 포도주겠지?)' },
-      { speaker: 'player', text: '(…포도주 맞겠지?)' },
+      { speaker: 'player', text: '(…포도주가 맞나?)' },
       { text: '어지러워서 구경만 하고 있던 도중, 누가 뒤에서 건드렸다.' },
       { text: '토끼 가면을 쓴, 약간 키 작은 여자가 말을 걸었다.' },
       { speaker: 'minji', text: '야 너 혼자 여기서 뭐해.', voice: 'ep1/민지1' },
       { speaker: 'player', text: '아, 아니 그냥 구경하고 있었어…' },
       { speaker: 'minji', text: '뭐 이런 거 처음 본 것 마냥 구경하고 있어?', voice: 'ep1/민지2' },
-      { speaker: 'minji', text: '여기 포도주 맛있더라. 소피를 섞어서 더 풍미가 돋아.', expression: 'smile', voice: 'ep1/민지3' },
-      { speaker: 'player', text: '(소피?…)' },
+      { speaker: 'minji', text: '여기 포도주 맛있더라. 소 피를 섞어서 더 풍미가 돋아.', expression: 'smile', voice: 'ep1/민지3' },
+      { speaker: 'player', text: '(소 피?…)' },
       { text: '한 모금 마셔보려고 했는데 그 마음이 싹 가셨다.' },
       { speaker: 'minji', text: '음? 안 먹는 걸 보니 귀족 자제분인가? 인간 피 아니면 안 먹는 거야?', voice: 'ep1/민지4' },
       { speaker: 'player', text: '아… 아니. 그냥 내가 오늘 속이 좀.' },
@@ -390,69 +396,169 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'player', text: '(너무 피곤하다…)' },
     ],
   },
+  // EP 2. 중간고사 뒤 술자리
   5: {
     id: 'month-5',
-    title: '사라진 교수님',
-    icon: '🎮',
-    background: classroomImg,
+    title: '중간고사 뒤 술자리',
+    icon: '🍷',
+    time: '밤',
     lines: [
-      // 프롤로그 — 사라진 교수님
-      { text: '평범한 대학교 강의실. 게임콘텐츠학과 학생들은 오늘도 교수님의 수업을 듣고 있다.' },
-      { text: '하지만 오늘 수업은 평소와 조금 달랐다. 교수님이 고전 명작 VR 판타지 RPG를 직접 해보고 평가하기로 한 것이다.' },
-      { name: '교수님', text: '게임 만드는 것도 많이 경험해 봐야 잘 만들겠죠???' },
-      { text: '다른 세계에 소환된 모험가가 되어 동료를 모으고, 몬스터를 처치하며 마왕성으로 향하는 전형적인 판타지 RPG였다.' },
-      { speaker: 'player', text: '교수님, 요즘도 마왕 잡는 게임을 만들어요?' },
-      { name: '교수님', text: '야, 기본이 제일 중요한 거야. 제대로 만들면 이런 게임도 재미있어.' },
-      { text: '교수님이 직접 VR 기기를 착용한다. 그런데 게임을 실행하는 순간, 강의실 모니터에 붉은 오류 메시지가 나타난다.' },
-      { text: '비정상적인 접속 요청이 감지되었습니다. 관리자 계정의 접근을 확인했습니다.', effect: 'system-error' },
-      { text: '외부 접속자를 강제 소환합니다. 접속을 취소할 수 없습니다.', effect: 'system-error' },
-      { name: '교수님', text: '어? 이거 뭐야?' },
-      { text: '교수님이 기기를 벗으려는 순간, 기기에서 강렬한 빛이 쏟아져 나온다.' },
-      { text: '순식간에 교수님의 몸이 빛 속으로 빨려 들어가고, 강의실 바닥에는 빈 VR 기기만 떨어진다.' },
-      { text: '학생들의 비명이 강의실을 가득 채운다.' },
-      { speaker: 'minji', text: '뭐야 이게…?' },
-      { text: '기기를 만지던 송민지가 빛 속으로 빨려 들어가고, 말리려던 서시영까지 함께 사라진다.' },
-      { speaker: 'emily', text: '뭐… 나도 가자고? 진짜 무리인 거 알지?' },
-      { speaker: 'player', text: '뭐, 오지 말든가. 나 먼저 갈게.' },
-      { speaker: 'emily', text: '엥, 진짜 가려고????' },
-      { text: '그 순간 에밀리가 턱에 걸려 넘어지며 먼저 기기를 건드리고, 그대로 빨려 들어간다.' },
-      { speaker: 'player', text: '??? 뭐… 뭐야 이거. 오케이, 나도 들어가긴 해야겠네.' },
-      { speaker: 'player', text: '얘들아, 일단 상황 봐주고 안 돌아오면 신고해 줘!' },
-      { text: '마지막으로 {name}이(가) VR 기기를 착용한다.' },
-      { text: '아직 아무도 몰랐다. 현실에서 흐르는 1초가 게임 세계에서는 하루에 해당한다는 사실을.' },
-      { text: '먼저 접속한 친구들은 이미 게임 세계에서 며칠을 보내고 있었고, 무작위 소환 때문에 서로 다른 장소에 떨어진 상태였다.' },
+      // 뱀파이어 대학에서의 수업
+      { text: '그동안 수업은 대체적으로 현대 사회 생존학이나 인간 심리학, 예절, 혈액양조학, 우주학 등 다양하게 배웠다.', background: classroomImg },
+      { text: '그래서 알게 된 점은 뱀파이어는 다른 차원에 살아가고 있고, 20살이 되던 해에 인간 세상을 가서 80살까지 살아남아야 진정한 뱀파이어로 인정받고 다시 넘어갈 수 있다는 것이었다.' },
+      { text: '그래서 대학교 4년 동안 생존에 관한 수업을 받고, 야간 직종으로 인간과 섞여 살아간다는 걸 알았다.' },
+      { text: '또한 이성의 피에 이끌리는데, 뜨거운 피의 냄새만 맡아도 발정하게 되는 경향이 있다는 걸 알게 되었다.' },
+      { text: '그래서 가면무도회 때 왜 그렇게 나한테 좋은 냄새가 난다고 했는지 알게 되었다.' },
+      { speaker: 'player', text: '(내가 흥분하거나 심장이 빠르게 뛰는 건 최대한 자제해야겠다.)' },
+      { speaker: 'player', text: '(그리고 최대한 아싸처럼 지내야겠다.)' },
+      { text: '이러면서 5월에 술자리를 가지게 되었다.' },
+      { text: '바로 도망가고 싶었지만 중간고사가 끝난 기념으로 다 참여하라고 해서 결국 참여하게 됐다.' },
 
-      // 1장부터 최종 선택까지는 쯔꾸르 게임(public/hayeong)으로 진행
+      // 중간고사 뒤 술자리
+      { text: '여기 음식은 고기와 포도주가 전부였다.', background: barImg },
+      { text: '그래서 고기 요리는 진짜 차원이 달랐다. 레어를 싫어하는데 딱 알맞은 굽기였다.' },
+      { text: '나도 모르게 고기를 먹으면서 포도주를 마시게 됐다.' },
+      { text: '한 잔을 비우고 나니 얼굴이 뜨거워졌다. 술기운 때문인지 심장도 조금씩 빨리 뛰기 시작했다.' },
+      // 위험 상황 ① 포도주
+      { speaker: 'player', text: '(아, 맞다. 흥분하면 안 되는데. 벌써부터 이러면 어떡하지?)', risk: { amount: 20, kind: 'excite' } },
+      { speaker: 'minji', text: '야, 너 오랜만이다. 가면무도회 때 그 웃긴 가면 너 맞지?', expression: 'smile' },
+      { text: '고개를 돌리자 송민지가 내 옆자리에 털썩 앉았다.' },
+      { speaker: 'minji', text: '그때 선도부한테 끌려가서 정신이 없었어. 너 이름이… 뭐였지?' },
+      { speaker: 'player', text: '나는 {name}…' },
+      { speaker: 'minji', text: '아, 맞다. {name}!', expression: 'bigsmile' },
+      { speaker: 'minji', text: '음, 역시 너 옆에 앉으니까 더 알 것 같아. 너 옆에 있으면 좀 오싹오싹하고 흥분되는 게…', expression: 'shy_smile' },
+      { speaker: 'player', text: '흥분되는 게…?' },
+      { text: '약간 눈이 돌아 있는 듯한 모습으로 나를 바라봐서 들키는 건가 무서웠다.' },
+      { speaker: 'minji', text: '너를 좋아하는 것 같아… 너 나랑 사귀자!!', expression: 'bigsmile' },
+      { speaker: 'player', text: '(…응?)' },
+      { text: '너무 뜬금없이 고백을 받아 그냥 벙지게 되었다.' },
+      { text: '뭔가 그동안 살 생각만 하니까 예쁘다고 생각이 들지 않았는데, 송민지는 귀여우면서 예뻐서 나도 모르게 볼이 빨개졌다.' },
+      // 위험 상황 ② 민지의 고백
+      { text: '잠깐, 사귀자고? 심장이 뛰는 게 느껴질 정도로 빨라졌다.', risk: { amount: 20, kind: 'excite' } },
+      // 선택지 1. 민지의 갑작스러운 고백
       {
-        text: '— 1장. 소환진: 직업 없는 모험가 —',
-        game: 'hayeong',
-        gameTitle: '하영의 이세계',
-        gameEndings: {
-          // 현실로 돌아오는 엔딩은 강의실에서 이어서 진행
-          A: [
-            { text: '눈을 뜨자, 익숙한 강의실 천장이 보였다.' },
-            { text: '교수님과 친구들도 하나둘 몸을 일으킨다. 모두 무사히 현실로 돌아온 것이다.' },
-            { speaker: 'minji', text: '우리…… 진짜 돌아온 거지?' },
-            { speaker: 'emily', text: '하…… 다시는 VR 안 해.' },
-            { speaker: 'siyeong', text: '다들…… 정말 다행이에요.' },
-            { name: '교수님', text: '너희…… 나 구하러 거기까지 들어온 거냐?' },
-            { text: "강의실 모니터에는 '마왕을 처치하고 세계를 구했습니다'라는 문구가 떠 있었다." },
-            { text: '모두가 귀환을 기뻐했지만, {name}은(는) 마지막까지 자신을 바라보던 마왕의 눈빛을 잊지 못한다.' },
-            { text: '[ENDING A — 예정된 승리]' },
-          ],
-          B: [
-            { text: '눈을 뜨자, 익숙한 강의실 천장이 보였다.' },
-            { text: '교수님과 친구들은 가까스로 현실로 탈출했다.' },
-            { speaker: 'minji', text: '{name}…… 괜찮아?' },
-            { speaker: 'player', text: '……응.' },
-            { text: '강의실 모니터 속 게임 화면은 멈춰 있었다. 움직이지 않는 왕좌 위에, 마왕만이 홀로 남아 있었다.' },
-            { text: '더 이상 죽지는 않지만 살아갈 수도 없는 마왕은, 끝나지 않는 시간을 보내게 된다.' },
-            { text: '[ENDING B — 끝나지 않은 악몽]' },
-          ],
-          // 게임 속에 남는 엔딩은 한 줄로 마무리
-          C: [{ text: '수천 번의 죽음 끝에, 그녀는 처음으로 내일을 맞이했다.' }],
-        },
+        speaker: 'player',
+        text: '(뭐라고 대답하지…?)',
+        choices: [
+          {
+            text: '나도 너랑 더 친해지고 싶어.',
+            affection: { minji: 10 },
+            reply: [
+              { speaker: 'minji', text: '오? 그럼 가능성 있다는 거네? 좋았어!', expression: 'bigsmile' },
+              { speaker: 'player', text: '(아니, 친해지고 싶다고 했지 사귀겠다고는 안 했는데…)' },
+            ],
+          },
+          {
+            text: '갑자기라 좀 놀랐어.',
+            affection: { minji: 5 },
+            reply: [{ speaker: 'minji', text: '하긴, 내가 좀 갑작스러웠지? 그래도 잘 생각해 봐!', expression: 'smile' }],
+          },
+          {
+            text: '장난은 그만해.',
+            affection: { minji: -5 },
+            reply: [{ speaker: 'minji', text: '뭐야, 나 나름 진지했는데? 너 은근 상처 준다.', expression: 'less' }],
+          },
+        ],
       },
+      { speaker: 'emily', text: '야, 또 얘 괴롭히지?', stage: ['minji', 'emily'] },
+      { text: '은발 초미녀가 말을 걸었다.' },
+      { text: '진짜 다행이다. 민지가 더 다가왔으면 심장 두근거리는 걸 멈출 수 없어서 들켰을 것이다.' },
+      { text: '에밀리라는 애였고, 얘는 귀족 자제로 싸가지가 좀 없는 듯했다.' },
+      { speaker: 'minji', text: '아, 또 너냐. 내가 그때 너 때문에 창피당한 거 생각하면 진짜…', expression: 'less' },
+      { speaker: 'emily', text: '뭐, 네가 잘못한 건데. 창피할 것도 따로 있나. 행동을 바르게 하면 그럴 일도 없거든. 쯧쯧.' },
+      { speaker: 'minji', text: '와, 진짜 내가 원래 이런 애가 아닌데 너는 진짜… 죽이고 싶다. 현피 한 번만 뜨면 안 될까?', expression: 'less' },
+      { speaker: 'emily', text: '꺼져. 혼자나 하시고.' },
+      { speaker: 'player', text: '(아니, 지금 막으러 온 거 아니었어? 둘이 또 싸우려고 하는데…)' },
+      { speaker: 'emily', text: '흠, 오랜만에 이 냄새를 맡으니 더 이끌리네.' },
+      { speaker: 'emily', text: '다시 한 번 더 물어보도록 하지. 너 향수를 뭐 쓴다고?' },
+      { speaker: 'player', text: '안… 안 쓴다니까…' },
+      { speaker: 'emily', text: '안 쓴다고? 그럼 그냥 너 향기라는 건가…' },
+      { text: '에밀리가 냄새를 맡으려 가까이 왔다.' },
+
+      // 쏟아진 포도주
+      { text: '그때 잔을 들고 다가오던 서시영이 에밀리와 나를 번갈아 봤다. 시영의 눈빛이 갑자기 이상해졌다.', stage: ['minji', 'siyeong', 'emily'] },
+      { speaker: 'siyeong', text: '…너무 가까워요.' },
+      { text: '갑자기 서시영이 빈손으로 에밀리를 힘껏 밀쳤다.' },
+      { speaker: 'siyeong', text: '내 거야!!!!!' },
+      { text: '그 바람에 시영이 들고 있던 포도주 잔이 기울었다. 붉은 포도주가 에밀리의 흰 셔츠 위로 쏟아졌다.' },
+      { speaker: 'emily', text: '…뭐?' },
+      { speaker: 'siyeong', text: '앗… 죄, 죄송해요!' },
+      { text: '젖은 흰 셔츠 너머로 에밀리가 입은 검은색 브래지어의 윤곽이 비쳤다.' },
+      { text: '에밀리는 자기 옷을 내려다보더니 얼굴이 빨개져서 급하게 팔로 몸을 가렸다.' },
+      { speaker: 'emily', text: '야! 다들 저리 좀 돌아봐!' },
+      { text: '아니, 이런 상황에서 왜 하필 내 쪽을 보는 거야. 나도 모르게 얼굴이 뜨거워지고 심장이 빠르게 뛰었다.' },
+      // 선택지 2. 당황한 에밀리에게 (위험 상황 ③, 위험도 100에 닿으면 즉시 배드엔딩)
+      {
+        speaker: 'player',
+        text: '(정신 차려, {name}. 여기서 피 냄새가 짙어지면 진짜 끝이다…!)',
+        choices: [
+          {
+            text: '에밀리, 잠깐! 이거라도 가려!',
+            affection: { emily: 5 },
+            reply: [
+              { text: '나는 고개를 돌린 채 입고 있던 겉옷을 벗어 에밀리에게 내밀었다.' },
+              { speaker: 'emily', text: '…고, 고맙다. 그리고 계속 돌아보고 있어.' },
+              { text: '에밀리가 옷을 받아 몸을 가렸다. 그래도 심장이 조금은 빨라졌다.', risk: { amount: 10, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '내가 가려줄게, 이쪽으로 와.',
+            affection: { emily: 10 },
+            reply: [
+              { text: '나는 겉옷을 펼쳐 들고 에밀리 앞으로 다가갔다. 가까이 서자 심장이 더 빠르게 뛰었다.', risk: { amount: 40, kind: 'excite' } },
+              // 위험도 100 미만으로 살아남았을 때
+              { speaker: 'emily', text: '이, 이렇게 가까이 오라는 뜻은 아니었는데… 그래도 고맙다.' },
+              { text: '에밀리는 황급히 내 겉옷을 받아 몸을 가렸다.' },
+            ],
+          },
+          {
+            text: '어… 에밀리…',
+            affection: {},
+            reply: [
+              { text: '너무 당황해서 고개를 돌려야 한다는 생각도 늦었다. 심장이 빨리 뛰고 피 냄새가 짙어졌다.', risk: { amount: 60, kind: 'excite' } },
+              // 위험도 100 미만으로 살아남았을 때
+              { speaker: 'emily', text: '야, 너도 돌아보라고!' },
+              { text: '나는 화들짝 놀라 뒤를 돌아봤다. 하지만 이미 너무 늦은 건 아닐까?' },
+            ],
+          },
+        ],
+      },
+      { text: '에밀리는 시영에게 무슨 일을 당했는지 모르는 표정으로 상황을 파악하려고 했다. 평소와 다른 모습이 조금 웃겼다.' },
+      { speaker: 'emily', text: '감히…? 이게 대체 뭐 하는 짓이지?' },
+      { speaker: 'siyeong', text: '죄, 죄송해요… 그치만 {name}한테 너무 가까이 붙어서…' },
+      { speaker: 'minji', text: '캬하하하하! 꼴이 좋아! 시영아 잘했어, 꼴이 좋아!', expression: 'bigsmile' },
+      { speaker: 'emily', text: '너 지금 웃었냐? 너도 같이 죽고 싶어?' },
+      { speaker: 'minji', text: '어우, 귀족님 화나셨네. 알았어, 돌아볼게. 돌아보면 되잖아!', expression: 'smile' },
+      // 선택지 3. 시영에게 말하기
+      {
+        speaker: 'siyeong',
+        text: '{name}은(는) 내 거예요… 내가 찜해놨어요!!!!!',
+        choices: [
+          {
+            text: '시영아, 괜찮아? 에밀리한텐 같이 사과하자.',
+            affection: { siyeong: 10 },
+            reply: [{ speaker: 'siyeong', text: '{name}이(가) 같이 가준다면… 저도 제대로 사과할게요.' }],
+          },
+          {
+            text: '다들 진정해. 차례대로 얘기하자.',
+            affection: { siyeong: 5 },
+            reply: [{ speaker: 'siyeong', text: '네… 일단 진정할게요.' }],
+          },
+          {
+            text: '시영아, 좀 무섭다…',
+            affection: { siyeong: -5 },
+            reply: [{ speaker: 'siyeong', text: '아… 미안해요. 무섭게 하려던 건 아닌데…' }],
+          },
+        ],
+      },
+      { speaker: 'minji', text: '아니 그건… 아니야. 내 거야, 시영아. 방금 건 씹호감 행동이었지만 {name}은(는) 양보 못 해.' },
+      { speaker: 'emily', text: '다 꺼져라, 좋은 말로 할 때. 귀족은 귀족끼리가 어울리는 법. 어디 가문도 없는 놈들이 넘보는 것인가.' },
+      { speaker: 'minji', text: '아니, 네가 뭔데 끼어들어? 방금까지 옷 가리고 있었으면서!', expression: 'less' },
+      { speaker: 'emily', text: '야, 송민지. 너 진짜 한 번만 더 말해 봐.' },
+      { speaker: 'siyeong', text: '{name}은(는)… 두 분한테 안 줄 거예요.' },
+      { text: '세 명이 날 두고 싸우는데 이게 대체 좋아해야 하는지 무서워해야 하는지 모르겠지만, 초절정 미녀들이 날 두고 싸우다니 그냥 좋았다.' },
+      { text: '물론 심장이 또 뛰기 시작하면 좋다고만 할 수는 없겠지만…' },
+      { text: '나는 조용히 물 한 잔을 마시며 다시 한번 마음을 가라앉혔다.', hidePortrait: true },
     ],
   },
 };

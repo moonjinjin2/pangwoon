@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type AnimationEvent, type ReactNode } from 'react';
 import schoolImg from '../img/background/school.jpg';
 import desktopImg from '../img/windows.jpg';
-import ResultDialog from './ResultDialog';
 import SettingsModal from './SettingsModal';
 import MenuButton from './ui/MenuButton';
 import Button from './ui/Button';
@@ -11,13 +10,14 @@ import Panel from './ui/Panel';
 import ProgressBar from './ui/ProgressBar';
 import TalkBox from './ui/TalkBox';
 import { INITIAL_STATS, type Stats } from './StatsBox';
-import { SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, parseGameEnd, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
+import { READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, parseGameEnd, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
 import { RISK_LIMIT, boostAffection, rollRisk } from '../utils/storyStats';
 import type { Effect } from '../utils/activity';
 import { getWeekIndex } from '../utils/gameDate';
 import { voiceUrl } from '../utils/voice';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 import DangerWarning from './DangerWarning';
+import { ResultDialog } from './Activity';
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
@@ -149,8 +149,9 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 장면 전환: 지금까지 나온 대사 중 마지막으로 지정된 배경 (없으면 에피소드 배경)
   let lineBackground: string | undefined;
   for (let i = index; !lineBackground && i >= 0; i--) lineBackground = lines[i].background;
-  // TODO(임시): 뱀파이어 테마 배경이 준비될 때까지 그림 배경은 모두 school.jpg로 (에피소드·대사별 배경 지정은 그대로 둠)
-  const shownBackground = typeof (lineBackground ?? background) === 'string' ? schoolImg : background;
+  // TODO(임시): 뱀파이어 테마 배경이 준비될 때까지 준비된 배경(READY_BACKGROUNDS) 말고는 모두 school.jpg로 (에피소드·대사별 배경 지정은 그대로 둠)
+  const pickedBackground = lineBackground ?? background;
+  const shownBackground = typeof pickedBackground === 'string' && !READY_BACKGROUNDS.has(pickedBackground) ? schoolImg : pickedBackground;
 
   // 캐릭터 이미지를 미리 불러와서 처음 등장할 때 비어 보이지 않게 함
   useEffect(() => {
