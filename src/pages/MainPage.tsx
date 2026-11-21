@@ -83,6 +83,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   // 개발자 모드: 에피소드를 골라 바로 보는 테스트 화면
   const [devEpisodesOpen, setDevEpisodesOpen] = useState(false);
   const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
+  const [voiceVolume, setVoiceVolume] = useStoredState(SETTINGS_KEYS.voiceVolume, 80);
   const [textSpeed, setTextSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
 
   const week = getWeekIndex(gameDate);
@@ -287,6 +288,8 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
         <SettingsModal
           volume={volume}
           onChangeVolume={setVolume}
+          voiceVolume={voiceVolume}
+          onChangeVoiceVolume={setVoiceVolume}
           textSpeed={textSpeed}
           onChangeTextSpeed={setTextSpeed}
           devMode={devMode}

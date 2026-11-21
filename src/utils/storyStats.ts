@@ -5,7 +5,8 @@
 export const RISK_LIMIT = 100;
 
 // excite: 흥분·당황 (정신력으로 피할 수 있음) · bleed: 출혈처럼 실제로 피가 나는 위험 (위장도 감소만 적용)
-export type RiskKind = 'excite' | 'bleed';
+// suspect: 대답 때문에 의심을 사는 위험 (정신력 회피 없이 위장도 감소만 적용)
+export type RiskKind = 'excite' | 'bleed' | 'suspect';
 
 export interface Risk {
   // 기본 위험 상승량 (위장도 0 기준)

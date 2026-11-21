@@ -1,4 +1,4 @@
-import { useEffect, useState, type AnimationEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type AnimationEvent, type ReactNode } from 'react';
 import schoolImg from '../img/background/school.jpg';
 import desktopImg from '../img/windows.jpg';
 import ResultDialog from './ResultDialog';
@@ -15,15 +15,22 @@ import { SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, parseGam
 import { RISK_LIMIT, boostAffection, rollRisk } from '../utils/storyStats';
 import type { Effect } from '../utils/activity';
 import { getWeekIndex } from '../utils/gameDate';
+import { voiceUrl } from '../utils/voice';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
+import DangerWarning from './DangerWarning';
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
 
 // 위험도가 100에 닿은 뒤 발각 연출을 보여주고 엔딩으로 넘어가기까지
-const EXPOSED_MS = 2200;
+// 위험도가 100에 닿은 대사를 다 보여준 뒤 발각 연출까지 기다리는 시간
+const EXPOSE_DELAY_MS = 2000;
+// 발각 연출을 보여주는 시간 (끝나면 엔딩으로)
+const EXPOSED_MS = 4500;
 
 const RISK_COLOR = '#ff4d6a';
+// 위험도가 이 이상이면 위험도 상자 테를 붉게 강조하고 화면 가장자리도 붉게 맥박침
+const RISK_WARN = 60;
 
 // 대사가 나오며 오른 위험도 (avoided: 정신력으로 피함)
 type RiskHit = { amount: number; avoided: boolean };
@@ -79,7 +86,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
     return { total: Math.min(RISK_LIMIT, hit?.amount ?? 0), last: hit };
   });
   const showRisk = !replay && hasRisk(episode.lines);
-  const exposed = risk.total >= RISK_LIMIT && !!onExposed;
+  // 위험도가 100에 닿음 (이때부터 대사를 넘길 수 없고, 잠시 뒤 발각 연출)
+  const caught = risk.total >= RISK_LIMIT && !!onExposed;
+  // 발각 연출 중
+  const [exposed, setExposed] = useState(false);
   // 방금 고른 선택지의 호감도 변화 (다음 대사로 넘어가면 사라짐)
   const [feedback, setFeedback] = useState<Partial<Affection> | null>(null);
   const [auto, setAuto] = useState(false);
@@ -94,6 +104,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 설정에서 고른 텍스트 속도·음량 (에피소드 도중에도 우측 상단 설정에서 바꿀 수 있음)
   const [textSpeed, setTextSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
   const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
+  const [voiceVolume, setVoiceVolume] = useStoredState(SETTINGS_KEYS.voiceVolume, 80);
+  // 지금 재생 중인 더빙 음성 (자동 진행은 음성이 끝날 때까지 기다림)
+  const voiceRef = useRef<HTMLAudioElement | null>(null);
+  const [voicePlaying, setVoicePlaying] = useState(false);
   const typeMs = (TEXT_SPEEDS.find((s) => s.key === textSpeed) ?? TEXT_SPEEDS[1]).ms;
 
   const fill = (text: string) => text.split('{name}').join(playerName);
@@ -148,6 +162,33 @@ export default function EpisodeScene({ number, label, episode, date, background 
     }
   }, []);
 
+  // 대사가 바뀌면 그 대사의 더빙 음성을 재생 (넘기면 이전 음성은 끊음)
+  useEffect(() => {
+    const url = line.voice && voiceUrl(line.voice);
+    if (!url) return;
+    const audio = new Audio(url);
+    audio.volume = voiceVolume / 100;
+    voiceRef.current = audio;
+    const stop = () => setVoicePlaying(false);
+    audio.addEventListener('ended', stop);
+    audio.addEventListener('error', stop);
+    setVoicePlaying(true);
+    // 브라우저가 자동 재생을 막으면 음성 없이 진행
+    audio.play().catch(stop);
+    return () => {
+      audio.pause();
+      audio.removeEventListener('ended', stop);
+      audio.removeEventListener('error', stop);
+      voiceRef.current = null;
+      setVoicePlaying(false);
+    };
+  }, [line]);
+
+  // 재생 중에 음성 음량을 바꾸면 바로 반영
+  useEffect(() => {
+    if (voiceRef.current) voiceRef.current.volume = voiceVolume / 100;
+  }, [voiceVolume]);
+
   // 한 글자씩 타이핑
   useEffect(() => {
     if (!typing) return;
@@ -197,7 +238,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 타이핑 중이면 문장을 바로 다 보여주고, 아니면 다음 대사로 (선택지가 떠 있거나 게임 중이면 무시)
   const advance = () => {
-    if (gamePhase || gameResultOpen || exposed) {
+    if (gamePhase || gameResultOpen || caught) {
       return;
     } else if (typing) {
       setTyped(text.length);
@@ -246,7 +287,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 다음 선택지(또는 게임)까지 건너뜀 (더 없으면 에피소드 종료)
   const skip = () => {
-    if (choosing || gamePhase || gameResultOpen || exposed) return;
+    if (choosing || gamePhase || gameResultOpen || caught) return;
     const target = lines.findIndex((l, i) => i >= index && (l.choices || l.game));
     if (target === -1) {
       finish();
@@ -278,7 +319,13 @@ export default function EpisodeScene({ number, label, episode, date, background 
     next(current);
   };
 
-  // 위험도가 100에 닿으면 발각 연출 뒤 엔딩으로
+  // 위험도가 100에 닿으면 그 대사를 다 보여주고 잠시 뒤 발각 연출, 연출이 끝나면 엔딩으로
+  useEffect(() => {
+    if (!caught || typing || exposed) return;
+    const timer = setTimeout(() => setExposed(true), EXPOSE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [caught, typing, exposed]);
+
   useEffect(() => {
     if (!exposed) return;
     const timer = setTimeout(() => onExposed?.(), EXPOSED_MS);
@@ -287,7 +334,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 자동 진행
   useEffect(() => {
-    if (exposed || !auto || typing || choosing || logOpen || settingsOpen || gamePhase || gameResultOpen) return;
+    if (caught || !auto || typing || voicePlaying || choosing || logOpen || settingsOpen || gamePhase || gameResultOpen) return;
     const timer = setTimeout(advance, AUTO_MS);
     return () => clearTimeout(timer);
   });
@@ -296,7 +343,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
     const onKeyDown = (e: KeyboardEvent) => {
       // 게임 중에는 키 입력을 게임에 맡기고, 결과창에서는 확인 버튼이 받음
       // 설정 창은 Esc를 직접 받아 닫힘
-      if (gamePhase || gameResultOpen || settingsOpen || exposed) return;
+      if (gamePhase || gameResultOpen || settingsOpen || caught) return;
       if (logOpen) {
         if (e.key === 'Escape') setLogOpen(false);
         return;
@@ -352,7 +399,22 @@ export default function EpisodeScene({ number, label, episode, date, background 
         ))}
       </div>
 
+      {/* 위험도가 높으면 체력 경고처럼 화면 가장자리가 붉게 맥박침 */}
+      {showRisk && risk.total >= RISK_WARN && <DangerWarning />}
+
       <div className="g-episode__menu" onClick={(e) => e.stopPropagation()}>
+        {/* 에피소드 위험도 (100이면 정체 발각): 눈에 잘 띄게 설정 버튼 왼쪽에 따로 */}
+        {showRisk && (
+          <div className={risk.total >= RISK_WARN ? 'g-episode__risk g-episode__risk--high' : 'g-episode__risk'}>
+            <span className="g-episode__risk-head">
+              <span className="g-episode__risk-label">⚠ 위험도</span>
+              <span className="g-episode__risk-value">
+                <strong>{risk.total}</strong> / {RISK_LIMIT}
+              </span>
+            </span>
+            <ProgressBar className="g-episode__risk-bar" value={risk.total} max={RISK_LIMIT} color={RISK_COLOR} />
+          </div>
+        )}
         <MenuButton icon="gear" label="설정" onClick={() => setSettingsOpen(true)} />
       </div>
 
@@ -360,15 +422,6 @@ export default function EpisodeScene({ number, label, episode, date, background 
         <Panel title={`EPISODE #${number}`} icon="book" extra={<span className="g-episode__tag">{tag}</span>}>
           <strong className="g-episode__title">{episode.title}</strong>
           <span className="g-episode__sub">{subtitle}</span>
-          {showRisk && (
-            <span className="g-episode__risk">
-              <span className="g-episode__risk-label">위험도</span>
-              <ProgressBar className="g-episode__risk-bar" value={risk.total} max={RISK_LIMIT} color={RISK_COLOR} />
-              <span className="g-episode__risk-value">
-                {risk.total} / {RISK_LIMIT}
-              </span>
-            </span>
-          )}
         </Panel>
       </div>
 
@@ -514,6 +567,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
         <SettingsModal
           volume={volume}
           onChangeVolume={setVolume}
+          voiceVolume={voiceVolume}
+          onChangeVoiceVolume={setVoiceVolume}
           textSpeed={textSpeed}
           onChangeTextSpeed={setTextSpeed}
           onExit={onExit}

@@ -1,5 +1,4 @@
 import roomImg from '../img/background/room.png';
-import barImg from '../img/background/bar_background.jpg';
 import backgroundImg from '../img/background/room.png';
 import Backdrop from '../components/Backdrop';
 import { useEffect, useState } from 'react';
@@ -27,7 +26,7 @@ export function EpisodeArt({ episode, showIllust = true }: { episode: Episode; s
   const isPrologue = episode.id === PROLOGUE.id;
   return (
     <div className={isPrologue ? 'ep-card__art ep-card__art--night' : 'ep-card__art'}>
-      <Backdrop src={isPrologue ? barImg : episode.background ?? roomImg} />
+      <Backdrop src={episode.background ?? roomImg} />
       <img className="ep-card__char" src={SPEAKERS[getMainSpeaker(episode)].image} alt="" />
     </div>
   );

@@ -17,9 +17,9 @@ function itemRate(rarity: Rarity) {
   return rate >= 1 ? rate.toFixed(1) : rate.toFixed(2);
 }
 
-// 획득 가능 아이템: 등급 탭별로 전체 목록과 확률, 보유 여부를 보여줌
+// 획득 가능 아이템: 등급 탭별로(N부터) 전체 목록과 확률, 보유 여부를 보여줌
 export default function ItemCatalog({ inventory, onClose }: Props) {
-  const [rarity, setRarity] = useState<Rarity>('SSS');
+  const [rarity, setRarity] = useState<Rarity>('N');
   const items = ITEMS.filter((i) => i.rarity === rarity);
   const ownedCount = items.filter((i) => (inventory[i.id] ?? 0) > 0).length;
 
@@ -39,7 +39,7 @@ export default function ItemCatalog({ inventory, onClose }: Props) {
   return (
     <Dialog title="획득 가능 아이템" icon="sparkle" onClose={onClose} closeOnBackdrop className="catalog">
       <div className="catalog__tabs" role="tablist" aria-label="등급">
-        {[...RARITIES].reverse().map((r) => (
+        {RARITIES.map((r) => (
           <button
             key={r}
             type="button"

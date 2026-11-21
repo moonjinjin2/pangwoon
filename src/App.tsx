@@ -3,7 +3,7 @@ import StartPage from './pages/StartPage';
 import SetNamePage from './pages/SetNamePage';
 import MainPage from './pages/MainPage';
 import EpisodeScene from './components/EpisodeScene';
-import barImg from './img/background/bar_background.jpg';
+import roomImg from './img/background/room.png';
 import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
 import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
 import { DATE_KEY, NAME_KEY, PROGRESS_KEYS, clearProgress, load, markCollected, remove, save } from './utils/storage';
@@ -99,7 +99,8 @@ function Game() {
           label="프롤로그"
           episode={PROLOGUE}
           date={PROLOGUE_DATE}
-          background={barImg}
+          // 메인 화면과 같은 방 배경 (그림 배경을 학교로 바꾸는 EpisodeScene의 임시 처리를 거치지 않게 직접 그림)
+          background={<img className="episode__bg" src={roomImg} alt="" aria-hidden />}
           playerName={name ?? ''}
           showPlayer
           onDone={handlePrologueDone}

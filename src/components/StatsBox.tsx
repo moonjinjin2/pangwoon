@@ -63,15 +63,16 @@ export const STAT_KEYS = statMeta.map(({ key }) => key);
 // 경고 수치에 닿은 스탯의 막대 색
 const DANGER_COLOR = '#ff4d6a';
 
-export type StatGrade = 'S' | 'A' | 'B' | 'C' | 'D';
+export type StatGrade = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
 // 최대치 대비 비율로 매기는 등급 (높은 등급부터, 이 비율 이상이면 그 등급)
 const GRADES: { grade: StatGrade; ratio: number }[] = [
-  { grade: 'S', ratio: 0.8 },
-  { grade: 'A', ratio: 0.6 },
-  { grade: 'B', ratio: 0.4 },
-  { grade: 'C', ratio: 0.2 },
-  { grade: 'D', ratio: 0 },
+  { grade: 'S', ratio: 0.9 },
+  { grade: 'A', ratio: 0.8 },
+  { grade: 'B', ratio: 0.65 },
+  { grade: 'C', ratio: 0.5 },
+  { grade: 'D', ratio: 0.35 },
+  { grade: 'F', ratio: 0 },
 ];
 
 export function getStatGrade(key: StatKey, stats: Stats): StatGrade {

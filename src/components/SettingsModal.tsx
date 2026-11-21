@@ -6,6 +6,9 @@ import { TEXT_SPEEDS, type TextSpeed } from '../utils/storage';
 interface Props {
   volume: number;
   onChangeVolume: (volume: number) => void;
+  // 더빙 음성 음량
+  voiceVolume: number;
+  onChangeVoiceVolume: (volume: number) => void;
   textSpeed: TextSpeed;
   onChangeTextSpeed: (speed: TextSpeed) => void;
   // 개발자 모드 줄 (에피소드 도중처럼 넘기지 않으면 숨김)
@@ -23,6 +26,8 @@ interface Props {
 export default function SettingsModal({
   volume,
   onChangeVolume,
+  voiceVolume,
+  onChangeVoiceVolume,
   textSpeed,
   onChangeTextSpeed,
   devMode,
@@ -58,6 +63,19 @@ export default function SettingsModal({
             onChange={(e) => onChangeVolume(Number(e.target.value))}
           />
           <span className="settings__value">{volume}</span>
+        </label>
+        <label className="settings__row">
+          <span className="settings__label">음성 음량</span>
+          <input
+            className="settings__slider"
+            type="range"
+            min={0}
+            max={100}
+            value={voiceVolume}
+            style={{ '--fill': `${voiceVolume}%` } as CSSProperties}
+            onChange={(e) => onChangeVoiceVolume(Number(e.target.value))}
+          />
+          <span className="settings__value">{voiceVolume}</span>
         </label>
         <div className="settings__row settings__row--stack" role="radiogroup" aria-label="텍스트 속도">
           <span className="settings__label">텍스트 속도</span>

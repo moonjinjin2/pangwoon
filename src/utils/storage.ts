@@ -24,6 +24,8 @@ export const PROGRESS_KEYS = {
 // 환경 설정 (새 게임을 시작해도 유지)
 export const SETTINGS_KEYS = {
   bgmVolume: 'bgmVolume',
+  // 더빙 음성 음량
+  voiceVolume: 'voiceVolume',
   textSpeed: 'textSpeed',
   // 설정의 개발자 모드 (에피소드 바로 보기 등 테스트 기능)
   devMode: 'devMode',

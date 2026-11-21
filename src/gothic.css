@@ -774,6 +774,10 @@
   --grade-color: #9a8686;
 }
 
+.g-stat__grade--f {
+  --grade-color: #6e5a5a;
+}
+
 /* 호감도: 얼굴 | 이름 ··· 수치 / 막대 (비공개면 수치·막대 자리에 공개 버튼) */
 .g-affection {
   list-style: none;
@@ -1466,24 +1470,49 @@
   color: var(--g-sub);
 }
 
-/* 에피소드 위험도 (100이면 정체 발각) */
+/* 에피소드 위험도 (100이면 정체 발각): 우측 상단 설정 버튼 왼쪽의 단독 상자 */
 .g-episode__risk {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: calc(10 * var(--u));
-  padding: calc(10 * var(--u)) calc(6 * var(--u)) 0;
-  font-size: calc(16 * var(--u));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(8 * var(--u));
+  width: calc(300 * var(--u));
+  height: calc(72 * var(--u));
+  padding: 0 calc(18 * var(--u));
+  font-family: var(--font-serif);
   color: var(--g-sub);
+  background: rgba(20, 5, 11, 0.88);
+  border: calc(2 * var(--u)) solid var(--g-line);
+  border-radius: calc(14 * var(--u));
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.g-episode__risk-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 
 .g-episode__risk-label {
   font-weight: 700;
+  font-size: calc(18 * var(--u));
   color: var(--hud-red);
 }
 
 .g-episode__risk-value {
+  font-size: calc(16 * var(--u));
   font-variant-numeric: tabular-nums;
+}
+
+.g-episode__risk-value strong {
+  font-size: calc(26 * var(--u));
+  color: #fff3ef;
+}
+
+/* 위험도가 높으면 테가 붉게 */
+.g-episode__risk--high {
+  border-color: var(--hud-red);
 }
 
 /* 위험도가 100에 닿았을 때: 화면이 붉게 물들며 발각 */
@@ -1499,8 +1528,37 @@
   font-family: var(--font-serif);
   text-align: center;
   background: radial-gradient(ellipse at center, rgba(122, 22, 48, 0.55), rgba(20, 2, 8, 0.92));
-  animation: hud-flash-in 0.6s ease-out;
+  /* 붉은 섬광 뒤 천천히 어두워지고, 글자는 차례로 등장 */
+  animation:
+    exposed-flash 0.5s ease-out,
+    exposed-darken 4.5s ease-in forwards;
   cursor: default;
+}
+
+@keyframes exposed-flash {
+  0% {
+    background-color: rgba(255, 40, 70, 0);
+  }
+
+  20% {
+    background-color: rgba(255, 40, 70, 0.6);
+  }
+
+  100% {
+    background-color: rgba(255, 40, 70, 0);
+  }
+}
+
+/* 마지막엔 거의 검게 잠겨 엔딩 화면으로 이어짐 */
+@keyframes exposed-darken {
+  0%,
+  60% {
+    box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0);
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0.85);
+  }
 }
 
 .g-episode__exposed-tag {
@@ -1508,7 +1566,9 @@
   font-size: calc(18 * var(--u));
   letter-spacing: 0.3em;
   color: var(--hud-red);
-  animation: hud-blink 0.8s ease-in-out infinite;
+  animation:
+    hud-flash-in 0.6s ease-out 0.4s both,
+    hud-blink 0.8s ease-in-out 1s infinite;
 }
 
 .g-episode__exposed-title {
@@ -1517,7 +1577,9 @@
   font-size: calc(56 * var(--u));
   color: #fff3ef;
   text-shadow: 0 0 calc(24 * var(--u)) rgba(255, 77, 106, 0.8);
-  animation: hud-shake 0.5s;
+  animation:
+    hud-flash-in 0.4s ease-out 1s both,
+    hud-shake 0.6s 1s;
 }
 
 @keyframes hud-flash-in {
@@ -1532,6 +1594,9 @@
   top: calc(30 * var(--u));
   right: calc(36 * var(--u));
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: calc(14 * var(--u));
   cursor: default;
 }
 
