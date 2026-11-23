@@ -1,4 +1,5 @@
 import roomImg from '../img/background/room.png';
+import schoolImg from '../img/background/school.jpg';
 import backgroundImg from '../img/background/room.png';
 import Backdrop from '../components/Backdrop';
 import { useEffect, useState } from 'react';
@@ -13,20 +14,41 @@ import {
   HEROINES,
   PROLOGUE,
   PROLOGUE_DATE,
+  READY_BACKGROUNDS,
   SPEAKERS,
+  MAIN_EPISODE_MONTHS,
+  getEpisodeCgs,
+  getMainEpisode,
   getMainSpeaker,
   getReplayLines,
   type Episode,
 } from '../utils/episode';
 import { NAME_KEY, PROGRESS_KEYS, load, loadChoices, loadSeenDates, useStoredState, type Collection } from '../utils/storage';
 
-// 일러스트가 없는 에피소드는 배경 + 대표 캐릭터로 대신 그림 (showIllust가 false면 아직 공개 전이라 일러스트를 가림)
+// 에피소드의 대표 배경: 지정된 에피소드 배경, 없으면 대사가 가장 많이 나오는 배경
+// 에피소드 장면처럼 아직 준비 안 된 배경은 school.jpg로 (프롤로그는 방에서 진행)
+function episodeBackground(episode: Episode) {
+  if (episode.id === PROLOGUE.id) return roomImg;
+  let picked = episode.background;
+  if (!picked) {
+    const counts = new Map<string, number>();
+    let current: string | undefined;
+    for (const line of episode.lines) {
+      current = line.background ?? current;
+      if (current) counts.set(current, (counts.get(current) ?? 0) + 1);
+    }
+    picked = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+  }
+  return picked && READY_BACKGROUNDS.has(picked) ? picked : schoolImg;
+}
+
+// 일러스트가 없는 에피소드는 대표 배경 + 대표 캐릭터로 대신 그림 (showIllust가 false면 아직 공개 전이라 일러스트를 가림)
 export function EpisodeArt({ episode, showIllust = true }: { episode: Episode; showIllust?: boolean }) {
   if (showIllust && episode.illust) return <img className="ep-card__illust" src={episode.illust} alt="" />;
   const isPrologue = episode.id === PROLOGUE.id;
   return (
     <div className={isPrologue ? 'ep-card__art ep-card__art--night' : 'ep-card__art'}>
-      <Backdrop src={episode.background ?? roomImg} />
+      <Backdrop src={episodeBackground(episode)} />
       <img className="ep-card__char" src={SPEAKERS[getMainSpeaker(episode)].image} alt="" />
     </div>
   );
@@ -92,6 +114,71 @@ function EpisodeLog({ episode, onClose }: { episode: Episode; onClose: () => voi
   );
 }
 
+// 메인 에피소드마다 들어갈 CG 수 (대본이 아직 없는 달도 이만큼 잠긴 칸으로 자리를 잡아 둠)
+const CGS_PER_EPISODE = 3;
+
+function LockedCg() {
+  return (
+    <span className="cg-grid__item cg-grid__item--locked" aria-label="아직 보지 않은 일러스트">
+      <span className="cg-grid__lock" aria-hidden>
+        <svg viewBox="0 0 24 24">
+          <rect x="5" y="11" width="14" height="10" rx="2" />
+          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+      </span>
+      <span className="cg-grid__lock-text">LOCKED</span>
+    </span>
+  );
+}
+
+// CG 모아보기: 메인 에피소드(달)별로 묶어 보여주고, 아직 안 본 에피소드의 CG는 잠가 둠 (데이트 일러스트는 데이트 기록에서)
+function CgGallery({ collectedIds, onView }: { collectedIds: Set<string>; onView: (cg: string, episode: Episode) => void }) {
+  const groups = MAIN_EPISODE_MONTHS.map((month) => {
+    const episode = getMainEpisode(month);
+    const cgs = episode ? getEpisodeCgs(episode) : [];
+    const open = !!episode && collectedIds.has(episode.id);
+    return { month, episode, cgs: open ? cgs : [], slots: Math.max(cgs.length, CGS_PER_EPISODE) };
+  });
+  const total = groups.reduce((sum, g) => sum + g.slots, 0);
+  const unlocked = groups.reduce((sum, g) => sum + g.cgs.length, 0);
+
+  return (
+    <section className="album__list album__gallery">
+      <div className="album__head">
+        <h3>
+          <HeartMark />
+          Illustrations
+        </h3>
+        <span className="album__count">
+          모은 일러스트 {unlocked} / {total}
+        </span>
+      </div>
+      <div className="album__scroll">
+        {groups.map(({ month, episode, cgs, slots }) => (
+          <div key={month} className="album__group">
+            <span className={cgs.length > 0 ? 'album__month' : 'album__month album__month--locked'}>
+              {month}월 · {cgs.length > 0 && episode ? episode.title : '아직 보지 않은 에피소드'}
+            </span>
+            <ul className="cg-grid">
+              {Array.from({ length: slots }, (_, i) => (
+                <li key={i}>
+                  {episode && cgs[i] ? (
+                    <button className="cg-grid__item" onClick={() => onView(cgs[i], episode)} aria-label={`${episode.title} 일러스트 크게 보기`}>
+                      <img src={cgs[i]} alt="" loading="lazy" />
+                    </button>
+                  ) : (
+                    <LockedCg />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 interface Props {
   onClose: () => void;
 }
@@ -103,6 +190,9 @@ export default function CollectionPage({ onClose }: Props) {
   const [viewing, setViewing] = useState<Entry | null>(null);
   const [logEpisode, setLogEpisode] = useState<Episode | null>(null);
   const [replaying, setReplaying] = useState<Episode | null>(null);
+  // 위쪽 탭: 에피소드 목록 / CG 모아보기
+  const [tab, setTab] = useState<'episodes' | 'cg'>('episodes');
+  const [viewingCg, setViewingCg] = useState<{ cg: string; episode: Episode } | null>(null);
 
   // 메인 화면은 프롤로그를 본 뒤에만 오므로 #0 프롤로그는 항상 수집된 것으로 봄
   const collected: Collection = { 0: PROLOGUE.id, ...stored };
@@ -116,16 +206,18 @@ export default function CollectionPage({ onClose }: Props) {
     .map((entry, i, list) => ({ ...entry, month: entry.month ?? nearestMonth(list, i) }));
 
   const current = entries.find((e) => e.number === selected) ?? entries[0];
+  // 본 에피소드 (데이트 포함)
+  const collectedIds = new Set(Object.values(collected));
 
   useEffect(() => {
     // 다시 보기 중에는 ESC가 에피소드 스킵이므로, 창이 떠 있을 때는 앨범이 같이 닫히지 않게 함
-    if (replaying || viewing || logEpisode) return;
+    if (replaying || viewing || logEpisode || viewingCg) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, replaying, viewing, logEpisode]);
+  }, [onClose, replaying, viewing, logEpisode, viewingCg]);
 
   // 같은 달끼리 묶음 (최근 것부터 정렬돼 있으므로 순서대로 이어 붙이면 됨)
   const groups: { month: number; items: Entry[] }[] = [];
@@ -147,86 +239,101 @@ export default function CollectionPage({ onClose }: Props) {
             <Icon name="book" className="page-top__icon" />
             에피소드 앨범
           </h2>
+          <div className="album__tabs" role="tablist">
+            <button role="tab" aria-selected={tab === 'episodes'} className={tab === 'episodes' ? 'album__tab album__tab--on' : 'album__tab'} onClick={() => setTab('episodes')}>
+              에피소드
+            </button>
+            <button role="tab" aria-selected={tab === 'cg'} className={tab === 'cg' ? 'album__tab album__tab--on' : 'album__tab'} onClick={() => setTab('cg')}>
+              일러스트
+            </button>
+          </div>
         </header>
 
-        <div className="album__body">
-          <section className="album__list">
-            <div className="album__head">
-              <h3>
-                <HeartMark />
-                Episodes
-              </h3>
-              <span className="album__count">진행한 에피소드 {entries.length}개</span>
-            </div>
-
-
-            <div className="album__scroll">
-              {groups.map(({ month, items }, i) => (
-                <div key={`${month}-${i}`} className="album__group">
-                  <span className="album__month">{month}월</span>
-                  <ul className="album__items">
-                    {items.map((entry) => (
-                      <li key={entry.number}>
-                        <button
-                          className={entry === current ? 'album__item album__item--on' : 'album__item'}
-                          onClick={() => setSelected(entry.number)}
-                        >
-                          <span className="album__thumb">
-                            <EpisodeArt episode={entry.episode} />
-                          </span>
-                          <span className="album__meta">
-                            <span className="album__no">
-                              EPISODE #{entry.number}
-                            </span>
-                            <span className="album__title">{entry.episode.title}</span>
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="album__preview">
-            {current && (
-              <div className="album__stage">
-                {/* 일러스트가 있으면 눌러서 크게 봄 (다시 보기는 버튼으로만) */}
-                {current.episode.illust ? (
-                  <button className="album__art" onClick={() => setViewing(current)} aria-label="일러스트 크게 보기">
-                    <EpisodeArt episode={current.episode} />
-                  </button>
-                ) : (
-                  <div className="album__art album__art--still">
-                    <EpisodeArt episode={current.episode} />
-                  </div>
-                )}
-                <span className="album__badge">EPISODE #{current.number}</span>
-                <div className="album__caption">
-                  <div className="album__info">
-                    <h3 className="album__heading">{current.episode.title}</h3>
-                  </div>
-                  <div className="album__actions">
-                    <button className="album__btn" onClick={() => setLogEpisode(current.episode)}>
-                      <svg viewBox="0 0 12 12" aria-hidden>
-                        <path d="M2 3h8M2 6h8M2 9h5" />
-                      </svg>
-                      대사 로그
-                    </button>
-                    <button className="album__btn album__btn--main" onClick={() => setReplaying(current.episode)}>
-                      <svg viewBox="0 0 12 12" aria-hidden>
-                        <path d="M3 2v8l7-4z" />
-                      </svg>
-                      다시 보기
-                    </button>
-                  </div>
-                </div>
+        {tab === 'cg' ? (
+          <div className="album__body album__body--single">
+            <CgGallery collectedIds={collectedIds} onView={(cg, episode) => setViewingCg({ cg, episode })} />
+          </div>
+        ) : (
+          <div className="album__body">
+            <section className="album__list">
+              <div className="album__head">
+                <h3>
+                  <HeartMark />
+                  Episodes
+                </h3>
+                <span className="album__count">진행한 에피소드 {entries.length}개</span>
               </div>
-            )}
-          </section>
-        </div>
+
+
+              <div className="album__scroll">
+                {groups.map(({ month, items }, i) => (
+                  <div key={`${month}-${i}`} className="album__group">
+                    <span className="album__month">{month}월</span>
+                    <ul className="album__items">
+                      {items.map((entry) => (
+                        <li key={entry.number}>
+                          <button
+                            className={entry === current ? 'album__item album__item--on' : 'album__item'}
+                            onClick={() => setSelected(entry.number)}
+                          >
+                            <span className="album__thumb">
+                              <EpisodeArt episode={entry.episode} />
+                            </span>
+                            <span className="album__meta">
+                              <span className="album__no">
+                                EPISODE #{entry.number}
+                              </span>
+                              <span className="album__title">{entry.episode.title}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="album__preview">
+              {current && (
+                <div className="album__stage">
+                  {/* 일러스트가 있으면 눌러서 크게 봄 (다시 보기는 버튼으로만) */}
+                  {current.episode.illust ? (
+                    <button className="album__art" onClick={() => setViewing(current)} aria-label="일러스트 크게 보기">
+                      <EpisodeArt episode={current.episode} />
+                    </button>
+                  ) : (
+                    <div className="album__art album__art--still">
+                      <EpisodeArt episode={current.episode} />
+                    </div>
+                  )}
+                  <span className="album__badge">EPISODE #{current.number}</span>
+                  <div className="album__caption">
+                    <div className="album__info">
+                      <h3 className="album__heading">{current.episode.title}</h3>
+                    </div>
+                    <div className="album__actions">
+                      <button className="album__btn" onClick={() => setLogEpisode(current.episode)}>
+                        <svg viewBox="0 0 12 12" aria-hidden>
+                          <path d="M2 3h8M2 6h8M2 9h5" />
+                        </svg>
+                        대사 로그
+                      </button>
+                      <button className="album__btn album__btn--main" onClick={() => setReplaying(current.episode)}>
+                        <svg viewBox="0 0 12 12" aria-hidden>
+                          <path d="M3 2v8l7-4z" />
+                        </svg>
+                        다시 보기
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
       </div>
+      {viewingCg && <IllustView mode="view" illust={viewingCg.cg} title={viewingCg.episode.title} onClose={() => setViewingCg(null)} />}
       {viewing?.episode.illust && (
         <IllustView
           mode="view"

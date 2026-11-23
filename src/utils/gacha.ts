@@ -17,7 +17,7 @@ export const RARITY_META: Record<Rarity, { rate: number; color: string }> = {
 
 // 뽑기 가격 (1회 25,000원 — 학사 알바만 한 달 하면 평균 7~8회). 10회 뽑기는 SR 이상 1개 확정
 export const PULL_PRICE = 25000;
-export const TEN_PULL_PRICE = 50000;
+export const TEN_PULL_PRICE = 250000;
 
 export interface Item {
   // 아이템 이름을 그대로 id로 씀

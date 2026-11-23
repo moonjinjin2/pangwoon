@@ -1830,6 +1830,7 @@
   opacity: 0.75;
 }
 
+
 /* 모바일(가로): 날짜 카드는 숨기고 하단을 오른쪽으로 */
 @media (orientation: landscape) and (max-height: 500px) {
   .g-date {

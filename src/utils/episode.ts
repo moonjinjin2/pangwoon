@@ -1050,6 +1050,14 @@ export function hasMainEpisode(month: number) {
   return !NO_EPISODE_MONTHS.has(month);
 }
 
+// 메인 에피소드가 나오는 달 (4~12월 중 에피소드 없는 달 빼고)
+export const MAIN_EPISODE_MONTHS = Array.from({ length: 9 }, (_, i) => i + 4).filter(hasMainEpisode);
+
+// 대본이 들어간 메인 에피소드 (아직 없으면 undefined)
+export function getMainEpisode(month: number): Episode | undefined {
+  return EPISODES[month];
+}
+
 // 데이트 에피소드 (히로인별 순서대로)
 export const DATE_EPISODES: Record<Heroine, Episode[]> = {
   // 첫 만남(4월) → 9~11월 히로인 선택 데이트: 기획 고민 → 축제의 질투 → 모교 타임캡슐
@@ -2646,6 +2654,20 @@ export function getReplayLines(lines: EpisodeLine[], picks: number[]): EpisodeLi
       return [rest, { speaker: 'player' as const, text: choice.text }, ...expand(choice.reply)];
     });
   return expand(lines);
+}
+
+// 에피소드에 나오는 일러스트(CG) 목록 (선택지 답변 속 CG·데이트 일러스트 포함, 나오는 순서대로, 중복 없이)
+export function getEpisodeCgs(episode: Episode): string[] {
+  const cgs: string[] = [];
+  const collect = (lines: EpisodeLine[]) => {
+    for (const l of lines) {
+      if (l.cg) cgs.push(l.cg);
+      l.choices?.forEach((c) => collect(c.reply));
+    }
+  };
+  collect(episode.lines);
+  if (episode.illust) cgs.push(episode.illust);
+  return [...new Set(cgs)];
 }
 
 // 에피소드의 대표 캐릭터 (주인공이 아닌 첫 화자, 없으면 주인공)

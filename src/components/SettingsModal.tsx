@@ -20,6 +20,8 @@ interface Props {
   onOpenGuide?: () => void;
   // 넘기지 않으면 게임 종료 버튼을 숨김
   onExit?: () => void;
+  // 에피소드 다시 보기 중: 넘기면 다시 보기 끝내기 버튼을 보여줌 (진행에 영향이 없어 확인 없이 바로 나감)
+  onEndReplay?: () => void;
   onClose: () => void;
 }
 
@@ -35,6 +37,7 @@ export default function SettingsModal({
   onOpenDevEpisodes,
   onOpenGuide,
   onExit,
+  onEndReplay,
   onClose,
 }: Props) {
   // 게임 종료 전 한 번 더 확인 (진행 상황은 저장돼 있어 이어하기로 돌아올 수 있음)
@@ -125,6 +128,15 @@ export default function SettingsModal({
               </Button>
             )}
           </div>
+        )}
+        {onEndReplay && (
+          <>
+            <div className="settings__divider" aria-hidden />
+            {/* 활동 결과창의 확인 버튼처럼 반짝이는 명판 */}
+            <Button className="settings__end-replay" onClick={onEndReplay}>
+              다시 보기 끝내기
+            </Button>
+          </>
         )}
         {onExit && (
           <>

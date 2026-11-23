@@ -1001,13 +1001,27 @@ body {
   flex: 1;
 }
 
-/* 텍스트 속도·개발자 모드: 금테 한 줄 안에 칸을 나눈 선택 막대. 고른 칸만 진홍으로 물듦
+/* 설정 창 버튼은 모두 활동 결과창 확인 버튼과 같은 광택 명판 계열
+   - 진홍(주요·고른 칸): 금속 그라데이션 테 + 윗부분이 빛나는 진홍 속판, 올리면 속판이 밝아지고 글자가 분홍빛으로 번짐
+   - 어두운(보조): 같은 금속 테 + 윗부분이 살짝 빛나는 검붉은 속판
    (gothic.css의 g-btn--ghost·g-btn--active가 뒤에 로드되므로 선택자를 한 단계 더 구체적으로) */
+.settings {
+  --settings-velvet:
+    radial-gradient(ellipse 70% 90% at 50% 0%, rgba(238, 106, 130, 0.3), transparent 70%),
+    linear-gradient(180deg, #5e1226 0%, #3a0915 55%, #22050d 100%);
+  --settings-dark:
+    radial-gradient(ellipse 70% 90% at 50% 0%, rgba(243, 220, 182, 0.1), transparent 70%),
+    linear-gradient(180deg, #2a0c16 0%, #170609 60%, #0e0306 100%);
+  --settings-glow-text: 0 0 calc(8 * var(--u)) var(--g-rose), 0 1px calc(3 * var(--u)) rgba(0, 0, 0, 0.9);
+}
+
+/* 텍스트 속도·개발자 모드: 금속 테 한 줄 안에 칸을 나눈 선택 막대. 고른 칸만 광택 진홍 */
 .settings__options {
   display: flex;
+  gap: calc(3 * var(--u));
   padding: calc(3 * var(--u));
-  background: rgba(10, 2, 6, 0.75);
-  border: 1px solid rgba(217, 178, 106, 0.4);
+  background: var(--settings-dark) padding-box, var(--g-metal) border-box;
+  border: 1.5px solid transparent;
 }
 
 .settings .settings__options .g-btn {
@@ -1019,14 +1033,14 @@ body {
   background: none;
   border: none;
   box-shadow: none;
-  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: color 0.2s, filter 0.2s, text-shadow 0.2s;
 }
 
 /* 칸 사이 세로 금선 (고른 칸 옆은 숨김) */
 .settings .settings__options .g-btn+.g-btn::before {
   content: '';
   position: absolute;
-  left: 0;
+  left: calc(-2 * var(--u));
   top: 25%;
   bottom: 25%;
   width: 1px;
@@ -1039,28 +1053,40 @@ body {
 }
 
 .settings .settings__options .g-btn:hover:not(:disabled) {
-  color: var(--g-text);
+  color: #f3dcb6;
   box-shadow: none;
+  text-shadow: var(--settings-glow-text);
 }
 
 .settings .settings__options .g-btn.g-btn--active {
-  color: #fff;
-  background: #5a1127;
-  box-shadow: inset 0 0 0 1px var(--g-line-strong);
+  color: #f3dcb6;
+  text-shadow: 0 1px calc(3 * var(--u)) rgba(0, 0, 0, 0.9);
+  background: var(--settings-velvet) padding-box, var(--g-metal) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 0 calc(10 * var(--u)) var(--g-glow);
 }
 
-/* 가이드 다시 보기: 금테 한 줄의 단색 보조 버튼 */
+.settings .settings__options .g-btn.g-btn--active:hover:not(:disabled) {
+  color: #fff4ec;
+  text-shadow: var(--settings-glow-text);
+  filter: brightness(1.2);
+}
+
+/* 가이드 다시 보기: 금속 테 + 어두운 광택 속판의 보조 버튼 */
 .settings>.g-btn--ghost {
   height: calc(44 * var(--u));
-  color: var(--g-text);
-  background: #1d0710;
-  border: 1px solid rgba(217, 178, 106, 0.45);
+  color: #f3dcb6;
+  text-shadow: 0 1px calc(3 * var(--u)) rgba(0, 0, 0, 0.9);
+  background: var(--settings-dark) padding-box, var(--g-metal) border-box;
+  border: 1.5px solid transparent;
+  transition: filter 0.2s, text-shadow 0.2s;
 }
 
 .settings>.g-btn--ghost:hover:not(:disabled) {
-  background: #260a15;
-  border-color: var(--g-line-strong);
-  box-shadow: none;
+  color: #fff4ec;
+  text-shadow: var(--settings-glow-text);
+  box-shadow: 0 0 calc(12 * var(--u)) var(--g-glow);
+  filter: brightness(1.25);
 }
 
 /* 개발자 모드 에피소드 테스트: 점선 테의 보조 버튼 */
@@ -1077,43 +1103,22 @@ body {
   box-shadow: none;
 }
 
-/* 게임 종료: 공용 육각 명판 버튼을 가운데에 적당한 너비로 */
+/* 게임 종료·다시 보기 끝내기: 공용 육각 명판(광택 진홍 그대로)을 가운데에 */
 .settings>.g-btn--primary {
   align-self: center;
   width: 70%;
   height: calc(50 * var(--u));
 }
 
-/* 설정 창의 육각 명판: 금속 그라데이션 테 → 단색 금테, 진홍 속판도 단색 (빛번짐 없이) */
-.settings .g-btn--primary {
-  background: var(--g-line-strong);
-  text-shadow: none;
-}
-
-.settings .g-btn--primary::before {
-  background: #5a1127;
-  transition: background-color 0.15s;
-}
-
-.settings .g-btn--primary:hover:not(:disabled),
-.settings .g-btn--primary:focus-visible {
-  text-shadow: none;
-}
-
-.settings .g-btn--primary:hover:not(:disabled)::before,
-.settings .g-btn--primary:focus-visible::before {
-  filter: none;
-  background: #6e1530;
-}
-
-/* 종료 확인의 취소: 종료 버튼과 같은 육각 모양에 어두운 테 */
+/* 종료 확인의 취소: 종료 버튼과 같은 육각 금속 테에 어두운 광택 속판 */
 .settings .settings__actions .g-btn--ghost {
   --g-btn-cut: calc(14 * var(--u));
   position: relative;
   isolation: isolate;
   height: calc(50 * var(--u));
-  color: var(--g-sub);
-  background: rgba(217, 178, 106, 0.45);
+  color: #f3dcb6;
+  text-shadow: 0 1px calc(3 * var(--u)) rgba(0, 0, 0, 0.9);
+  background: var(--g-metal);
   border: none;
   clip-path: polygon(var(--g-btn-cut) 0, calc(100% - var(--g-btn-cut)) 0, 100% 50%, calc(100% - var(--g-btn-cut)) 100%, var(--g-btn-cut) 100%, 0 50%);
 }
@@ -1121,19 +1126,31 @@ body {
 .settings .settings__actions .g-btn--ghost::before {
   content: '';
   position: absolute;
-  inset: 1px 1.5px;
+  inset: calc(2 * var(--u)) calc(2.5 * var(--u));
   z-index: -1;
   clip-path: inherit;
-  background: #1d0710;
+  background: var(--settings-dark);
+  transition: filter 0.2s;
 }
 
 .settings .settings__actions .g-btn--ghost:hover:not(:disabled) {
-  color: var(--g-text);
+  color: #fff4ec;
+  text-shadow: var(--settings-glow-text);
   box-shadow: none;
+}
+
+.settings .settings__actions .g-btn--ghost:hover:not(:disabled)::before {
+  filter: brightness(1.6);
 }
 
 .settings__actions .g-btn--primary {
   height: calc(50 * var(--u));
+}
+
+/* 다시 보기 끝내기: 글자 길이에 맞춘 너비 */
+.settings>.g-btn--primary.settings__end-replay {
+  width: auto;
+  padding: 0 calc(44 * var(--u));
 }
 
 /* 가운데 작은 마름모가 박힌 금선 */
@@ -3418,6 +3435,175 @@ body {
 
 .album__btn:active {
   transform: translateY(1px);
+}
+
+/* 에피소드 / CG 탭 (제목 리본 오른쪽 끝): 뒤로 버튼과 같은 금속 테 + 어두운 벨벳, 고른 탭은 리본과 같은 진홍 */
+.album__tabs {
+  display: flex;
+  gap: 4px;
+  height: 50px;
+  margin-left: auto;
+  padding: 4px;
+  background:
+    var(--g-grain) padding-box,
+    radial-gradient(circle at 50% 35%, #3a1020, #1a060c 75%) padding-box,
+    var(--g-metal) border-box;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 3px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.album__tab {
+  min-width: 96px;
+  padding: 0 22px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: var(--g-sub);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.12s, filter 0.12s;
+}
+
+.album__tab:hover {
+  color: #f3dcb6;
+}
+
+.album__tab--on,
+.album__tab--on:hover {
+  color: #fff3ef;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  background: var(--g-grain), linear-gradient(180deg, #8e1c39, var(--g-crimson) 55%, #5c0f23);
+  box-shadow:
+    inset 0 0 0 1px var(--g-line),
+    0 0 10px var(--g-glow);
+}
+
+.album__tab:active {
+  transform: translateY(1px);
+}
+
+/* CG 모아보기: 목록 없이 넓은 판 하나 (좁은 화면용 2단 배치보다 우선) */
+.album__body.album__body--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* 달 묶음 사이를 에피소드 목록보다 넓게 */
+.album__gallery .album__group+.album__group {
+  margin-top: 36px;
+}
+
+.album__gallery .album__month {
+  margin-bottom: 14px;
+  font-size: 1rem;
+}
+
+.cg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cg-grid__item {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(30, 9, 18, 0.92);
+  border: 2px solid var(--g-line-soft);
+  border-radius: 4px;
+  cursor: zoom-in;
+}
+
+.cg-grid__item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  transition: transform 0.2s ease;
+}
+
+.cg-grid__item:hover {
+  border-color: var(--g-line);
+}
+
+.cg-grid__item:hover img {
+  transform: scale(1.04);
+}
+
+/* 아직 안 본 CG: 어두운 벨벳 판 + 안쪽 가는 테 + 가운데 자물쇠 (데이트 기록의 잠긴 카드와 같은 자물쇠) */
+.cg-grid__item--locked {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background:
+    var(--g-grain),
+    radial-gradient(ellipse 80% 90% at 50% 40%, rgba(120, 26, 52, 0.35), transparent 70%),
+    #14050a;
+  cursor: default;
+}
+
+.cg-grid__item--locked::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--g-line-soft);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.cg-grid__item--locked:hover {
+  border-color: var(--g-line-soft);
+}
+
+.cg-grid__lock {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(30, 9, 18, 0.92);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--g-line),
+    0 0 14px rgba(0, 0, 0, 0.6);
+}
+
+.cg-grid__lock svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--g-line-strong);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cg-grid__lock-text {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.24em;
+  color: var(--g-sub);
+  opacity: 0.8;
+}
+
+/* 아직 안 본 에피소드 묶음 제목 */
+.album__month--locked {
+  opacity: 0.6;
 }
 
 /* 낮거나 좁은 화면: 목록을 줄이고 버튼을 작게 */

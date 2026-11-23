@@ -18,6 +18,7 @@ export default function EpisodeReplay({ episode, onClose }: Props) {
       playerName={load(NAME_KEY) ?? ''}
       replay={loadChoices(episode.id) ?? []}
       onDone={onClose}
+      onEndReplay={onClose}
     />
   );
 }

@@ -59,13 +59,15 @@ interface Props {
   onDone: (affection: Partial<Affection>, picks?: number[]) => void;
   // 설정의 게임 종료 (넘기지 않으면 설정 창에 게임 종료 버튼이 없음)
   onExit?: () => void;
+  // 다시 보기 도중 설정에서 끝내고 나감 (넘기지 않으면 버튼이 없음)
+  onEndReplay?: () => void;
   // 위장도·정신력(위험도)과 매력(호감도 보너스)에 쓰는 현재 스탯
   stats?: Stats;
   // 위험도가 100에 닿아 정체가 들켰을 때 (넘기지 않으면 들켜도 계속 진행)
   onExposed?: () => void;
 }
 
-export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? schoolImg, playerName, showPlayer = false, replay, onDone, onExit, stats = INITIAL_STATS, onExposed }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? schoolImg, playerName, showPlayer = false, replay, onDone, onExit, onEndReplay, stats = INITIAL_STATS, onExposed }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
   const [lines, setLines] = useState(() => (replay ? getReplayLines(episode.lines, replay) : episode.lines));
   // 고른 선택지 번호 (나온 순서대로 기록해 다시 보기에 씀)
@@ -537,6 +539,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
           textSpeed={textSpeed}
           onChangeTextSpeed={setTextSpeed}
           onExit={onExit}
+          onEndReplay={onEndReplay}
           onClose={() => setSettingsOpen(false)}
         />
       )}
