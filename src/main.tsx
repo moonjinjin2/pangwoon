@@ -1,8 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { installClickSound } from './utils/sfx';
 import './index.css';
 import './gothic.css';
+
+installClickSound();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

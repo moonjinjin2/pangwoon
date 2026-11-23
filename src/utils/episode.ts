@@ -238,7 +238,7 @@ const EPISODES: Record<number, Episode> = {
       { text: '심장이 점점 빠르게 뛰기 시작했다.' },
       // 위험 상황 ① 악수
       { speaker: 'player', text: '(안 돼. 여기서 심장이 빨라지면…)', risk: { amount: 40, kind: 'excite' } },
-      { speaker: 'minji', text: '너 좀 맛있는 냄새가 난다…?', expression: 'surprised_soft', voice: 'ep1/민지9' },
+      { speaker: 'minji', text: '너 좀 맛있는 냄새가 난다…?', expression: 'surprised_soft', voice: 'ep1/민지21' },
       { text: '민지는 내 목으로 코끝을 다가가 냄새를 맡으려고 한다.' },
       { text: '점점 가까워지는 얼굴에 몸이 굳었다.' },
       { speaker: 'player', text: '(이대로 냄새를 맡으면…)' },

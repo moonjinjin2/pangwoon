@@ -3,6 +3,7 @@ import crystalImg from '../img/gacha/crystal.png';
 import crackImg from '../img/gacha/crack.png';
 import burstImg from '../img/gacha/burst.png';
 import { Sparkle } from './DecoFrame';
+import { playCardFlip, playGachaResult, playGachaSpin } from '../utils/sfx';
 import { RARITY_META, getEffectParts, rarityRank, type Item } from '../utils/gacha';
 
 interface Props {
@@ -83,7 +84,14 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
   // 여러 개 결과: 카드 번호 → 공개했는지
   const [flipped, setFlipped] = useState<boolean[]>(() => items.map(() => single));
   const allFlipped = flipped.every(Boolean);
-  const flip = (index: number) => setFlipped((prev) => prev.map((v, i) => (i === index ? true : v)));
+  // 뒤집을 때마다 카드 소리 (모두 열기 도중 직접 연 카드는 다시 울리지 않게 연 카드를 기억)
+  const opened = useRef(new Set<number>());
+  const flip = (index: number) => {
+    if (opened.current.has(index)) return;
+    opened.current.add(index);
+    playCardFlip();
+    setFlipped((prev) => prev.map((v, i) => (i === index ? true : v)));
+  };
   // 모두 열기: 남은 카드를 차례로 뒤집음
   const flipTimers = useRef<number[]>([]);
   const flipAll = () => {
@@ -100,7 +108,26 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
     return () => clearTimeout(timer);
   }, [phase]);
 
-  const skip = () => setStep(phases.length - 1);
+  const skip = () => {
+    stopSpin.current();
+    setStep(phases.length - 1);
+  };
+
+  // 연출이 시작될 때 차오르는 소리, 결과가 나오기 전에 건너뛰면 서서히 줄임
+  const stopSpin = useRef<() => void>(() => {});
+  useEffect(() => {
+    stopSpin.current = playGachaSpin();
+    return () => stopSpin.current();
+  }, []);
+
+  // 결과가 나타날 때 효과음
+  // (개발 모드 StrictMode에서 효과가 두 번 돌아도 한 번만 울리게 함)
+  const resultPlayed = useRef(false);
+  useEffect(() => {
+    if (!revealed || resultPlayed.current) return;
+    resultPlayed.current = true;
+    playGachaResult();
+  }, [revealed]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -165,6 +192,8 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
                     <li key={i} style={{ '--delay': `${i * CARD_GAP_MS}ms` } as CSSProperties}>
                       <button
                         type="button"
+                        // 뒤집기 전에는 딸깍 대신 카드 소리만 나게 함
+                        data-sfx={flipped[i] ? undefined : 'none'}
                         className={`gacha-card gacha-card--${item.rarity}${flipped[i] ? ' gacha-card--open' : ''}${useNow[i] ? ' gacha-card--on' : ''}`}
                         style={{ '--rarity': RARITY_META[item.rarity].color } as CSSProperties}
                         aria-label={flipped[i] ? `${item.name}${useNow[i] ? ' (바로 사용)' : ''}` : `${i + 1}번 카드 열기`}

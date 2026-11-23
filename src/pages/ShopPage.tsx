@@ -23,6 +23,7 @@ import {
   type ItemInventory,
 } from '../utils/gacha';
 import { PROGRESS_KEYS, useStoredState } from '../utils/storage';
+import { playItemUse } from '../utils/sfx';
 
 interface Props {
   coins: number;
@@ -109,6 +110,7 @@ export default function ShopPage({ coins, stats, onSpend, onUseItems, onClose }:
       return next;
     });
     onUseItems(items);
+    playItemUse();
     const what = items.length === 1 ? items[0].name : `아이템 ${items.length}개`;
     setNotice({ id: Date.now(), text: `${what} 사용 · ${describeEffects(items)}` });
   };

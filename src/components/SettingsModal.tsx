@@ -1,7 +1,8 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import Dialog from './ui/Dialog';
 import Button from './ui/Button';
-import { TEXT_SPEEDS, type TextSpeed } from '../utils/storage';
+import { SETTINGS_KEYS, TEXT_SPEEDS, useStoredState, type TextSpeed } from '../utils/storage';
+import { DEFAULT_SFX_VOLUME, playClick } from '../utils/sfx';
 
 interface Props {
   volume: number;
@@ -42,6 +43,8 @@ export default function SettingsModal({
 }: Props) {
   // 게임 종료 전 한 번 더 확인 (진행 상황은 저장돼 있어 이어하기로 돌아올 수 있음)
   const [confirmExit, setConfirmExit] = useState(false);
+  // 효과음 음량 (효과음은 저장된 값을 바로 읽어 쓰므로 여기서만 다룸)
+  const [sfxVolume, setSfxVolume] = useStoredState(SETTINGS_KEYS.sfxVolume, DEFAULT_SFX_VOLUME);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -79,6 +82,21 @@ export default function SettingsModal({
             onChange={(e) => onChangeVoiceVolume(Number(e.target.value))}
           />
           <span className="settings__value">{voiceVolume}</span>
+        </label>
+        <label className="settings__row">
+          <span className="settings__label">효과음 음량</span>
+          <input
+            className="settings__slider"
+            type="range"
+            min={0}
+            max={100}
+            value={sfxVolume}
+            style={{ '--fill': `${sfxVolume}%` } as CSSProperties}
+            onChange={(e) => setSfxVolume(Number(e.target.value))}
+            // 손을 뗄 때 바뀐 크기로 한 번 들려줌
+            onPointerUp={() => setTimeout(playClick)}
+          />
+          <span className="settings__value">{sfxVolume}</span>
         </label>
         <div className="settings__row settings__row--stack" role="radiogroup" aria-label="텍스트 속도">
           <span className="settings__label">텍스트 속도</span>

@@ -26,6 +26,8 @@ export const SETTINGS_KEYS = {
   bgmVolume: 'bgmVolume',
   // 더빙 음성 음량
   voiceVolume: 'voiceVolume',
+  // 버튼·가챠 효과음 음량
+  sfxVolume: 'sfxVolume',
   textSpeed: 'textSpeed',
   // 설정의 개발자 모드 (에피소드 바로 보기 등 테스트 기능)
   devMode: 'devMode',
