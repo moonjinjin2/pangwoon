@@ -27,7 +27,7 @@ const FLIP_GAP_MS = 150;
 const SPARKS = 12;
 
 // 카드 뒷면: 핏빛 벨벳 + 금빛 마름모 격자(CSS) 위에 금선 두 겹 테두리 · 계단식 모서리, 가운데 초승달 문장
-// 문장 아래 작은 보석만 등급 색으로 빛나 무엇이 들었는지 살짝 암시
+// 등급은 뒤집기 전까지 알 수 없게 모든 카드 뒷면이 같은 모양·색
 function CardBack() {
   return (
     <span className="gacha-card__back" aria-hidden>
