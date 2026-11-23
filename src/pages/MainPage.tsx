@@ -24,7 +24,7 @@ import ShopPage from './ShopPage';
 import { MAIN_GUIDE } from '../utils/guide';
 import { ACTIVITIES, getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
 import type { Item } from '../utils/gacha';
-import { HEROINES, getEpisode, type Affection, type Heroine } from '../utils/episode';
+import { HEROINES, getEpisode, hasMainEpisode, type Affection, type Heroine } from '../utils/episode';
 import { getWeekIndex, isEpisodeDay } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
 
@@ -38,7 +38,7 @@ interface Props {
   onProceed?: () => void;
 }
 
-const initialPlans: Activity[] = ['job', 'gym', 'meditate', 'tanning'];
+const initialPlans: Activity[] = ['job', 'rest', 'job', 'tanning'];
 
 // 시작 자금
 const START_COINS = 0;
@@ -87,8 +87,8 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
 
   const week = getWeekIndex(gameDate);
   const month = Number(gameDate.split('-')[1]);
-  // 말일은 메인 에피소드 날
-  const episodeDay = isEpisodeDay(gameDate);
+  // 말일은 메인 에피소드 날 (메인 에피소드가 없는 달은 말일을 건너뛰지만, 이미 말일에 저장된 경우 평소처럼)
+  const episodeDay = isEpisodeDay(gameDate) && hasMainEpisode(month);
 
   const changePlan = (week: number, activity: Activity) => {
     setPlans((prev) => prev.map((p, i) => (i === week ? activity : p)));
@@ -118,9 +118,8 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     onProceed?.();
   };
 
-  // 에피소드를 끝까지 보면 컬렉션에 기록하고 선택지 호감도와 게임에서 얻은 스탯을 반영
-  const completeEpisode = (number: number, id: string, changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
-    if (gameStats) applyEffect(gameStats);
+  // 에피소드를 끝까지 보면 컬렉션에 기록하고 선택지 호감도를 반영
+  const completeEpisode = (number: number, id: string, changes: Partial<Affection>, picks?: number[]) => {
     markCollected(number, id, gameDate);
     if (picks) saveChoices(id, picks);
     setAffection((prev) => {
@@ -133,8 +132,8 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   };
 
   // 말일 에피소드가 끝나면 다음 달로
-  const finishEpisode = (changes: Partial<Affection>, gameStats?: Effect, picks?: number[]) => {
-    completeEpisode(getNextEpisodeNumber(), getEpisode(month).id, changes, gameStats, picks);
+  const finishEpisode = (changes: Partial<Affection>, picks?: number[]) => {
+    completeEpisode(getNextEpisodeNumber(), getEpisode(month).id, changes, picks);
     setPlaying(false);
     onProceed?.();
   };
@@ -271,6 +270,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
       {shopOpen && (
         <ShopPage
           coins={coins}
+          stats={stats}
           onSpend={(amount) => setCoins((prev) => prev - amount)}
           onUseItems={applyItems}
           onClose={() => setShopOpen(false)}

@@ -8,6 +8,8 @@ import { Glyph, glyphs } from '../components/DecoFrame';
 import Icon from '../components/Icon';
 import ItemCard from '../components/ItemCard';
 import Plate from '../components/ui/Plate';
+import { DANGER_COLOR, STAT_META, getStatMax, isDanger, type Stats } from '../components/StatsBox';
+import ProgressBar from '../components/ui/ProgressBar';
 import {
   ITEMS,
   PULL_PRICE,
@@ -24,6 +26,8 @@ import { PROGRESS_KEYS, useStoredState } from '../utils/storage';
 
 interface Props {
   coins: number;
+  // 아이템 효과를 바로 확인할 수 있게 현재 스탯을 골드 옆에 표시
+  stats: Stats;
   onSpend: (amount: number) => void;
   // 아이템을 사용하면 효과(스탯·호감도)를 반영
   onUseItems: (items: Item[]) => void;
@@ -64,7 +68,7 @@ function PullButton({ label, price, note, disabled, onClick }: PullButtonProps) 
 }
 
 // 상점: 골드로 비밀의 상자를 열어 아이템을 뽑고 보관함에 모아 둠
-export default function ShopPage({ coins, onSpend, onUseItems, onClose }: Props) {
+export default function ShopPage({ coins, stats, onSpend, onUseItems, onClose }: Props) {
   const [inventory, setInventory] = useStoredState<ItemInventory>(PROGRESS_KEYS.items, {});
   const [results, setResults] = useState<Item[] | null>(null);
   // 한 번 더 뽑을 때 연출을 처음부터 다시 보여주려고 뽑을 때마다 늘림
@@ -134,6 +138,24 @@ export default function ShopPage({ coins, onSpend, onUseItems, onClose }: Props)
           <Icon name="shop" className="page-top__icon" />
           상점
         </h2>
+        <ul className="shop__stats" aria-label="현재 스탯">
+          {STAT_META.map(({ key, label, icon, color }) => {
+            const max = getStatMax(key);
+            const value = Math.max(0, Math.min(max, stats[key]));
+            const danger = key === 'health' && isDanger(key, stats);
+            return (
+              <li key={key} className={danger ? 'shop__stat shop__stat--danger' : 'shop__stat'} title={label}>
+                <Icon name={icon} className="shop__stat-icon" />
+                <span className="shop__stat-label">{label}</span>
+                <span className="shop__stat-value">
+                  {value}
+                  <span className="shop__stat-max"> / {max}</span>
+                </span>
+                <ProgressBar className="shop__stat-bar" value={value} max={max} color={danger ? DANGER_COLOR : color} />
+              </li>
+            );
+          })}
+        </ul>
         <Plate className="topmenu__coins shop__coins" label={`골드 ${formatGold(coins)}`}>
           <span className="topmenu__coin" aria-hidden>G</span>
           <span className="topmenu__amount">{formatGold(coins)}</span>

@@ -9,6 +9,7 @@ import {
   ACTIVITY_ORDER,
   DAYS_PER_WEEK,
   Effect,
+  getAnimation,
   getWeekCost,
   getWeekResult,
   isGoodChange,
@@ -16,6 +17,7 @@ import {
   type Grade,
 } from '../utils/activity';
 import { STAT_LABELS } from './StatsBox';
+import { useFreshGif } from '../utils/media';
 
 // 주간 활동 화면 모음: 고르기(ActivityModal) → 진행 연출(ActivityScene) → 결과(ActivityResult)
 
@@ -98,12 +100,15 @@ interface SceneProps {
 
 export function ActivityScene({ weekLabel, activity, days, onFinish }: SceneProps) {
   const info = ACTIVITIES[activity];
+  // 5일치 결과는 미리 정해져 있으므로 평균 판정(성공/보통/실패)에 맞는 움짤을 처음부터 보여줌
+  const animation = getAnimation(activity, days);
+  const animationUrl = useFreshGif(animation);
   const [frame, setFrame] = useState(0);
   const [revealed, setRevealed] = useState(0);
 
   useEffect(() => {
     // 움짤이 없을 때만 컷을 직접 넘김
-    const tick = info.animation ? undefined : setInterval(() => setFrame((f) => (f + 1) % info.frames.length), FRAME_MS);
+    const tick = animation ? undefined : setInterval(() => setFrame((f) => (f + 1) % info.frames.length), FRAME_MS);
     const reveal = setInterval(() => setRevealed((r) => Math.min(r + 1, DAYS_PER_WEEK)), DAY_MS);
     const end = setTimeout(onFinish, PLAY_MS);
     return () => {
@@ -111,7 +116,7 @@ export function ActivityScene({ weekLabel, activity, days, onFinish }: SceneProp
       clearInterval(reveal);
       clearTimeout(end);
     };
-  }, [info.animation, info.frames.length, onFinish]);
+  }, [animation, info.frames.length, onFinish]);
 
   // Enter / Space로 스킵 (꾹 누르고 있을 때 결과창까지 넘어가지 않도록 반복 입력은 무시)
   useEffect(() => {
@@ -130,8 +135,8 @@ export function ActivityScene({ weekLabel, activity, days, onFinish }: SceneProp
       <div className="g-scene__window">
         <Panel title={`${weekLabel} · ${info.label}`} icon={ACTIVITY_ICONS[activity]}>
           <div className="g-scene__stage">
-            {info.animation ? (
-              <img className="g-scene__animation" src={info.animation} alt={info.label} />
+            {animation ? (
+              animationUrl && <img className="g-scene__animation" src={animationUrl} alt={info.label} />
             ) : (
               <span className="g-scene__frame" aria-hidden>{info.frames[frame]}</span>
             )}

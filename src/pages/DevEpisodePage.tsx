@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import Box from '../components/Box';
 import EpisodeScene from '../components/EpisodeScene';
 import IllustView from '../components/IllustView';
-import type { Effect } from '../utils/activity';
-import { STAT_LABELS, type StatKey } from '../components/StatsBox';
 import { DATE_EPISODES, HEROINES, MAIN_EPISODE_LIST, SPEAKERS, getDateLabel, type Affection, type Episode } from '../utils/episode';
 
 interface Props {
@@ -18,11 +16,10 @@ interface Playing {
   isDate: boolean;
 }
 
-// 테스트로 본 에피소드에서 바뀐 호감도·스탯 (게임 진행에는 반영하지 않고 보여주기만 함)
+// 테스트로 본 에피소드에서 바뀐 호감도 (게임 진행에는 반영하지 않고 보여주기만 함)
 interface TestResult {
   title: string;
   affection: Partial<Affection>;
-  stats?: Effect;
 }
 
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
@@ -43,20 +40,15 @@ export default function DevEpisodePage({ name, gameDate, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [playing, illust, onClose]);
 
-  const finish = (affection: Partial<Affection>, stats?: Effect) => {
+  const finish = (affection: Partial<Affection>) => {
     if (!playing) return;
-    setResult({ title: playing.episode.title, affection, stats });
+    setResult({ title: playing.episode.title, affection });
     // 실제 데이트처럼 끝나면 일러스트 공개
     if (playing.isDate && playing.episode.illust) setIllust(playing.episode);
     setPlaying(null);
   };
 
-  const changes = result && [
-    ...HEROINES.filter((h) => result.affection[h]).map((h) => `${SPEAKERS[h].name} ${signed(result.affection[h]!)}`),
-    ...Object.entries(result.stats ?? {})
-      .filter(([, v]) => v)
-      .map(([k, v]) => `${k === 'coins' ? '자금' : STAT_LABELS[k as StatKey]} ${signed(v!)}`),
-  ];
+  const changes = result && HEROINES.filter((h) => result.affection[h]).map((h) => `${SPEAKERS[h].name} ${signed(result.affection[h]!)}`);
 
   return (
     <>

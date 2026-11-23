@@ -96,7 +96,7 @@ export type IconName = keyof typeof paths;
 export const ACTIVITY_ICONS: Record<Activity, IconName> = {
   job: 'briefcase',
   blood: 'drop',
-  gym: 'dumbbell',
+  rest: 'bed',
   meditate: 'moon',
   tanning: 'sparkle',
 };

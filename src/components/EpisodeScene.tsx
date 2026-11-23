@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState, type AnimationEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import schoolImg from '../img/background/school.jpg';
-import desktopImg from '../img/windows.jpg';
 import SettingsModal from './SettingsModal';
 import MenuButton from './ui/MenuButton';
 import Button from './ui/Button';
@@ -10,14 +9,12 @@ import Panel from './ui/Panel';
 import ProgressBar from './ui/ProgressBar';
 import TalkBox from './ui/TalkBox';
 import { INITIAL_STATS, type Stats } from './StatsBox';
-import { READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, parseGameEnd, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type GameEnd, type Heroine, type Speaker } from '../utils/episode';
+import { READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type Heroine, type Poster, type Speaker } from '../utils/episode';
 import { RISK_LIMIT, boostAffection, rollRisk } from '../utils/storyStats';
-import type { Effect } from '../utils/activity';
 import { getWeekIndex } from '../utils/gameDate';
 import { voiceUrl } from '../utils/voice';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 import DangerWarning from './DangerWarning';
-import { ResultDialog } from './Activity';
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
@@ -35,15 +32,13 @@ const RISK_WARN = 60;
 // 대사가 나오며 오른 위험도 (avoided: 정신력으로 피함)
 type RiskHit = { amount: number; avoided: boolean };
 
-// 게임 화면 전환 단계: 들어가는 전환 → 게임 중 → 나오는 전환(암전) → 에피소드로 복귀(밝아짐)
-type GamePhase = 'enter' | 'play' | 'leave' | 'return';
-
-// TODO(테스트용): 쯔꾸르가 아직 미완성이라 창 닫기(✕)로 나와도 엔딩 A + 예시 스탯으로 이어감
-// 게임에서 game-end 메시지를 보내게 되면 {}로 바꿔서 엔딩·스탯 없이 끝나게 할 것
-const EXIT_GAME_END: GameEnd = {
-  ending: 'A',
-  stats: { health: -20, charm: 10, mental: -15 },
-};
+// 종이를 확대해서 그 지점을 화면 가운데로 (종이 밖이 보이지 않게 가장자리에서 멈춤)
+function posterTransform(zoom: Poster['zoom']) {
+  if (!zoom) return undefined;
+  const edge = 50 / zoom.scale;
+  const clamp = (v: number) => Math.min(100 - edge, Math.max(edge, v));
+  return `scale(${zoom.scale}) translate(${50 - clamp(zoom.x)}%, ${50 - clamp(zoom.y)}%)`;
+}
 
 interface Props {
   // 상단 창 제목에 표시 (에피소드 #0, #1 …)
@@ -60,8 +55,8 @@ interface Props {
   showPlayer?: boolean;
   // 컬렉션에서 다시 볼 때 그때 고른 선택지 번호들 (선택지 대신 고른 대사가 바로 나오고, 호감도는 바뀌지 않음)
   replay?: number[];
-  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 게임에서 얻은 스탯 변화량, 고른 선택지 번호들
-  onDone: (affection: Partial<Affection>, stats?: Effect, picks?: number[]) => void;
+  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 고른 선택지 번호들
+  onDone: (affection: Partial<Affection>, picks?: number[]) => void;
   // 설정의 게임 종료 (넘기지 않으면 설정 창에 게임 종료 버튼이 없음)
   onExit?: () => void;
   // 위장도·정신력(위험도)과 매력(호감도 보너스)에 쓰는 현재 스탯
@@ -86,10 +81,14 @@ export default function EpisodeScene({ number, label, episode, date, background 
     return { total: Math.min(RISK_LIMIT, hit?.amount ?? 0), last: hit };
   });
   const showRisk = !replay && hasRisk(episode.lines);
-  // 위험도가 100에 닿음 (이때부터 대사를 넘길 수 없고, 잠시 뒤 발각 연출)
+  // 위험도가 100에 닿음 (잠시 대사를 넘길 수 없고, 배드엔딩 장면이 있으면 그 장면을 본 뒤 발각 연출)
   const caught = risk.total >= RISK_LIMIT && !!onExposed;
+  // 배드엔딩 장면을 보는 중
+  const [badEnd, setBadEnd] = useState(false);
   // 발각 연출 중
   const [exposed, setExposed] = useState(false);
+  // 대사를 넘길 수 없는 동안 (들킨 직후 · 발각 연출 중)
+  const blocked = (caught && !badEnd) || exposed;
   // 방금 고른 선택지의 호감도 변화 (다음 대사로 넘어가면 사라짐)
   const [feedback, setFeedback] = useState<Partial<Affection> | null>(null);
   const [auto, setAuto] = useState(false);
@@ -97,16 +96,12 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [settingsOpen, setSettingsOpen] = useState(false);
   // 선택지에서 강조된 항목 (방향키·마우스로 고르고 Enter/Space로 선택)
   const [choiceIndex, setChoiceIndex] = useState(0);
-  const [gamePhase, setGamePhase] = useState<GamePhase | null>(null);
-  // 게임이 끝나며 알려준 엔딩·스탯 (게임 종료 버튼으로 나오면 빈 값)
-  const [gameEnd, setGameEnd] = useState<GameEnd | null>(null);
-  const [gameResultOpen, setGameResultOpen] = useState(false);
   // 설정에서 고른 텍스트 속도·음량 (에피소드 도중에도 우측 상단 설정에서 바꿀 수 있음)
   const [textSpeed, setTextSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
   const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
   const [voiceVolume, setVoiceVolume] = useStoredState(SETTINGS_KEYS.voiceVolume, 80);
   // 지금 재생 중인 더빙 음성 (자동 진행은 음성이 끝날 때까지 기다림)
-  const voiceRef = useRef<HTMLAudioElement | null>(null);
+  const voiceRef = useRef<HTMLAudioElement[]>([]);
   const [voicePlaying, setVoicePlaying] = useState(false);
   const typeMs = (TEXT_SPEEDS.find((s) => s.key === textSpeed) ?? TEXT_SPEEDS[1]).ms;
 
@@ -146,6 +141,16 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const choosing = !typing && !!line.choices;
   // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
   const systemError = line.effect === 'system-error';
+  const poster = line.poster;
+  // 일러스트(CG): 마지막으로 지정된 cg (그 사이에 배경이 바뀌었거나 null로 지웠으면 없음)
+  let cg: string | undefined;
+  for (let i = index; i >= 0; i--) {
+    if (lines[i].cg !== undefined) {
+      cg = lines[i].cg ?? undefined;
+      break;
+    }
+    if (lines[i].background) break;
+  }
   // 장면 전환: 지금까지 나온 대사 중 마지막으로 지정된 배경 (없으면 에피소드 배경)
   let lineBackground: string | undefined;
   for (let i = index; !lineBackground && i >= 0; i--) lineBackground = lines[i].background;
@@ -164,30 +169,40 @@ export default function EpisodeScene({ number, label, episode, date, background 
   }, []);
 
   // 대사가 바뀌면 그 대사의 더빙 음성을 재생 (넘기면 이전 음성은 끊음)
+  // 여러 개면 동시에 재생하고, 모두 끝나야 자동 진행
   useEffect(() => {
-    const url = line.voice && voiceUrl(line.voice);
-    if (!url) return;
-    const audio = new Audio(url);
-    audio.volume = voiceVolume / 100;
-    voiceRef.current = audio;
-    const stop = () => setVoicePlaying(false);
-    audio.addEventListener('ended', stop);
-    audio.addEventListener('error', stop);
+    const keys = typeof line.voice === 'string' ? [line.voice] : (line.voice ?? []);
+    const urls = keys.map(voiceUrl).filter((url): url is string => !!url);
+    if (urls.length === 0) return;
+    const audios = urls.map((url) => new Audio(url));
+    voiceRef.current = audios;
+    let remaining = audios.length;
+    const stop = () => {
+      remaining--;
+      if (remaining <= 0) setVoicePlaying(false);
+    };
     setVoicePlaying(true);
-    // 브라우저가 자동 재생을 막으면 음성 없이 진행
-    audio.play().catch(stop);
+    for (const audio of audios) {
+      audio.volume = voiceVolume / 100;
+      audio.addEventListener('ended', stop, { once: true });
+      audio.addEventListener('error', stop, { once: true });
+      // 브라우저가 자동 재생을 막으면 음성 없이 진행
+      audio.play().catch(stop);
+    }
     return () => {
-      audio.pause();
-      audio.removeEventListener('ended', stop);
-      audio.removeEventListener('error', stop);
-      voiceRef.current = null;
+      for (const audio of audios) {
+        audio.pause();
+        audio.removeEventListener('ended', stop);
+        audio.removeEventListener('error', stop);
+      }
+      voiceRef.current = [];
       setVoicePlaying(false);
     };
   }, [line]);
 
   // 재생 중에 음성 음량을 바꾸면 바로 반영
   useEffect(() => {
-    if (voiceRef.current) voiceRef.current.volume = voiceVolume / 100;
+    for (const audio of voiceRef.current) audio.volume = voiceVolume / 100;
   }, [voiceVolume]);
 
   // 한 글자씩 타이핑
@@ -197,99 +212,75 @@ export default function EpisodeScene({ number, label, episode, date, background 
     return () => clearTimeout(timer);
   }, [typing, typed, typeMs]);
 
-  // target 번째 대사로 이동하며 그 사이(건너뛴 대사 포함)에 나온 위험을 반영
+  // 호감도 변화를 더하고 (오르는 호감도에는 매력 보너스) 화면에 표시
+  const gainAffection = (changes: Partial<Affection>[]) => {
+    const gained: Partial<Affection> = {};
+    for (const change of changes) {
+      for (const [key, value] of Object.entries(change) as [Heroine, number][]) {
+        gained[key] = (gained[key] ?? 0) + boostAffection(value, stats.charm);
+      }
+    }
+    if (Object.keys(gained).length === 0) return;
+    setAffection((prev) => {
+      const sum = { ...prev };
+      for (const [key, value] of Object.entries(gained) as [Heroine, number][]) {
+        sum[key] = (sum[key] ?? 0) + value;
+      }
+      return sum;
+    });
+    // 다시 보기에서는 호감도가 바뀌지 않으므로 표시하지 않음
+    if (!replay) setFeedback(gained);
+  };
+
+  // target 번째 대사로 이동하며 그 사이(건너뛴 대사 포함)에 나온 위험·호감도를 반영
   const moveTo = (target: number, current = lines) => {
     let total = risk.total;
     let last: RiskHit | null = null;
+    const changes: Partial<Affection>[] = [];
     for (let i = index + 1; i <= target; i++) {
       const hit = hitRisk(current[i]);
       if (hit) {
         total += hit.amount;
         last = hit;
       }
+      if (current[i].affection && !replay) changes.push(current[i].affection!);
     }
-    setRisk({ total: Math.min(RISK_LIMIT, total), last });
+    setRisk({ total: Math.max(0, Math.min(RISK_LIMIT, total)), last });
+    gainAffection(changes);
     setIndex(target);
     setTyped(0);
   };
 
   const next = (current = lines) => moveTo(index + 1, current);
 
-  const gameStats = gameEnd?.stats;
-  const hasGameStats = !!gameStats && Object.keys(gameStats).length > 0;
-
-  // 에피소드 종료 (게임에서 얻은 스탯이 있으면 결과창을 먼저 보여줌)
-  const finish = () => {
-    if (hasGameStats && !gameResultOpen) {
-      setGameResultOpen(true);
-    } else {
-      onDone(affection, gameStats, picks);
-    }
-  };
+  // 배드엔딩 장면이 끝나면 발각 연출로
+  const finish = () => (badEnd ? setExposed(true) : onDone(affection, picks));
 
   // 다음 대사로 (마지막 대사였으면 에피소드 종료)
-  const proceed = (current = lines) => {
-    if (index < current.length - 1) {
+  const proceed = () => {
+    if (index < lines.length - 1) {
       setFeedback(null);
-      next(current);
+      next();
     } else {
       finish();
     }
   };
 
-  // 타이핑 중이면 문장을 바로 다 보여주고, 아니면 다음 대사로 (선택지가 떠 있거나 게임 중이면 무시)
+  // 타이핑 중이면 문장을 바로 다 보여주고, 아니면 다음 대사로 (선택지가 떠 있으면 무시)
   const advance = () => {
-    if (gamePhase || gameResultOpen || caught) {
+    if (blocked) {
       return;
     } else if (typing) {
       setTyped(text.length);
-    } else if (choosing) {
-      return;
-    } else if (line.game) {
-      setGamePhase('enter');
-    } else {
+    } else if (!choosing) {
       proceed();
     }
   };
 
-  const endGame = (end: GameEnd) => {
-    setGameEnd(end);
-    setGamePhase('leave');
-  };
-
-  // 전환 효과가 끝날 때마다 다음 단계로
-  const onWarpEnd = (e: AnimationEvent) => {
-    if (e.target !== e.currentTarget) return;
-    if (gamePhase === 'enter') {
-      setGamePhase('play');
-    } else if (gamePhase === 'leave') {
-      setGamePhase('return');
-      // 게임이 알려준 엔딩의 대사를 게임 바로 뒤에 끼워 넣고 이어서 진행
-      const ending = gameEnd?.ending ? line.gameEndings?.[gameEnd.ending] : undefined;
-      const current = ending ? [...lines.slice(0, index + 1), ...ending, ...lines.slice(index + 1)] : lines;
-      setLines(current);
-      proceed(current);
-    } else {
-      setGamePhase(null);
-    }
-  };
-
-  // 게임 쪽에서 끝났다고 알려주면 에피소드로 돌아옴
-  useEffect(() => {
-    if (gamePhase !== 'play') return;
-    const onMessage = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin) return;
-      const end = parseGameEnd(e.data);
-      if (end) endGame(end);
-    };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [gamePhase]);
-
-  // 다음 선택지(또는 게임)까지 건너뜀 (더 없으면 에피소드 종료)
+  // 다음 선택지까지 건너뜀 (더 없으면 에피소드 종료)
   const skip = () => {
-    if (choosing || gamePhase || gameResultOpen || caught) return;
-    const target = lines.findIndex((l, i) => i >= index && (l.choices || l.game));
+    if (choosing || blocked) return;
+    const target = lines.findIndex((l, i) => i >= index && l.choices);
     if (target === -1) {
       finish();
       return;
@@ -304,28 +295,29 @@ export default function EpisodeScene({ number, label, episode, date, background 
     setPicks((prev) => [...prev, line.choices!.indexOf(choice)]);
     const current = [...lines.slice(0, index + 1), ...choice.reply, ...lines.slice(index + 1)];
     setLines(current);
-    // 오르는 호감도에는 매력 보너스
-    const gained = Object.fromEntries(
-      Object.entries(choice.affection).map(([key, value]) => [key, boostAffection(value, stats.charm)]),
-    ) as Partial<Affection>;
-    setAffection((prev) => {
-      const sum = { ...prev };
-      for (const [key, value] of Object.entries(gained) as [Heroine, number][]) {
-        sum[key] = (sum[key] ?? 0) + value;
-      }
-      return sum;
-    });
-    // 다시 보기에서는 호감도가 바뀌지 않으므로 표시하지 않음
-    if (!replay) setFeedback(gained);
+    gainAffection([choice.affection]);
     next(current);
   };
 
-  // 위험도가 100에 닿으면 그 대사를 다 보여주고 잠시 뒤 발각 연출, 연출이 끝나면 엔딩으로
+  // 위험도가 100에 닿으면 그 대사를 다 보여주고 잠시 뒤 배드엔딩 장면(없으면 바로 발각 연출), 연출이 끝나면 엔딩으로
   useEffect(() => {
-    if (!caught || typing || exposed) return;
-    const timer = setTimeout(() => setExposed(true), EXPOSE_DELAY_MS);
+    if (!caught || typing || exposed || badEnd) return;
+    const timer = setTimeout(() => {
+      const { badEnding } = episode;
+      if (!badEnding) {
+        setExposed(true);
+        return;
+      }
+      // 남은 대사 대신 배드엔딩 장면으로
+      setBadEnd(true);
+      setLines((prev) => [...prev.slice(0, index + 1), ...badEnding]);
+      setIndex(index + 1);
+      setTyped(0);
+      setFeedback(null);
+      setRisk((prev) => ({ ...prev, last: null }));
+    }, EXPOSE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [caught, typing, exposed]);
+  }, [caught, typing, exposed, badEnd, episode, index]);
 
   useEffect(() => {
     if (!exposed) return;
@@ -335,16 +327,15 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 자동 진행
   useEffect(() => {
-    if (caught || !auto || typing || voicePlaying || choosing || logOpen || settingsOpen || gamePhase || gameResultOpen) return;
+    if (blocked || !auto || typing || voicePlaying || choosing || logOpen || settingsOpen) return;
     const timer = setTimeout(advance, AUTO_MS);
     return () => clearTimeout(timer);
   });
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // 게임 중에는 키 입력을 게임에 맡기고, 결과창에서는 확인 버튼이 받음
       // 설정 창은 Esc를 직접 받아 닫힘
-      if (gamePhase || gameResultOpen || settingsOpen || caught) return;
+      if (settingsOpen || blocked) return;
       if (logOpen) {
         if (e.key === 'Escape') setLogOpen(false);
         return;
@@ -388,7 +379,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
         shownBackground
       )}
 
-      <div className="episode__cast">
+      {/* 일러스트가 바뀌면 새로 그려서 페이드인 */}
+      {cg && <img key={cg} className="episode__bg" src={cg} alt="" aria-hidden />}
+
+      <div className="episode__cast" hidden={!!cg}>
         {shownSpeakers.map((s, i) => (
           <img
             key={s}
@@ -399,6 +393,18 @@ export default function EpisodeScene({ number, label, episode, date, background 
           />
         ))}
       </div>
+
+      {(line.dim || poster) && <div className="episode__dim" aria-hidden />}
+
+      {poster && (
+        <div className="poster" aria-hidden>
+          <div key={poster.image} className="poster__paper">
+            <div className="poster__sheet" style={{ transform: posterTransform(poster.zoom) }}>
+              <img className="poster__image" src={poster.image} alt="" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 위험도가 높으면 체력 경고처럼 화면 가장자리가 붉게 맥박침 */}
       {showRisk && risk.total >= RISK_WARN && <DangerWarning />}
@@ -431,6 +437,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
           {risk.last &&
             (risk.last.avoided ? (
               <span className="g-episode__affection--up">🛡 정신력으로 버텼다! 위험 회피</span>
+            ) : risk.last.amount < 0 ? (
+              <span className="g-episode__affection--down">💧 진정했다! 위험도 {risk.last.amount}</span>
             ) : (
               <span className="g-episode__affection--risk">⚠ 위험도 +{risk.last.amount}</span>
             ))}
@@ -512,50 +520,6 @@ export default function EpisodeScene({ number, label, episode, date, background 
       >
         {systemError ? '' : text.slice(0, typed)}
       </TalkBox>
-
-      {line.game && (gamePhase === 'play' || gamePhase === 'leave') && (
-        // 바탕화면 위에 뜬 프로그램 창처럼 게임을 띄움
-        <div className="episode__game" style={{ backgroundImage: `url(${desktopImg})` }} onClick={(e) => e.stopPropagation()}>
-          <div className="game-window">
-            <div className="game-window__titlebar">
-              <span className="game-window__title">{line.gameTitle ?? line.game}</span>
-              <button
-                className="game-window__close"
-                onClick={() => endGame(EXIT_GAME_END)}
-                disabled={gamePhase === 'leave'}
-                aria-label="게임 종료"
-                title="게임 종료"
-              >
-                ✕
-              </button>
-            </div>
-            <iframe
-              className="game-window__frame"
-              src={`${import.meta.env.BASE_URL}${line.game}/index.html`}
-              title={line.gameTitle ?? '게임'}
-              allow="autoplay; fullscreen"
-              // 바로 키보드로 조작할 수 있게 게임에 포커스
-              onLoad={(e) => e.currentTarget.contentWindow?.focus()}
-            />
-          </div>
-        </div>
-      )}
-
-      {gamePhase && gamePhase !== 'play' && (
-        // 단계마다 새로 그려야 애니메이션이 처음부터 다시 재생됨 (같은 요소면 leave → return에서 멈춤)
-        <div key={gamePhase} className={`warp warp--${gamePhase}`} onAnimationEnd={onWarpEnd} onClick={(e) => e.stopPropagation()}>
-          {gamePhase === 'enter' && (
-            <div className="warp__message">
-              <p className="warp__error">SYSTEM ERROR</p>
-              <p>외부 접속자를 강제 소환합니다.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {gameResultOpen && gameStats && (
-        <ResultDialog title="게임 결과" changes={gameStats} onConfirm={() => onDone(affection, gameStats, picks)} />
-      )}
 
       {exposed && (
         <div className="g-episode__exposed" role="alert" onClick={(e) => e.stopPropagation()}>

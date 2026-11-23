@@ -8,6 +8,8 @@ export const CORE_IMAGES = Object.values(
       '../img/**/*.{png,jpg,jpeg,gif,webp}',
       '!../img/logo.png',
       '!../img/study.gif',
+      '!../img/exercise.gif',
+      '!../img/work.gif',
       '!../img/background/cafe.jpg',
       '!../img/background/bar.png',
       '!../img/background/rooftop.png',
@@ -20,6 +22,8 @@ export const CORE_IMAGES = Object.values(
       '!../img/character/hayeong/hayeong.png',
       '!../img/character/hayeong/hayeong_whole.png',
       '!../img/character/hayeong/hayeong_default.png',
+      // 아직 장면에 배치하지 않은 일러스트
+      '!../img/episode/00_*.png',
     ],
     { eager: true, query: '?url', import: 'default' },
   ),

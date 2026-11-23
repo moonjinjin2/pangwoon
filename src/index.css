@@ -2134,241 +2134,110 @@ body {
   color: var(--g-rose);
 }
 
-/* 미니게임 전환·시스템 오류·게임 창은 스토리 속 레트로 연출이라 픽셀 폰트 유지 */
-.warp,
-.warp *,
+/* 시스템 오류는 스토리 속 레트로 연출이라 픽셀 폰트 유지 */
 .sys-error,
-.sys-error *,
-.game-window,
-.game-window * {
+.sys-error * {
   font-family: 'RoundedFixedsys', system-ui, sans-serif;
 }
 
-/* 쯔꾸르 게임으로 넘어가는 화면 전환 */
-.warp {
+/* 어두운 배경 (독백·종이 연출) */
+.episode__dim {
   position: absolute;
   inset: 0;
-  z-index: 20;
+  background: radial-gradient(ellipse at center, rgba(8, 4, 16, 0.6), rgba(4, 2, 8, 0.92));
+  pointer-events: none;
+  animation: episode-dim-in 0.8s ease;
+}
+
+@keyframes episode-dim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 화면 가운데에 펼친 종이 (대사창 위 공간에 맞춤) */
+.poster {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: default;
+  padding: 64px 16px 220px;
+  pointer-events: none;
 }
 
-/* 붉은 오류 깜박임 → 하얀 빛에 빨려 들어감 → 암전 */
-.warp--enter {
-  animation: warp-enter 2.6s steps(1, end) forwards, warp-enter-fade 2.6s ease-in forwards;
-}
-
-@keyframes warp-enter {
-  0% {
-    background-color: rgba(0, 0, 0, 0);
-  }
-
-  8% {
-    background-color: rgba(255, 30, 70, 0.35);
-  }
-
-  12% {
-    background-color: rgba(0, 0, 0, 0);
-  }
-
-  18% {
-    background-color: rgba(255, 30, 70, 0.45);
-  }
-
-  22% {
-    background-color: rgba(0, 0, 0, 0);
-  }
-
-  28% {
-    background-color: rgba(255, 30, 70, 0.55);
-  }
-
-  32% {
-    background-color: rgba(0, 0, 0, 0);
-  }
-}
-
-/* 위 깜박임 위로 덮이는 빛 → 어둠 */
-@keyframes warp-enter-fade {
-
-  0%,
-  35% {
-    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0);
-  }
-
-  60% {
-    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1);
-  }
-
-  72% {
-    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 1);
-  }
-
-  100% {
-    box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 1);
-  }
-}
-
-.warp__message {
-  text-align: center;
-  font-size: 1.4rem;
-  color: #fff;
-  text-shadow: 2px 2px 0 #000;
-  animation: warp-message 2.6s linear forwards;
-}
-
-.warp__error {
-  margin-bottom: 8px;
-  font-size: 2.6rem;
-  color: #ff3b5c;
-}
-
-@keyframes warp-message {
-  0% {
-    opacity: 0;
-    transform: translateX(0);
-  }
-
-  6% {
-    opacity: 1;
-    transform: translateX(-6px);
-  }
-
-  10% {
-    transform: translateX(6px);
-  }
-
-  14% {
-    transform: translateX(-3px);
-  }
-
-  18% {
-    transform: translateX(0);
-  }
-
-  45% {
-    opacity: 1;
-  }
-
-  58%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* 게임에서 나올 때 암전 → 에피소드로 돌아오며 밝아짐 */
-.warp--leave {
-  background: #000;
-  animation: warp-fade-in 0.8s ease-in forwards;
-}
-
-.warp--return {
-  background: #000;
-  animation: warp-fade-out 0.8s ease-out forwards;
-}
-
-@keyframes warp-fade-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes warp-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.episode__game {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #3a6ea5;
-  background-size: cover;
-  background-position: center;
-  image-rendering: pixelated;
-  cursor: default;
-}
-
-/* 바탕화면 위에 뜬 XP 스타일 프로그램 창 */
-.game-window {
-  display: flex;
-  flex-direction: column;
-  padding: 0 4px 4px;
-  background: #0831d9;
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
-  animation: game-window-open 0.5s ease-out;
-}
-
-@keyframes game-window-open {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.game-window__titlebar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  height: 34px;
-  padding: 0 4px 0 10px;
-  background: linear-gradient(#3d95ff, #0a5be8 18%, #0053e1 80%, #0447c9);
-  border-radius: 7px 7px 0 0;
-}
-
-.game-window__title {
+.poster__paper {
   overflow: hidden;
-  font-size: 1rem;
-  color: #fff;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-shadow: 1px 1px 0 #0a1e6e;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 18px 60px rgba(0, 0, 0, 0.85);
+  transform-origin: top center;
+  animation: poster-unfold 1.1s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-.game-window__close {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  font-size: 0.95rem;
-  color: #fff;
-  background: linear-gradient(#e97a5c, #d6461f);
-  border: 2px solid #fff;
-  border-radius: 4px;
-  cursor: pointer;
+/* 위에서부터 종이가 펼쳐지며 내려옴 */
+@keyframes poster-unfold {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) rotateX(-75deg) scaleY(0.05);
+  }
+
+  55% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(8deg) scaleY(1.02);
+  }
+
+  100% {
+    transform: none;
+  }
 }
 
-.game-window__close:hover {
-  background: linear-gradient(#f39478, #e5552c);
+/* 확대·이동은 천천히 */
+.poster__sheet {
+  position: relative;
+  transition: transform 1.2s cubic-bezier(0.45, 0, 0.25, 1);
 }
 
-/* 게임 화면 비율(816x624)을 유지하며 화면 안에 맞춤 */
-.game-window__frame {
+.poster__image {
   display: block;
-  width: min(92vw, calc((90vh - 38px) * 816 / 624));
-  aspect-ratio: 816 / 624;
-  border: none;
-  background: #000;
+  max-width: min(760px, 92vw);
+  max-height: calc(100vh - 300px);
+}
+
+/* 강조 부분: 빛나는 테두리가 맥박침 */
+.poster__mark {
+  position: absolute;
+  border: 2px solid rgba(255, 214, 120, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(255, 200, 90, 0.8), inset 0 0 12px rgba(255, 200, 90, 0.45);
+  transition:
+    left 1.2s cubic-bezier(0.45, 0, 0.25, 1),
+    top 1.2s cubic-bezier(0.45, 0, 0.25, 1),
+    width 1.2s cubic-bezier(0.45, 0, 0.25, 1),
+    height 1.2s cubic-bezier(0.45, 0, 0.25, 1);
+  animation:
+    poster-mark-in 0.8s ease 1.2s backwards,
+    poster-mark-pulse 1.6s ease-in-out 2s infinite;
+}
+
+@keyframes poster-mark-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes poster-mark-pulse {
+  50% {
+    box-shadow: 0 0 24px rgba(255, 200, 90, 1), inset 0 0 18px rgba(255, 200, 90, 0.6);
+  }
+}
+
+@media (max-width: 760px) {
+  .poster {
+    padding-bottom: 180px;
+  }
+
+  .poster__image {
+    max-height: calc(100vh - 250px);
+  }
 }
 
 /* 시스템 오류 화면 효과 */
@@ -3954,8 +3823,63 @@ body {
   height: 1em;
 }
 
-.shop__coins {
-  margin-left: auto;
+.shop__stats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+/* 아이콘 · 스탯명 · 수치 한 줄 + 아래 미니 게이지 */
+.shop__stat {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px 5px;
+  width: 135px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--g-sub);
+}
+
+.shop__stat-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--g-line-strong);
+  stroke-width: 1.5;
+}
+
+.shop__stat-value {
+  font-family: 'BusanDandiMyeongjo';
+  font-weight: 600;
+  font-size: 0.8em;
+  line-height: 1;
+  color: var(--g-text);
+  white-space: nowrap;
+}
+
+.shop__stat-bar {
+  grid-column: 1 / -1;
+  height: 5px;
+}
+
+.shop__stat--danger .shop__stat-bar {
+  animation: stat-warn-blink 1.1s ease-in-out infinite;
+}
+
+.shop__stat-max {
+  font-weight: 400;
+  color: var(--g-sub);
+}
+
+.shop__stat--danger,
+.shop__stat--danger .shop__stat-icon,
+.shop__stat--danger .shop__stat-value {
+  color: #ff6b84;
 }
 
 .shop__body {
@@ -4432,6 +4356,27 @@ body {
 
   .shop__coins {
     font-size: 1rem;
+  }
+
+  .page-top:has(.shop__stats) {
+    flex-wrap: wrap;
+  }
+
+  .shop__stats {
+    order: 1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .shop__stat {
+    width: auto;
+  }
+
+  .shop__stat-label {
+    display: none;
   }
 
   .shop__body {
@@ -5069,12 +5014,14 @@ body {
 }
 
 @keyframes gacha-card-heat {
+
   0%,
   15% {
     transform: rotateY(180deg) scale(1.1);
     border-color: color-mix(in srgb, var(--rarity) 70%, #fff);
     box-shadow: 0 0 36px color-mix(in srgb, var(--rarity) 95%, transparent), inset 0 0 30px color-mix(in srgb, var(--rarity) 70%, transparent);
   }
+
   35% {
     transform: rotateY(180deg) scale(0.97);
   }
@@ -5123,6 +5070,7 @@ body {
   0% {
     opacity: 0.95;
   }
+
   100% {
     opacity: 0;
   }
@@ -5169,6 +5117,7 @@ body {
     opacity: 1;
     transform: translate(-50%, -50%) scale(0.3);
   }
+
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.1);
@@ -5180,6 +5129,7 @@ body {
     opacity: 1;
     transform: translate(-50%, -50%) scale(0.4);
   }
+
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(2.8);
@@ -5220,9 +5170,11 @@ body {
     opacity: 1;
     transform: rotate(var(--angle)) translateY(0) scale(1.4);
   }
+
   65% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
     transform: rotate(var(--angle)) translateY(calc(-1 * var(--spread))) scale(0.5);

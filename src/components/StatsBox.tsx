@@ -51,17 +51,17 @@ export function clampStats(stats: Stats): Stats {
   return next;
 }
 
-const statMeta: { key: StatKey; label: string; icon: IconName; color: string }[] = [
+export const STAT_META: { key: StatKey; label: string; icon: IconName; color: string }[] = [
   { key: 'health', label: '체력', icon: 'heart', color: '#d8475f' },
   { key: 'charm', label: '매력', icon: 'sparkle', color: '#e07aa6' },
   { key: 'mental', label: '정신력', icon: 'moon', color: '#7f74d6' },
   { key: 'disguise', label: '위장도', icon: 'mask', color: '#9a8fa8' },
 ];
 
-export const STAT_KEYS = statMeta.map(({ key }) => key);
+export const STAT_KEYS = STAT_META.map(({ key }) => key);
 
 // 경고 수치에 닿은 스탯의 막대 색
-const DANGER_COLOR = '#ff4d6a';
+export const DANGER_COLOR = '#ff4d6a';
 
 export type StatGrade = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
@@ -80,7 +80,7 @@ export function getStatGrade(key: StatKey, stats: Stats): StatGrade {
   return GRADES.find(({ ratio: min }) => ratio >= min)!.grade;
 }
 
-export const STAT_LABELS = Object.fromEntries(statMeta.map(({ key, label }) => [key, label])) as Record<StatKey, string>;
+export const STAT_LABELS = Object.fromEntries(STAT_META.map(({ key, label }) => [key, label])) as Record<StatKey, string>;
 
 interface Props {
   stats: Stats;
@@ -90,7 +90,7 @@ export default function StatsBox({ stats }: Props) {
   return (
     <Panel title="상태 정보" icon="sparkle">
       <ul className="g-stats">
-        {statMeta.map(({ key, label, icon, color }) => {
+        {STAT_META.map(({ key, label, icon, color }) => {
           const max = STAT_MAX[key];
           const value = Math.max(0, Math.min(max, stats[key]));
           // 경고 수치에 닿은 스탯은 경고 원인임을 알 수 있게 붉게 표시

@@ -59,6 +59,11 @@ export function isEpisodeDay(date: string) {
   return d.getDate() === lastDayOf(d);
 }
 
+// 'YYYY-MM-DD' → 월(1~12)
+export function getMonth(date: string) {
+  return Number(date.split('-')[1]);
+}
+
 // 진행하기 후의 날짜
 // 1주차 → 2주차 → 3주차 → 4주차 → 에피소드(말일) → 다음 달 1일
 export function getNextWeekDate(date: string) {

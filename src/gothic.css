@@ -1551,6 +1551,7 @@
 
 /* 마지막엔 거의 검게 잠겨 엔딩 화면으로 이어짐 */
 @keyframes exposed-darken {
+
   0%,
   60% {
     box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0);
@@ -2003,8 +2004,8 @@
 }
 
 .item-card__count {
-  font-family: var(--font-latin);
   font-weight: 600;
+  font-size: 0.7em;
   color: #f3dcb6;
   background: rgba(20, 6, 12, 0.88);
   border: 1px solid var(--g-line);

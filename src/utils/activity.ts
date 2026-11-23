@@ -1,9 +1,16 @@
 import { getStatMax, type StatKey, type Stats } from '../components/StatsBox';
-import exerciseGif from '../img/exercise.gif';
-import workGif from '../img/work.gif';
 import restGif from '../img/rest.gif';
+import jobSuccessGif from '../img/activity/학사근로_성공.gif';
+import jobNormalGif from '../img/activity/학사근로_보통.gif';
+import jobFailGif from '../img/activity/학사근로_실패.gif';
+import gymSuccessGif from '../img/activity/침대뒹굴기_성공.gif';
+import gymNormalGif from '../img/activity/침대뒹굴기_보통.gif';
+import gymFailGif from '../img/activity/침대뒹굴기_실패.gif';
+import tanningSuccessGif from '../img/activity/화이트태닝_성공.gif';
+import tanningNormalGif from '../img/activity/화이트태닝_보통.gif';
+import tanningFailGif from '../img/activity/화이트태닝_실패.gif';
 
-export type Activity = 'job' | 'blood' | 'gym' | 'meditate' | 'tanning';
+export type Activity = 'job' | 'blood' | 'rest' | 'meditate' | 'tanning';
 
 // 스탯·자금 변화량 (coins = 자금, 원 단위)
 export type Effect = Partial<Record<StatKey | 'coins', number>>;
@@ -18,8 +25,8 @@ interface ActivityInfo {
   icon: string;
   color: string;
   message: string;
-  // 활동 중 보여줄 움짤
-  animation?: string;
+  // 활동 중 보여줄 움짤. 판정별로 나뉘어 있으면 5일치 평균 판정에 맞는 움짤을 보여줌
+  animation?: string | Record<Grade, string>;
   // 움짤이 없을 때 대신 순서대로 반복되는 컷
   frames: string[];
   // 하루 비용 (원). 판정과 상관없이 매일 나감
@@ -35,7 +42,7 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     icon: '💼',
     color: '#8fd8f5',
     message: '학사 사무실에서 알바를 합니다...',
-    animation: workGif,
+    animation: { success: jobSuccessGif, normal: jobNormalGif, fail: jobFailGif },
     frames: ['💼', '☕', '💰'],
     cost: 0,
     perDay: {
@@ -57,12 +64,12 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
       success: { coins: 60000, health: -14 },
     },
   },
-  gym: {
+  rest: {
     label: '침대에서 뒹굴거리기',
     icon: '🛏️',
     color: '#f5a98a',
     message: '침대에서 뒹굴거리며 쉽니다...',
-    animation: exerciseGif,
+    animation: { success: gymSuccessGif, normal: gymNormalGif, fail: gymFailGif },
     frames: ['🛏️', '💤', '😪'],
     cost: 0,
     perDay: {
@@ -90,6 +97,7 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
     icon: '✨',
     color: '#f5c6dc',
     message: '창백하고 매혹적인 피부를 가꿉니다...',
+    animation: { success: tanningSuccessGif, normal: tanningNormalGif, fail: tanningFailGif },
     frames: ['🧴', '✨', '🪞'],
     cost: 0,
     perDay: {
@@ -100,7 +108,7 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
   },
 };
 
-export const ACTIVITY_ORDER: Activity[] = ['job', 'blood', 'gym', 'meditate', 'tanning'];
+export const ACTIVITY_ORDER: Activity[] = ['job', 'blood', 'rest', 'meditate', 'tanning'];
 
 // 한 주차는 월~금 5일치를 한 번에 진행
 export const DAYS_PER_WEEK = 5;
@@ -136,6 +144,21 @@ export function rollDays(activity: Activity, stats: Stats): Grade[] {
   return days;
 }
 
+const GRADE_SCORES: Record<Grade, number> = { fail: 0, normal: 1, success: 2 };
+
+// 여러 날 판정의 평균 (✕=0, △=1, ○=2 점수 평균을 반올림)
+export function getAverageGrade(days: Grade[]): Grade {
+  if (days.length === 0) return 'normal';
+  const avg = days.reduce((sum, grade) => sum + GRADE_SCORES[grade], 0) / days.length;
+  return GRADES[Math.round(avg)];
+}
+
+// 활동 중 보여줄 움짤 (판정별 움짤이 있으면 평균 판정에 맞는 것으로)
+export function getAnimation(activity: Activity, days: Grade[]) {
+  const { animation } = ACTIVITIES[activity];
+  return typeof animation === 'object' ? animation[getAverageGrade(days)] : animation;
+}
+
 // 모든 스탯·자금은 오르는 쪽이 좋은 변화
 export function isGoodChange(_key: keyof Effect, value: number) {
   return value > 0;
@@ -161,7 +184,7 @@ export function getWeekResult(activity: Activity, days: Grade[]): Effect {
 const EFFECT_SUMMARY: Record<Activity, [keyof Effect, 'up' | 'down'][]> = {
   job: [['coins', 'up'], ['health', 'down']],
   blood: [['coins', 'up'], ['health', 'down']],
-  gym: [['health', 'up']],
+  rest: [['health', 'up']],
   meditate: [['mental', 'up']],
   tanning: [['charm', 'up']],
 };

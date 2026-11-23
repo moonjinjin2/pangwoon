@@ -4,8 +4,8 @@ import SetNamePage from './pages/SetNamePage';
 import MainPage from './pages/MainPage';
 import EpisodeScene from './components/EpisodeScene';
 import roomImg from './img/background/room.png';
-import { PROLOGUE, PROLOGUE_DATE } from './utils/episode';
-import { START_GAME_DATE, getNextWeekDate } from './utils/gameDate';
+import { PROLOGUE, PROLOGUE_DATE, hasMainEpisode } from './utils/episode';
+import { START_GAME_DATE, getMonth, getNextWeekDate, isEpisodeDay } from './utils/gameDate';
 import { DATE_KEY, NAME_KEY, PROGRESS_KEYS, clearProgress, load, markCollected, remove, save } from './utils/storage';
 import LoadingScreen from './components/LoadingScreen';
 import { CORE_IMAGES, useMinLoading, usePreload } from './utils/preload';
@@ -83,7 +83,9 @@ function Game() {
   };
 
   const handleProceed = () => {
-    const next = getNextWeekDate(gameDate);
+    let next = getNextWeekDate(gameDate);
+    // 메인 에피소드가 없는 달은 말일을 건너뛰고 다음 달로
+    if (isEpisodeDay(next) && !hasMainEpisode(getMonth(next))) next = getNextWeekDate(next);
     save(DATE_KEY, next);
     setGameDate(next);
   };
