@@ -8,7 +8,7 @@ import AffectionBox, { MAX_AFFECTION, REVEAL_PRICE } from '../components/Affecti
 import EpisodeScene from '../components/EpisodeScene';
 import FundsAlert from '../components/FundsAlert';
 import GuideTour from '../components/GuideTour';
-import Icon, { type IconName } from '../components/Icon';
+import Icon from '../components/Icon';
 import StatsBox, { DANGER_KINDS, INITIAL_STATS, clampStats, isDanger, isGameOver, type DangerKind, type EndingKind, type StatKey } from '../components/StatsBox';
 import DangerWarning, { DangerAlert } from '../components/DangerWarning';
 import BadEnding from '../components/BadEnding';
@@ -19,7 +19,6 @@ import HexButton from '../components/ui/HexButton';
 import TalkBox from '../components/ui/TalkBox';
 import CollectionPage from './CollectionPage';
 import DevEpisodePage from './DevEpisodePage';
-import DatePage from './DatePage';
 import ShopPage from './ShopPage';
 import { MAIN_GUIDE } from '../utils/guide';
 import { ACTIVITIES, getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
@@ -74,7 +73,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
   // 본 데이트를 다시 보는 데이트 앨범
-  const [dateAlbumOpen, setDateAlbumOpen] = useState(false);
   // 스탯이 경고 수치에 닿은 걸 이미 알렸는지 (벗어났다 다시 닿으면 또 알림)
   const [dangerWarned, setDangerWarned] = useStoredState(PROGRESS_KEYS.dangerWarned, initialDangerWarned);
   const [dangerAlert, setDangerAlert] = useState<DangerKind | null>(null);
@@ -233,7 +231,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
         <div className="main__action">
           <ActionBox
             onProceed={proceed}
-            onDate={() => setDateAlbumOpen(true)}
             // 말일 에피소드 날 안내
             notice={
               episodeDay ? (
@@ -262,7 +259,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
         ) : (
           <ActivityScene weekLabel={`${month}월 ${week + 1}주`} activity={plans[week]} days={days} onFinish={finishActivity} />
         ))}
-      {dateAlbumOpen && <DatePage onClose={() => setDateAlbumOpen(false)} />}
       {showResult && <ActivityResult activity={plans[week]} days={days} onConfirm={finishWeek} />}
       {fundsAlert && (
         <FundsAlert activity={plans[week]} cost={getWeekCost(plans[week])} coins={coins} onClose={() => setFundsAlert(false)} />
@@ -311,38 +307,18 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
 
 interface ActionBoxProps {
   onProceed: () => void;
-  // 본 데이트 다시 보기 (데이트 앨범)
-  onDate: () => void;
   // 일정 진행 버튼 위에 띄우는 말풍선 (이벤트·에피소드 날 안내)
   notice?: ReactNode;
 }
 
-const ACTION_ITEMS: { label: string; icon: IconName }[] = [
-  { label: '일정 진행', icon: 'calendar' },
-  { label: '데이트', icon: 'heart' },
-];
-
-// 일정 진행·데이트 버튼 (클릭으로만 실행, 단축키 없음)
-function ActionBox({ onProceed, onDate, notice }: ActionBoxProps) {
-  // 0: 일정 진행, 1: 데이트 (마우스를 올린 버튼이 빛남)
-  const [selected, setSelected] = useState(0);
-
-  const run = (index: number) => (index === 0 ? onProceed() : onDate());
-
+// 일정 진행 버튼 (클릭으로만 실행, 단축키 없음)
+function ActionBox({ onProceed, notice }: ActionBoxProps) {
   return (
     <div className="g-actions">
-      {ACTION_ITEMS.map(({ label, icon }, i) => (
-        <div key={i} className="g-actions__item">
-          {i === 0 && notice && <span className="main__bubble">{notice}</span>}
-          <HexButton
-            icon={icon}
-            label={label}
-            selected={selected === i}
-            onSelect={() => setSelected(i)}
-            onClick={() => run(i)}
-          />
-        </div>
-      ))}
+      <div className="g-actions__item">
+        {notice && <span className="main__bubble">{notice}</span>}
+        <HexButton icon="calendar" label="진행하기" selected onClick={onProceed} />
+      </div>
     </div>
   );
 }

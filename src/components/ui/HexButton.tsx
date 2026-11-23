@@ -9,7 +9,7 @@ interface Props {
   onSelect?: () => void;
 }
 
-// 육각형 행동 버튼 (일정 진행·데이트)
+// 육각형 행동 버튼 (일정 진행)
 export default function HexButton({ icon, label, selected = false, onClick, onSelect }: Props) {
   return (
     <button

@@ -9,9 +9,7 @@ import Icon, { HeartMark } from '../components/Icon';
 import IllustView from '../components/IllustView';
 import { Glyph, glyphs } from '../components/DecoFrame';
 import {
-  DATE_EPISODES,
   EPISODE_CATALOG,
-  HEROINES,
   PROLOGUE,
   PROLOGUE_DATE,
   READY_BACKGROUNDS,
@@ -61,9 +59,6 @@ interface Entry {
   // 본 달 (목록을 달별로 묶음)
   month: number;
 }
-
-// 데이트는 데이트 기록에서 따로 보므로 앨범에서는 뺌
-const DATE_IDS = new Set(HEROINES.flatMap((h) => DATE_EPISODES[h].map((e) => e.id)));
 
 // 본 달 (본 날짜를 기록하기 전에 본 에피소드는 프롤로그·달 에피소드('month-5')만 짐작하고, 모르면 undefined)
 function seenMonthOf(number: number, episode: Episode, seen: Record<string, string>) {
@@ -131,7 +126,7 @@ function LockedCg() {
   );
 }
 
-// CG 모아보기: 메인 에피소드(달)별로 묶어 보여주고, 아직 안 본 에피소드의 CG는 잠가 둠 (데이트 일러스트는 데이트 기록에서)
+// CG 모아보기: 메인 에피소드(달)별로 묶어 보여주고, 아직 안 본 에피소드의 CG는 잠가 둠 
 function CgGallery({ collectedIds, onView }: { collectedIds: Set<string>; onView: (cg: string, episode: Episode) => void }) {
   const groups = MAIN_EPISODE_MONTHS.map((month) => {
     const episode = getMainEpisode(month);
@@ -199,7 +194,7 @@ export default function CollectionPage({ onClose }: Props) {
   const seen = loadSeenDates();
   const entries: Entry[] = Object.entries(collected)
     .map(([key, id]) => ({ number: Number(key), episode: EPISODE_CATALOG.find((e) => e.id === id) }))
-    .filter((e): e is { number: number; episode: Episode } => !!e.episode && !DATE_IDS.has(e.episode.id))
+    .filter((e): e is { number: number; episode: Episode } => !!e.episode)
     .sort((a, b) => b.number - a.number)
     .map(({ number, episode }) => ({ number, episode, month: seenMonthOf(number, episode, seen) }))
     // 본 날짜 기록이 없으면 가까운 회차의 달로 봄

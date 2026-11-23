@@ -36,8 +36,8 @@ export const MAIN_GUIDE: GuideStep[] = [
     target: ['.main__right > :nth-child(2)'],
   },
   {
-    title: '일정 진행 · 데이트',
-    text: '일정 진행을 누르면 이번 주 스케줄이 실행돼요.\n매달 말일엔 메인 에피소드가 기다리고 있어요.\n데이트에선 지금까지 본 데이트를 다시 볼 수 있어요.',
+    title: '일정 진행',
+    text: '진행하기를 누르면 이번 주 스케줄이 실행돼요.\n매달 말일엔 메인 에피소드가 기다리고 있어요.',
     target: ['.main__action'],
   },
   {

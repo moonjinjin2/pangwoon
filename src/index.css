@@ -10,7 +10,6 @@
 .modal,
 .shop,
 .album,
-.dates,
 .illust,
 .loading,
 .gacha-scene,
@@ -19,7 +18,7 @@
   font-family: var(--font-serif);
 }
 
-:where(.box, .modal, .shop, .album, .dates, .illust, .loading, .gacha-scene, .dev-episodes, .bad-ending) * {
+:where(.box, .modal, .shop, .album, .illust, .loading, .gacha-scene, .dev-episodes, .bad-ending) * {
   font-family: inherit;
 }
 
@@ -683,7 +682,6 @@ body {
 .main__action {
   position: relative;
   flex-shrink: 0;
-  width: calc(520 * var(--u));
   display: flex;
 }
 
@@ -2374,10 +2372,6 @@ body {
     left: calc(480 * var(--u));
   }
 
-  .main__action {
-    width: calc(420 * var(--u));
-  }
-
 }
 
 /* 모바일(가로): 뒤로 버튼·골드 아이콘 작게 */
@@ -2605,21 +2599,7 @@ body {
   }
 }
 
-/* Date records: 히로인별 데이트 기록 (본 데이트 다시 보기) */
-.dates {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 24px 32px 28px;
-  color: var(--g-text);
-  background-size: cover;
-  background-position: center;
-}
-
-.dates .heart-mark,
+/* 앨범·상점 공용 상단 (뒤로 버튼 + 리본 제목) */
 .album .heart-mark {
   width: 1em;
   height: 1em;
@@ -2702,6 +2682,7 @@ body {
   clip-path: inherit;
 }
 
+/* 큰 상자 (상점 뽑기·가방): 테두리 판 + 제목 줄 */
 .dates__panel {
   display: flex;
   flex-direction: column;
@@ -2740,314 +2721,8 @@ body {
   color: var(--g-text);
 }
 
-.dates__count {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--g-sub);
-}
-
-.dates__count b {
-  padding: 3px 14px;
-  font-size: 1rem;
-  color: #fff;
-  background: var(--g-crimson);
-  border-radius: 3px;
-}
-
-.dates__rows {
-  display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  flex: 1;
-  min-height: 0;
-  padding: 20px 24px 24px;
-  overflow: auto;
-}
-
-.dates__row {
-  display: grid;
-  grid-template-columns: minmax(110px, 0.5fr) minmax(0, 4fr);
-  gap: 20px;
-  min-height: 0;
-}
-
-.dates__profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 0;
-  padding: 8px;
-  background: rgba(30, 9, 18, 0.82);
-  border-radius: 4px;
-}
-
-/* 캐릭터 그림을 크게 키워 얼굴 부분만 동그랗게 보여줌 (얼굴 위치는 DatePage FACES) */
-.dates__avatar {
-  position: relative;
-  width: min(100px, 70%);
-  aspect-ratio: 1;
-  flex-shrink: 1;
-  min-height: 0;
-  overflow: hidden;
-  background: rgba(30, 9, 18, 0.92);
-  border: 3px solid var(--g-line);
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--g-line);
-}
-
-.dates__avatar img {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 230%;
-  user-select: none;
-  pointer-events: none;
-}
-
-.dates__name {
-  margin-top: 6px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1.35rem;
-}
-
-.dates__progress {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--g-sub);
-}
-
-.dates__progress .heart-mark {
-  width: 0.9em;
-  height: 0.9em;
-}
-
-.dates__cards {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.date-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: rgba(30, 9, 18, 0.92);
-  border-radius: 4px;
-  box-shadow:
-    0 0 0 2px var(--g-line),
-    0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.date-card:not(.date-card--locked):hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 0 0 2px var(--g-line),
-    0 8px 18px rgba(0, 0, 0, 0.48);
-}
-
-.date-card__frame {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  background: rgba(30, 9, 18, 0.92);
-}
-
-.date-card__art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  background: none;
-  border: none;
-  cursor: zoom-in;
-}
-
-.date-card__art .ep-card__illust {
-  object-position: center 20%;
-}
-
-.date-card__no {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  padding: 2px 12px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-style: normal;
-  font-size: 0.8rem;
-  color: var(--g-line-strong);
-  background: rgba(30, 9, 18, 0.92);
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.date-card__replay {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-style: normal;
-  font-size: 0.85rem;
-  color: #fff;
-  background: var(--g-crimson);
-  border: none;
-  border-radius: 3px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
-  cursor: pointer;
-}
-
-.date-card__replay svg {
-  width: 9px;
-  height: 9px;
-  fill: currentColor;
-}
-
-.date-card__replay:hover {
-  background: #7a1630;
-}
-
-.date-card__info {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px;
-}
-
-.date-card__title {
-  overflow: hidden;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1rem;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.date-card__when {
-  flex-shrink: 0;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-style: normal;
-  font-size: 0.75rem;
-  color: var(--g-sub);
-}
-
-/* 아직 안 본 데이트: 점선 테두리 + 빗금 */
-.date-card--locked {
-  background: rgba(30, 9, 18, 0.82);
-}
-
-.date-card--locked .date-card__frame {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin: 8px 8px 0;
-  /* 위쪽은 데이트 번호 라벨 자리 */
-  padding: 30px 8px 8px;
-  text-align: center;
-  background: repeating-linear-gradient(135deg, rgba(30, 9, 18, 0.92) 0 10px, rgba(30, 9, 18, 0.92) 10px 20px);
-  border: 2px dashed var(--g-line);
-  border-radius: 4px;
-}
-
-.date-card--locked .date-card__no {
-  color: var(--g-sub);
-}
-
-.date-card__lock {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 6px;
-  flex-shrink: 0;
-  background: rgba(30, 9, 18, 0.92);
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--g-line);
-}
-
-.date-card__lock svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: var(--g-line-strong);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.date-card__lock-title {
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--g-sub);
-}
-
-.date-card__lock-sub {
-  font-size: 0.78rem;
-  color: var(--g-sub);
-}
-
-.date-card--locked .date-card__title {
-  color: var(--g-sub);
-}
-
-/* 낮은 화면에서는 잠긴 카드 안내 문구를 줄임 */
-@media (max-height: 760px) {
-  .date-card__lock {
-    width: 34px;
-    height: 34px;
-    margin-bottom: 2px;
-  }
-
-  .date-card__lock-sub,
-  .date-card__lock-title {
-    display: none;
-  }
-
-  .dates__rows {
-    gap: 14px;
-    padding: 14px 18px 18px;
-  }
-}
-
-/* 좁은 화면: 히로인 프로필을 위에 한 줄로, 카드는 2칸씩, 목록은 스크롤 */
+/* 좁은 화면: 큰 상자 제목 줄을 줄임 */
 @media (max-width: 760px) {
-  .dates {
-    gap: 12px;
-    padding: 16px;
-  }
-
   .dates__head {
     flex-wrap: wrap;
     padding: 10px 16px;
@@ -3055,61 +2730,6 @@ body {
 
   .dates__head h3 {
     font-size: 1.1rem;
-  }
-
-  .dates__rows {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 16px;
-  }
-
-  .dates__row {
-    grid-template-columns: minmax(0, 1fr);
-    flex-shrink: 0;
-    gap: 10px;
-  }
-
-  .dates__profile {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 8px 12px;
-  }
-
-  .dates__avatar {
-    width: 48px;
-  }
-
-  .dates__name {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-
-  .dates__cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .date-card__frame {
-    flex: none;
-    aspect-ratio: 4 / 3;
-  }
-
-  .date-card--locked .date-card__frame {
-    aspect-ratio: auto;
-    height: 120px;
-  }
-
-  .date-card__lock-sub {
-    display: none;
-  }
-
-  .date-card__replay {
-    right: 8px;
-    bottom: 8px;
-    padding: 4px 10px;
-    font-size: 0.75rem;
   }
 }
 
