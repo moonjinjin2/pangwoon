@@ -157,7 +157,7 @@ export interface Episode {
 }
 
 // 뱀파이어 테마에 맞춰 준비된 배경 (나머지 그림 배경은 EpisodeScene에서 임시로 school.jpg로 보여줌)
-export const READY_BACKGROUNDS = new Set<string>([roomImg, ballroomImg, barImg, studyroomImg]);
+export const READY_BACKGROUNDS = new Set<string>([roomImg, ballroomImg, barImg, studyroomImg, waterparkImg]);
 
 // 임시 에피소드. 달(1~12)별로 지정하고, 없는 달은 DEFAULT_EPISODE
 const EPISODES: Record<number, Episode> = {
