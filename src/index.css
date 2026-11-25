@@ -127,25 +127,6 @@ body {
   text-align: center;
 }
 
-.start__kicker {
-  display: flex;
-  align-items: center;
-  gap: calc(16 * var(--u));
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: calc(20 * var(--u));
-  letter-spacing: 0.04em;
-  color: var(--night-gold);
-}
-
-.start__kicker::before,
-.start__kicker::after {
-  content: '';
-  width: calc(42 * var(--u));
-  height: calc(2 * var(--u));
-  background: var(--night-gold);
-}
-
 .start__title {
   display: flex;
   flex-direction: column;
@@ -312,6 +293,40 @@ body {
   pointer-events: none;
   mix-blend-mode: screen;
   opacity: 0.6;
+}
+
+/* 오프닝 영상: 화면을 꽉 채워 재생하고 오른쪽 아래에 건너뛰기 */
+.intro-video {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+.intro-video__player {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.intro-video__skip {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.intro-video__skip:hover,
+.intro-video__skip:focus-visible {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -687,89 +702,6 @@ body {
 
 .main__action .hud-card {
   flex: 1;
-}
-
-/* Set Name: 시작 화면과 같은 밤 배경 위 고딕풍 상자. 1920x1080 시안 기준 크기를 --u로 비례 축소 */
-.setname {
-  --u: max(0.55px, min(100vw / 1920, 100vh / 1080));
-  position: relative;
-  height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: #1a0c1c;
-  isolation: isolate;
-}
-
-/* 배경을 어둡게 눌러 입력 상자가 또렷하게 */
-.setname::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, rgba(16, 6, 16, 0.55) 0%, rgba(16, 6, 16, 0.85) 75%);
-}
-
-.setname__card {
-  z-index: 1;
-  width: min(calc(735 * var(--u)), 100%);
-}
-
-.setname__form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(26 * var(--u));
-  padding: calc(24 * var(--u)) calc(40 * var(--u)) calc(16 * var(--u));
-}
-
-.setname__label {
-  font-weight: 700;
-  font-size: calc(30 * var(--u));
-  color: var(--g-text);
-}
-
-.setname__field {
-  width: 100%;
-  height: calc(74 * var(--u));
-  display: flex;
-  align-items: center;
-  gap: calc(14 * var(--u));
-  padding: 0 calc(22 * var(--u)) 0 calc(28 * var(--u));
-  background: var(--g-row);
-  border: 1px solid var(--g-line);
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.setname__field:focus-within {
-  border-color: var(--g-rose);
-  box-shadow: 0 0 calc(14 * var(--u)) var(--g-glow);
-}
-
-.setname__input {
-  flex: 1;
-  min-width: 0;
-  font-weight: 700;
-  font-size: calc(28 * var(--u));
-  color: var(--g-text);
-  caret-color: var(--g-rose);
-  background: none;
-  border: none;
-  outline: none;
-}
-
-.setname__count {
-  font-family: var(--font-body);
-  font-size: calc(18 * var(--u));
-  color: var(--g-muted);
-  font-variant-numeric: lining-nums;
-}
-
-/* 공용 .g-btn 크기(gothic.css가 뒤에 로드됨)보다 우선하게 */
-.setname .setname__submit {
-  width: calc(220 * var(--u));
-  height: calc(60 * var(--u));
-  font-size: calc(24 * var(--u));
 }
 
 /* Box: 둥근 분홍 카드 모양 창 (모달·장면 공용) */
@@ -4062,9 +3994,271 @@ body {
     gacha-float 2.4s ease-in-out 0.7s infinite;
 }
 
+.gacha-scene__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* 슈우우욱: 점점 빠르고 세게 떨리며 커지고, 빛이 차오름 */
 .gacha-scene--crack .gacha-scene__crystal {
-  filter: drop-shadow(0 0 40px var(--glow));
-  animation: gacha-shake 0.45s ease-in-out infinite;
+  animation:
+    gacha-charge-shake 2.8s linear forwards,
+    gacha-charge-glow 2.8s ease-in forwards;
+}
+
+@keyframes gacha-charge-shake {
+  0% {
+    transform: translate(0, 0) rotate(0) scale(1);
+  }
+
+  8.9% {
+    transform: translate(0.6px, 0) rotate(-0.27deg) scale(1.001);
+  }
+
+  14.9% {
+    transform: translate(-0.7px, 0) rotate(0.31deg) scale(1.003);
+  }
+
+  19.8% {
+    transform: translate(0.8px, 0) rotate(-0.36deg) scale(1.005);
+  }
+
+  24.0% {
+    transform: translate(-0.9px, 0) rotate(0.41deg) scale(1.007);
+  }
+
+  27.8% {
+    transform: translate(1.0px, 0) rotate(-0.46deg) scale(1.009);
+  }
+
+  31.2% {
+    transform: translate(-1.1px, 0) rotate(0.52deg) scale(1.012);
+  }
+
+  34.4% {
+    transform: translate(1.3px, 0) rotate(-0.57deg) scale(1.014);
+  }
+
+  37.3% {
+    transform: translate(-1.4px, 0) rotate(0.63deg) scale(1.017);
+  }
+
+  40.1% {
+    transform: translate(1.5px, 0) rotate(-0.69deg) scale(1.019);
+  }
+
+  42.8% {
+    transform: translate(-1.7px, 0) rotate(0.75deg) scale(1.022);
+  }
+
+  45.3% {
+    transform: translate(1.8px, 0) rotate(-0.81deg) scale(1.025);
+  }
+
+  47.7% {
+    transform: translate(-1.9px, 0) rotate(0.88deg) scale(1.027);
+  }
+
+  50.0% {
+    transform: translate(2.1px, 0) rotate(-0.94deg) scale(1.030);
+  }
+
+  52.2% {
+    transform: translate(-2.2px, 0) rotate(1.00deg) scale(1.033);
+  }
+
+  54.4% {
+    transform: translate(2.3px, 0) rotate(-1.06deg) scale(1.035);
+  }
+
+  56.5% {
+    transform: translate(-2.5px, 0) rotate(1.13deg) scale(1.038);
+  }
+
+  58.5% {
+    transform: translate(2.6px, 0) rotate(-1.19deg) scale(1.041);
+  }
+
+  60.5% {
+    transform: translate(-2.8px, 0) rotate(1.26deg) scale(1.044);
+  }
+
+  62.4% {
+    transform: translate(2.9px, 0) rotate(-1.32deg) scale(1.047);
+  }
+
+  64.2% {
+    transform: translate(-3.0px, 0) rotate(1.39deg) scale(1.050);
+  }
+
+  66.1% {
+    transform: translate(3.2px, 0) rotate(-1.45deg) scale(1.052);
+  }
+
+  67.8% {
+    transform: translate(-3.3px, 0) rotate(1.52deg) scale(1.055);
+  }
+
+  69.6% {
+    transform: translate(3.5px, 0) rotate(-1.58deg) scale(1.058);
+  }
+
+  71.3% {
+    transform: translate(-3.6px, 0) rotate(1.65deg) scale(1.061);
+  }
+
+  73.0% {
+    transform: translate(3.8px, 0) rotate(-1.71deg) scale(1.064);
+  }
+
+  74.6% {
+    transform: translate(-3.9px, 0) rotate(1.78deg) scale(1.067);
+  }
+
+  76.2% {
+    transform: translate(4.1px, 0) rotate(-1.85deg) scale(1.070);
+  }
+
+  77.8% {
+    transform: translate(-4.2px, 0) rotate(1.91deg) scale(1.073);
+  }
+
+  79.3% {
+    transform: translate(4.4px, 0) rotate(-1.98deg) scale(1.076);
+  }
+
+  80.8% {
+    transform: translate(-4.5px, 0) rotate(2.05deg) scale(1.078);
+  }
+
+  82.3% {
+    transform: translate(4.7px, 0) rotate(-2.11deg) scale(1.081);
+  }
+
+  83.8% {
+    transform: translate(-4.8px, 0) rotate(2.18deg) scale(1.084);
+  }
+
+  85.3% {
+    transform: translate(4.9px, 0) rotate(-2.25deg) scale(1.087);
+  }
+
+  86.7% {
+    transform: translate(-5.1px, 0) rotate(2.32deg) scale(1.090);
+  }
+
+  88.1% {
+    transform: translate(5.2px, 0) rotate(-2.39deg) scale(1.093);
+  }
+
+  89.5% {
+    transform: translate(-5.4px, 0) rotate(2.45deg) scale(1.096);
+  }
+
+  90.9% {
+    transform: translate(5.5px, 0) rotate(-2.52deg) scale(1.099);
+  }
+
+  92.2% {
+    transform: translate(-5.7px, 0) rotate(2.59deg) scale(1.102);
+  }
+
+  93.6% {
+    transform: translate(5.8px, 0) rotate(-2.66deg) scale(1.105);
+  }
+
+  94.9% {
+    transform: translate(-6.0px, 0) rotate(2.73deg) scale(1.108);
+  }
+
+  96.2% {
+    transform: translate(6.1px, 0) rotate(-2.79deg) scale(1.111);
+  }
+
+  97.5% {
+    transform: translate(-6.3px, 0) rotate(2.86deg) scale(1.114);
+  }
+
+  98.7% {
+    transform: translate(6.4px, 0) rotate(-2.93deg) scale(1.117);
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(0) scale(1.12);
+  }
+}
+
+@keyframes gacha-charge-glow {
+  from {
+    filter: drop-shadow(0 0 20px var(--glow)) brightness(1);
+  }
+
+  to {
+    filter: drop-shadow(0 0 70px var(--glow)) drop-shadow(0 0 24px #fff) brightness(1.6);
+  }
+}
+
+/* 모이는 빛: 가운데 빛무리가 커지고, 바깥에서 고리가 안쪽으로 빨려 들어옴 */
+.gacha-scene__charge {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gacha-scene__charge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 50%, #fff) 0%, color-mix(in srgb, var(--glow) 45%, transparent) 22%, transparent 55%);
+  animation: gacha-charge-core 2.8s ease-in forwards;
+}
+
+@keyframes gacha-charge-core {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.gacha-scene__charge i {
+  position: absolute;
+  inset: 15%;
+  border: 2px solid color-mix(in srgb, var(--glow) 60%, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 18px var(--glow), inset 0 0 12px var(--glow);
+  opacity: 0;
+  animation: gacha-charge-ring 0.7s ease-in infinite;
+}
+
+.gacha-scene__charge i:nth-child(2) {
+  animation-delay: 0.23s;
+}
+
+.gacha-scene__charge i:nth-child(3) {
+  animation-delay: 0.46s;
+}
+
+@keyframes gacha-charge-ring {
+  0% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+
+  35% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
 }
 
 .gacha-scene--burst .gacha-scene__crystal {
@@ -4076,22 +4270,6 @@ body {
   from {
     transform: scale(0.5) translateY(40px);
     opacity: 0;
-  }
-}
-
-@keyframes gacha-shake {
-
-  0%,
-  100% {
-    transform: rotate(0) scale(1);
-  }
-
-  25% {
-    transform: rotate(-1.5deg) scale(1.02);
-  }
-
-  75% {
-    transform: rotate(1.5deg) scale(1.02);
   }
 }
 
@@ -4119,21 +4297,53 @@ body {
   color: rgba(255, 220, 236, 0.6);
 }
 
-/* 결과로 넘어갈 때 한 번 번쩍임 */
+/* 팡!: 결과로 넘어갈 때 하얗게 번쩍이고 충격파 고리가 퍼짐 */
 .gacha-scene__flash {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(30, 9, 18, 0.92), var(--glow) 60%, transparent);
-  animation: gacha-flash 0.6s ease-out forwards;
+  background: radial-gradient(circle, #fff 0%, color-mix(in srgb, var(--glow) 60%, #fff) 20%, var(--glow) 45%, transparent 80%);
+  animation: gacha-flash 0.9s ease-out forwards;
 }
 
-@keyframes gacha-flash {
-  from {
+.gacha-scene__flash::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40vmin;
+  aspect-ratio: 1;
+  border: 6px solid color-mix(in srgb, var(--glow) 40%, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 30px var(--glow), inset 0 0 20px var(--glow);
+  transform: translate(-50%, -50%) scale(0.2);
+  animation: gacha-shockwave 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes gacha-shockwave {
+  0% {
     opacity: 1;
   }
 
-  to {
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(4);
+  }
+}
+
+@keyframes gacha-flash {
+  0% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
     opacity: 0;
   }
 }
@@ -4212,6 +4422,7 @@ body {
   .gacha-scene {
     justify-content: flex-start;
     overflow: auto;
+    overflow-x: hidden;
   }
 }
 
@@ -4525,6 +4736,8 @@ body {
   max-height: 100%;
   padding: 30px 34px 28px;
   overflow: auto;
+  /* 카드를 열 때 터지는 이펙트가 옆으로 넘쳐도 가로 스크롤이 생기지 않게 */
+  overflow-x: hidden;
   color: var(--g-text);
   background:
     radial-gradient(ellipse 60% 40% at 50% 32%, color-mix(in srgb, var(--rarity) 16%, transparent), transparent 70%),
@@ -4883,8 +5096,10 @@ body {
   top: 45%;
   border-radius: 50%;
   opacity: 0;
+  /* 끝나면 크기 0으로 돌아가 투명하게 남은 채 결과 창을 넓히지 않게 함 */
+  transform: translate(-50%, -50%) scale(0);
   animation-delay: 0.18s;
-  animation-fill-mode: both;
+  animation-fill-mode: backwards;
 }
 
 .gacha-card__burst::before {
@@ -4942,7 +5157,8 @@ body {
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
   filter: drop-shadow(0 0 6px var(--rarity)) drop-shadow(0 0 2px #fff);
   opacity: 0;
-  animation: gacha-burst-spark 0.85s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+  transform: scale(0);
+  animation: gacha-burst-spark 0.85s cubic-bezier(0.15, 0.7, 0.3, 1) backwards;
   animation-delay: 0.22s;
 }
 

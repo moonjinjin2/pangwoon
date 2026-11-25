@@ -1,6 +1,6 @@
 import EpisodeScene from './EpisodeScene';
 import { getDateLabel, type Episode } from '../utils/episode';
-import { NAME_KEY, getCollectedNumber, load, loadChoices } from '../utils/storage';
+import { getCollectedNumber, loadChoices } from '../utils/storage';
 
 interface Props {
   episode: Episode;
@@ -15,7 +15,6 @@ export default function EpisodeReplay({ episode, onClose }: Props) {
       number={getCollectedNumber(episode.id) ?? 0}
       label={['다시 보기', partner].filter(Boolean).join(' · ')}
       episode={{ icon: '💗', ...episode }}
-      playerName={load(NAME_KEY) ?? ''}
       replay={loadChoices(episode.id) ?? []}
       onDone={onClose}
       onEndReplay={onClose}

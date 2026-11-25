@@ -41,6 +41,7 @@ import ep05Emily1Cg from '../img/episode/ep05_01.png';
 import ep05SiyeongCg from '../img/episode/ep05_02.png';
 import ep05MinjiCg from '../img/episode/ep05_03.png';
 import type { Risk } from './storyStats';
+import type { StatKey } from '../components/StatsBox';
 
 // 히로인
 export type Heroine = 'minji' | 'siyeong' | 'emily';
@@ -49,9 +50,11 @@ export const HEROINES: Heroine[] = ['minji', 'siyeong', 'emily'];
 
 export type Speaker = 'player' | Heroine;
 
+// 플레이어(주인공) 이름은 고정
+export const PLAYER_NAME = '박하영';
+
 export const SPEAKERS: Record<Speaker, { name: string; image: string }> = {
-  // 플레이어 이름은 진행 시 입력한 이름으로 표시
-  player: { name: '', image: hayeongImg },
+  player: { name: PLAYER_NAME, image: hayeongImg },
   minji: { name: '민지', image: minjiImg },
   siyeong: { name: '시영', image: siyeongImg },
   emily: { name: '에밀리', image: emilyImg },
@@ -81,6 +84,8 @@ export interface Choice {
   text: string;
   // 히로인별 호감도 변화량
   affection: Partial<Affection>;
+  // 스탯 변화량 (예: { mental: -3 }). 에피소드를 무사히 끝냈을 때만 반영
+  stats?: Partial<Record<StatKey, number>>;
   // 선택 직후 이어지는 대사
   reply: EpisodeLine[];
 }
@@ -121,6 +126,8 @@ export interface EpisodeLine {
   // { amount: -10, kind: 'calm' }처럼 음수면 그대로 내려감 (0 아래로는 안 내려감)
   // 선택지의 답변 대사에 넣으면 그 선택지를 골랐을 때만 오름
   risk?: Risk;
+  // 이 대사에서 위험도가 100에 닿으면 에피소드의 badEnding 대신 이 장면을 보여줌 (예: 직접 정체를 드러낸 경우)
+  badEnding?: EpisodeLine[];
   // 있으면 이 대사가 나올 때 선택지 없이 호감도가 바뀜 (선택지와 같이 매력 보너스 적용)
   affection?: Partial<Affection>;
   // 있으면 이 대사 후 선택지 표시
@@ -160,116 +167,330 @@ export interface Episode {
 export const READY_BACKGROUNDS = new Set<string>([roomImg, ballroomImg, barImg, studyroomImg, waterparkImg]);
 
 // 임시 에피소드. 달(1~12)별로 지정하고, 없는 달은 DEFAULT_EPISODE
+// id는 처음 나온 달 기준이라 지금 달과 다를 수 있음 (저장된 컬렉션·선택 기록과 맞추려고 바꾸지 않음)
 const EPISODES: Record<number, Episode> = {
-  // EP 1. 개강총회 (가면무도회)
+  // EP 1. 첫 수업
   4: {
-    id: 'month-4',
-    title: '개강총회',
-    icon: '🎭',
+    id: 'first-class',
+    title: '첫 수업',
+    icon: '📖',
     time: '밤',
     lines: [
-      { text: '문자가 날아왔다.', background: roomImg },
-      { name: 'SYSTEM', text: '[신입생 개강총회 안내] 오랜 전통에 따라 이번 개강총회는 가면무도회로 진행됩니다.' },
-      { name: 'SYSTEM', text: '참석자는 각자 어울리는 가면을 착용하고 오시기 바랍니다. — 학생회 —' },
-      { speaker: 'player', text: '(과연 뱀파이어 대학다운 모습이다.)' },
-      { speaker: 'player', text: '(나가긴 가야겠지. 아니면 손목이 터져 죽을 수도 있으니…)' },
-      { text: '근처 문구점에서 가면을 사서 무도회장으로 갔다.' },
+      { text: '대학교에서 처음으로 수업을 듣는 날이다.' },
+      { text: '강의실 문 앞에서 한참을 서 있었다. 안에서는 학생들이 떠드는 소리가 들려왔다.' },
+      { speaker: 'player', text: '(첫 수업이라 그런지 괜히 긴장된다. 늦기 전에 자리에 앉아야겠다.)' },
+      { text: '나는 심호흡을 한 번 하고 조심스럽게 문을 열었다.' },
+      { text: '강의실은 내가 알던 대학교 강의실과 크게 다르지 않았다. 칠판이 있고, 책상이 줄지어 놓여 있고, 학생들은 삼삼오오 모여 얘기를 하고 있었다.' },
+      { text: '평범한 대학 강의실 같았다. 창문마다 두꺼운 커튼이 쳐져 있다는 점만 빼면.' },
+      { text: '나는 강의실 뒤쪽 빈자리에 앉아 가방을 무릎 위에 올렸다.' },
+      { speaker: 'player', text: '(첫 수업은 어떤 내용일까.)' },
+      { text: '시간표를 한 번 더 확인하고 앞을 바라봤다.' },
+      { text: '잠시 뒤, 교수가 강의실에 들어왔다. 떠들던 학생들이 하나둘 입을 다물었다.' },
+      { name: '교수', text: '반갑습니다. 이번 학기 현대 사회 생존학을 맡은 교수입니다.' },
+      { text: '교수는 칠판에 ‘인간 사회’라고 적었다. 그 아래에는 ‘생존’이라는 단어가 적혔다.' },
+      { speaker: 'player', text: '(‘인간 사회’라니. 우리가 사는 사회를 말하는 건가?)' },
+      { speaker: 'player', text: '(강의 이름이 현대 사회 생존학이어서 취업이나 사회생활에 관한 수업인 줄 알았다.)' },
+      { name: '교수', text: '여러분은 대학을 마친 뒤 우리가 사는 차원을 떠나 인간들 사이에서 살아가게 됩니다.' },
+      { speaker: 'player', text: '(……차원?)' },
+      { text: '나는 시간표를 다시 확인했다. 현대 사회 생존학. 강의실을 잘못 찾아온 건 아닌데.' },
+      { text: '교수의 말을 듣던 옆자리 학생들이 작은 목소리로 이야기했다.' },
+      { name: '학생 1', text: '야, 너 인간 세상 가 본 적 있어?' },
+      { name: '학생 2', text: '아니. 근데 나가면 제일 먼저 인간부터 보고 싶어.' },
+      { name: '학생 1', text: '보기만 하게?' },
+      { name: '학생 2', text: '뭐, 기회가 되면 맛도 봐야지.' },
+      { speaker: 'player', text: '(……맛을 봐?)' },
+      { speaker: 'player', text: '(내가 방금 제대로 들은 건가. 사람을 보러 가서 맛을 본다고?)' },
+      { text: '어떤 게임 이야기를 하는 건가. 둘 다 웃지도 않고 이야기하니 괜히 끼어들기가 어려웠다.' },
+      { name: '교수', text: '스무 살이 되는 해부터 인간 세상에 갈 수 있고, 그곳에서 여든 살까지 살아남아야 진정한 뱀파이어로 인정받아 다시 돌아올 수 있죠.' },
+      { speaker: 'player', text: '(……뱀파이어?)' },
+      { text: '나는 고개를 들어 강의실을 둘러봤다. 누군가는 책을 펴고 있었고, 누군가는 태연하게 필기하고 있었다.' },
+      { speaker: 'player', text: '(다들 아무렇지도 않다. 방금 들은 게 수업을 위한 설정인가?)' },
+      { name: '교수', text: '당장 혼자 보내지는 않습니다. 앞으로 4년 동안 인간의 생활 방식과 심리, 예절을 배우고 현장 실습도 나갈 겁니다.' },
+      { name: '교수', text: '인간들은 뱀파이어가 존재한다는 사실을 모릅니다. 여러분이 무엇을 먹는지도, 어떤 생활을 하는지도 모르죠.' },
+      { name: '교수', text: '그들에게 정체를 들키지 않고 살아가는 것. 그게 이 수업의 목적입니다.' },
+      { speaker: 'player', text: '(인간에게 정체를 들키지 않는다고? 대학 첫 수업에 이런 걸 배우는 거였어?)' },
+      { text: '설정이라고 하기에는 교수의 목소리가 너무 진지했다.' },
+      { name: '교수', text: '주로 밤에 활동해야 하니 야간에 일할 수 있는 직업을 선택하는 학생들이 많습니다. 편의점, 호텔, 병원처럼요.' },
+      { speaker: 'minji', text: '교수님, 그럼 인간들이랑 매일 붙어 있어야 하는 거예요?' },
+      { name: '교수', text: '직업에 따라 다르겠지만, 그럴 수도 있겠죠.' },
+      { speaker: 'minji', text: '와…… 맨날 보고 있으면 그냥 한 번쯤 먹고 싶어질 것 같은데.', expression: 'smile' },
+      { text: '말을 마친 앞줄 여자애가 옆을 돌아보며 웃었다. 입술 사이로 보인 송곳니가 조금씩 길어졌다.' },
+      { text: '방금까지는 저렇지 않았는데. 나는 눈을 비비고 다시 봤다. 여자애는 아무 일도 없다는 듯 입을 다물었다.' },
+      { text: '주변을 둘러봤지만 그걸 이상하게 보는 사람은 아무도 없었다.', hidePortrait: true },
+      { name: '교수', text: '그 욕구를 들키지 않는 법을 배우는 겁니다. 눈앞의 인간에게 정신이 팔려서 정체가 드러나면, 다른 인간들과 섞여 사는 건 어려워지니까요.' },
+      { text: '뒤쪽에서 몇몇 학생이 고개를 끄덕였다. 나는 굳은 손으로 가방끈을 움켜쥐었다.' },
+      { speaker: 'player', text: '(처음엔 학생들이 이상한 농담을 한다고 생각했다. 교수님도 수업을 위해 설정을 잡은 줄 알았다.)' },
+      { speaker: 'player', text: '(그런데 방금 본 건 뭘까. 정말 이곳이 뱀파이어가 다니는 학교라면…….)' },
+      { speaker: 'player', text: '(그리고 저 애들이 말하는 인간이 나라는 걸 알게 되면?)' },
+      { text: '나는 자리에서 일어나려다 멈췄다. 문까지 가려면 다른 학생들 사이를 지나가야 한다.' },
+      { speaker: 'player', text: '(지금 갑자기 나갔다가 주목받으면 어떡하지. 일단 수업이 끝날 때까지 조용히 있어 보자.)' },
 
-      // 무도회장
-      { speaker: 'player', text: '(대학교에 이런 장소가….?)', background: ballroomImg },
-      { text: '위대한 개츠비도 이런 성대한 파티를 열 수 없을 것 같은 파티가 열리고 있었다.' },
-      { text: '사람들은 하나같이 화려한 가면을 쓰고 잔을 부딪치고 있었다.' },
-      { text: '자세히 보니 잔에 담긴 붉은 액체가 조금씩 색이 다르다.' },
-      { speaker: 'player', text: '(저거 다 포도주겠지?)' },
-      { speaker: 'player', text: '(…포도주가 맞나?)' },
-      { text: '어지러워서 구경만 하고 있던 도중, 누가 뒤에서 건드렸다.' },
-      { text: '토끼 가면을 쓴, 약간 키 작은 여자가 말을 걸었다.', cg: ep01MinjiCg },
-      { speaker: 'minji', text: '야 너 혼자 여기서 뭐해.', voice: 'ep1/민지1' },
-      { speaker: 'player', text: '아, 아니 그냥 구경하고 있었어…' },
-      { speaker: 'minji', text: '뭐 이런 거 처음 본 것 마냥 구경하고 있어?', voice: 'ep1/민지2', cg: null },
-      { speaker: 'minji', text: '여기 포도주 맛있더라. 소 피를 섞어서 더 풍미가 돋아.', expression: 'smile', voice: 'ep1/민지3' },
-      { speaker: 'player', text: '(소 피?…)' },
-      { text: '한 모금 마셔보려고 했는데 그 마음이 싹 가셨다.' },
-      { speaker: 'minji', text: '음? 안 먹는 걸 보니 귀족 자제분인가? 인간 피 아니면 안 먹는 거야?', voice: 'ep1/민지4' },
-      { speaker: 'player', text: '아… 아니. 그냥 내가 오늘 속이 좀.' },
+      // 네 사람이 한 조
+      { name: '교수', text: '첫날부터 실제 상황을 생각해 봅시다. 네 명씩 조를 만들어서 자료를 나눠 드릴게요.' },
+      { speaker: 'player', text: '(네 명씩……? 혼자 조용히 앉아 있으면 끝날 줄 알았는데.)' },
+      { text: '교수는 명단을 보며 이름을 불렀다.' },
+      { name: '교수', text: '{name}, 송민지, 에밀리, 서시영 학생이 한 조입니다. 저쪽 빈 책상에 모이세요.' },
+      { text: '앞줄에 앉아 있던 여자애가 의자를 뒤로 밀고 일어났다.' },
+      { speaker: 'minji', text: '아, 첫날부터 조별 과제야?', expression: 'less' },
+      { text: '은발의 여자애가 책을 챙기며 그쪽을 바라봤다.' },
+      { speaker: 'emily', text: '불만이 있다면 교수님께 직접 말씀드리렴. 들릴 만큼 중얼거리지 말고.', stage: ['minji', 'emily'] },
+      { speaker: 'minji', text: '내가 너한테 말했냐?', expression: 'less' },
+      { speaker: 'emily', text: '듣기 싫어도 들렸으니까 하는 말이지.' },
+      { text: '둘은 잠깐 서로를 노려봤지만, 교수가 자료를 들고 다가오자 각자 자리에 앉았다.' },
+      { text: '마지막으로 검은 머리의 여자애가 책을 안고 조용히 걸어왔다. 내 맞은편에 앉더니 작게 고개를 숙였다.' },
+      { speaker: 'siyeong', text: '서시영이에요…… 잘 부탁해요.', stage: ['minji', 'siyeong', 'emily'] },
+      { speaker: 'player', text: '아, 응. 나는 {name}(이)야.' },
+      { speaker: 'emily', text: '소개는 다 끝났지? 그럼 일단 읽어 보자. 수업이 끝나기 전까지 제출해야 할 테니까.' },
+      { text: '교수가 우리 조의 책상에 상황이 적힌 종이와 빈 답안지를 내려놓았다.' },
+      { name: '과제', text: '[상황: 인간 세상의 카페에서 마감 근무를 하고 있다. 함께 일하던 인간 동료가 식기를 정리하다 컵을 깨뜨려 손을 베었고, 매장 안에는 아직 나가기 전인 손님들이 남아 있다.]' },
+      { name: '과제', text: '[뱀파이어의 정체를 들키지 않고 상황을 수습하는 방법을 순서대로 적으시오.]' },
+      { speaker: 'player', text: '(……왜 하필 사람이 다치는 상황이야.)' },
+      { speaker: 'minji', text: '인간이 다쳤으면 피가 나겠네.' },
+      { speaker: 'siyeong', text: '손님도 있으니까…… 바로 다가가면 안 되겠죠?' },
+      { speaker: 'minji', text: '손님부터 내보내면 되잖아. 그다음에 둘이 남으면…….', expression: 'smile' },
+      { speaker: 'emily', text: '손님을 내보낸 뒤 동료까지 사라지면 당연히 범인은 너겠지. 생각 좀 해.' },
+      { speaker: 'minji', text: '왜 지랄이야? 장난친 거지!', expression: 'less' },
+      { speaker: 'emily', text: '네 표정만 봐도 뭘 할지 알겠으니까 그러지.' },
+      { speaker: 'player', text: '일단은…… 다친 사람이 얼마나 다쳤는지 확인해야 하지 않을까?' },
+      { text: '세 사람의 시선이 나에게 향했다.' },
+      { speaker: 'player', text: '많이 다쳤으면 도움을 불러야 할 수도 있으니까.' },
+      { speaker: 'siyeong', text: '아…… 그렇겠네요. 도움을 부를 곳도 적어야겠다.' },
+      { text: '시영이는 답안지 위에 연필을 올렸다. 잠시 망설이다가 나를 봤다.' },
+      { speaker: 'siyeong', text: '인간 세상에서는…… 어디에 연락해야 하지?' },
+      { speaker: 'player', text: '응급 상황이면 119에…….' },
+      { text: '말을 끝내기도 전에 입을 다물었다.' },
+      { speaker: 'player', text: '(아, 나도 모르게 대답해 버렸다.)' },
+      { speaker: 'minji', text: '119? 그게 뭔데?', expression: 'surprised_soft' },
+      { speaker: 'player', text: '그게…….' },
+      { text: '우리 쪽을 지나가던 교수가 발을 멈췄다.' },
+      { name: '교수', text: '{name} 학생은 그 번호를 어디서 알았죠?' },
+      { speaker: 'player', text: '(갑자기 머릿속이 하얘졌다. 내가 인간이라는 걸 들킨 건 아니겠지?)' },
+      // 위험 상황 ① 교수의 질문에 당황함
+      { text: '당황해서 피가 빠르게 도는 게 느껴졌다. 진정해야 하는데 자꾸 입이 말랐다.', risk: { amount: 10, kind: 'excite' } },
+      // 선택지 1. 어떻게 알았다고 대답할까 (위험도 100에 닿으면 즉시 배드엔딩)
       {
-        speaker: 'minji',
-        text: '그냥 술을 싫어하나? 그럴 수 있지! 나는 완전 좋아하는데~',
-        expression: 'bigsmile',
-        voice: 'ep1/민지5',
+        speaker: 'player',
+        text: '(뭐라고 대답하지……?)',
         choices: [
           {
-            text: '나중에 네가 좋아하는 거 추천해 줘.',
-            affection: { minji: 10 },
+            text: '인간 사회에 관한 자료를 찾아보다가 봤어요.',
+            affection: {},
             reply: [
-              { speaker: 'minji', text: '오~ 그래? 약속한 거다?', expression: 'smile', voice: 'ep1/민지 호감1-1' },
-              { speaker: 'minji', text: '내가 진짜 맛있는 걸로 골라줄게!', expression: 'bigsmile', voice: 'ep1/민지 호감1-2' },
+              { name: '교수', text: '미리 공부해 왔군요. 나라에 따라 번호가 다를 수 있으니 실습을 나가기 전에는 해당 지역의 번호를 확인해야 합니다.' },
+              { speaker: 'player', text: '네. 조심할게요.' },
+              { speaker: 'player', text: '(다행이다. 더 묻지는 않는 것 같다.)' },
             ],
           },
           {
-            text: '난 이런 자리에 오니까 좀 정신이 없어서.',
-            affection: { minji: 5 },
+            text: '그냥…… 알고 있었어요.',
+            affection: {},
             reply: [
-              { speaker: 'minji', text: '아, 나도 처음 왔을 땐 그랬어.', voice: 'ep1/민지 호감2-1' },
-              { speaker: 'minji', text: '뭐 하다 보면 적응되겠지!', expression: 'smile', voice: 'ep1/민지 호감2-2' },
+              { name: '교수', text: '그냥 알고 있었다고요?', risk: { amount: 20, kind: 'excite' } },
+              { speaker: 'player', text: '아, 그게…… 전에 인간 사회에 관한 걸 찾아보다가 본 것 같아요.' },
+              { text: '급하게 말을 고쳤다. 교수는 나를 잠시 바라보다가 답안지를 내려다봤다.' },
+              { name: '교수', text: '알고 있는 건 좋지만, 어디서 본 정보인지 확인하는 습관도 들이세요. 잘못된 정보는 실습에서 위험해질 수 있습니다.' },
             ],
           },
           {
-            text: '너는 그런 걸 진짜 맛있게 먹어?',
-            affection: { minji: -5 },
+            text: '제가 인간이라서 당연히 알죠.',
+            affection: {},
             reply: [
-              { speaker: 'minji', text: '뭐야, 왜 그렇게 이상한 눈으로 봐?', expression: 'less', voice: 'ep1/민지 호감3-1' },
-              { speaker: 'minji', text: '진짜 맛있다니까?', expression: 'less', voice: 'ep1/민지 호감3-2' },
+              // 직접 정체를 드러내 즉시 발각 (위장도·정신력으로 피할 수 없음)
+              { text: '교수의 표정이 굳었다. 교실 안의 시선이 한꺼번에 내게 쏠렸다.', risk: { amount: 100, kind: 'reveal' } },
             ],
           },
         ],
       },
-      { text: '민지는 들고 있던 잔을 한 번 흔들더니 눈을 반짝였다.' },
+      { speaker: 'minji', text: '너 그런 것도 미리 찾아봤어? 생각보다 뭘 많이 아네?', expression: 'smile', stage: ['minji', 'siyeong', 'emily'] },
+      { speaker: 'player', text: '아…… 그냥 조금.' },
+      { speaker: 'emily', text: '적어도 아무 생각 없이 말하는 것보다는 확실히 낫군.' },
+      { speaker: 'minji', text: '너 지금 나한테 하는 말이지?', expression: 'less' },
+      { speaker: 'emily', text: '찔린다면 네 얘기겠지.' },
+      { text: '또 싸우려는 건가. 나는 얼른 답안지를 가리켰다.' },
+      { speaker: 'player', text: '그래서…… 이제 뭘 먼저 적을까?' },
+
+      // 조별 답안
+      { speaker: 'siyeong', text: '다친 사람을 도우면서…… 다른 손님들에게 이상하게 보이지 않아야 해요.' },
+      { speaker: 'minji', text: '손님들 있으면 귀찮으니까, 난 일단 가게 앞부터 정리할래.' },
+      { speaker: 'emily', text: '가게를 네 마음대로 비울 수 있을 것 같니? 점장에게 연락해서 상황을 알리는 게 먼저겠지.' },
+      { speaker: 'siyeong', text: '구급상자는…… 어디에 있는지 알아 둬야 할 것 같아요.' },
+      { text: '셋 다 한마디씩 했지만, 답안지에는 아직 아무것도 적히지 않았다.' },
+      { text: '시영이가 연필을 든 채 나를 바라봤다.' },
+      // 선택지 2. 어떤 의견부터 적을까
+      {
+        speaker: 'siyeong',
+        text: '{name}, 뭘 먼저 쓰면 좋을까?',
+        choices: [
+          {
+            text: '에밀리 말대로 점장에게 연락하는 것부터 적자.',
+            affection: { emily: 5 },
+            reply: [
+              { speaker: 'emily', text: '그래. 혼자 처리할 수 없을 때는 책임자부터 불러야지.' },
+              { speaker: 'minji', text: '아, 네 말 맞다고 하니까 표정 풀리는 거 봐.', expression: 'smile' },
+              { speaker: 'emily', text: '시끄러워. 나머지 의견도 이어서 적으면 되잖니.' },
+            ],
+          },
+          {
+            text: '민지 말대로 다른 손님들이 다치지 않게 입구부터 정리하자.',
+            affection: { minji: 5 },
+            reply: [
+              { speaker: 'minji', text: '그렇지. 사람들 계속 들어오면 더 정신없잖아.', expression: 'bigsmile' },
+              { speaker: 'emily', text: '입구만 막고 끝낼 생각은 아니겠지?' },
+              { speaker: 'minji', text: '알아서 다음 것도 적을 거거든? 좀 기다려 봐.', expression: 'less' },
+            ],
+          },
+          {
+            text: '시영이 말대로 구급상자를 가져와서 옆에 두자.',
+            affection: { siyeong: 5 },
+            reply: [
+              { speaker: 'siyeong', text: '내 의견…… 괜찮았어?' },
+              { speaker: 'player', text: '응. 바로 필요한 물건이 어디 있는지 알아야 하니까.' },
+              { speaker: 'siyeong', text: '알겠어. 그럼 내가 적을게.' },
+              { text: '시영이는 아까보다 조금 빠르게 답안지를 채워 나갔다.' },
+            ],
+          },
+          {
+            text: '셋 다 쓸모없는 의견이야. 그냥 내 말대로 해.',
+            affection: { minji: -15, emily: -15, siyeong: -15 },
+            stats: { mental: -3 },
+            reply: [
+              { speaker: 'minji', text: '야, 네가 뭔데 남의 말을 그렇게 잘라?', expression: 'less', risk: { amount: 40, kind: 'excite' } },
+              { speaker: 'emily', text: '의견을 내 달라고 해 놓고 모욕할 생각이었니?' },
+              { speaker: 'player', text: '미안해. 너무 예민하게 말했어. 너희 의견도 같이 적자.' },
+              { speaker: 'siyeong', text: '……응. 그럼 다시 이야기해 보자.' },
+            ],
+          },
+        ],
+      },
+      { text: '네 사람은 손님이 다치지 않도록 주변을 정리하고, 점장에게 알리고, 필요한 구급 물품을 준비한다는 순서로 답안을 완성했다.', stage: ['minji', 'siyeong', 'emily'] },
+      { text: '상태가 심각하면 인간 세상의 응급 연락처에 도움을 요청하는 것도 적었다.' },
+      { speaker: 'minji', text: '됐다. 이 정도면 되는 거 아니야?', expression: 'smile' },
+      { speaker: 'emily', text: '아직 하나 빠졌어. 네가 피 냄새 맡고 달려드는 걸 어떻게 막을 건지.' },
+      { speaker: 'minji', text: '아, 진짜. 너는 피 냄새 나면 아무렇지도 않나 보지?', expression: 'less' },
+      { speaker: 'emily', text: '적어도 사람들 앞에서 침 흘리고 있지는 않겠지.' },
+      { text: '교수가 두 사람의 목소리를 듣고 우리 조에 다가왔다.' },
+      { name: '교수', text: '좋은 지적이 나왔군요. 상황은 정리했지만, 다친 인간 곁에는 여전히 여러분이 있습니다.' },
+      { name: '교수', text: '상처에서 나는 냄새를 맡고 본능이 올라온다면 어떻게 해야 하죠?' },
+      { speaker: 'minji', text: '잠깐 자리를 비우면 되지 않아요? 계속 쳐다보고 있으면 더 먹고 싶을 것 같은데.' },
+      { name: '교수', text: '그렇습니다. 다른 사람에게 상황을 맡기고 냄새에서 벗어나는 것도 방법이에요. 다만 이유 없이 달아나거나 노골적으로 피를 탐내면 인간들도 이상하게 여기겠죠.' },
+      { speaker: 'siyeong', text: '냄새가…… 그렇게 강하게 나나요?' },
+      { name: '교수', text: '살아 있는 인간의 따뜻한 피는 보관된 피와 다릅니다. 특히 이성의 피 냄새에 강하게 끌려 흥분하거나 본능을 억누르기 어려워지는 경우도 있죠.' },
+      { name: '교수', text: '피를 흘리지 않더라도 긴장하거나 흥분해서 피가 빠르게 돌면, 평소보다 체취가 짙어질 수 있습니다. 상처가 나면 냄새는 훨씬 직접적으로 퍼지고요.' },
+      { speaker: 'player', text: '(피를 흘리지 않아도……?)' },
+      { speaker: 'player', text: '(그럼 내가 겁을 먹거나 흥분하는 것만으로도 위험해질 수 있다는 거잖아.)' },
+      { name: '교수', text: '평소의 체취만으로 상대가 인간인지 바로 알 수 있는 건 아닙니다. 하지만 냄새가 짙어지거나 피가 직접 드러난다면 이야기가 달라지죠.' },
+      { speaker: 'minji', text: '와…… 그럼 실제로 맡으면 진짜 못 참을 수도 있겠네.', expression: 'surprised_soft' },
+      { name: '교수', text: '그래서 배우는 겁니다. 눈앞의 인간에게 이끌리더라도 자신의 정체를 감출 수 있어야 인간 사회에 남을 수 있으니까요.' },
+      { speaker: 'player', text: '(나는 피 냄새가 나지 않게 조심해야 한다. 이 학교에서 살아나갈 수 있을까…….)', hidePortrait: true },
+    ],
+    badEnding: [
+      { name: '교수', text: '방금 인간이라고 했습니까?' },
+      { text: '입을 막았지만 이미 늦었다.', hidePortrait: true },
+      { name: 'BAD END', text: '직접 드러난 비밀' },
+    ],
+  },
+  // EP 2. 가면무도회
+  5: {
+    id: 'month-4',
+    title: '가면무도회',
+    icon: '🎭',
+    time: '밤',
+    lines: [
+      // 가면무도회의 초대
+      { text: '문자가 날아왔다.', background: roomImg },
+      { text: '오랜 전통에 따라 가면무도회가 열리니 각자 알맞은 가면을 쓰고 파티에 오라고 한다.' },
+      { speaker: 'player', text: '(과연 뱀파이어 대학다운 모습이다. 나가긴 가야겠지…)' },
+      { text: '근처 문구점에서 가면을 사서 무도회장으로 갔다.' },
+
+      // 무도회장
+      { speaker: 'player', text: '(대학교에 이런 장소가…?)', background: ballroomImg },
+      { text: '위대한 개츠비도 이런 성대한 파티를 열 수 없을 것 같은 파티가 열리고 있었다.' },
+      { text: '어지러워서 구경만 하고 있던 도중 누가 뒤에서 건드렸다.' },
+      { text: '토끼 가면을 쓴, 약간 키 작은 여자였다. 낯익은 목소리를 듣고 누군지 알 수 있었다.', cg: ep01MinjiCg },
+      { speaker: 'minji', text: '야, 너 혼자 여기서 뭐 해?', voice: 'ep1/민지1' },
+      { speaker: 'player', text: '아, 민지야. 그냥 구경하고 있었어…' },
+      { speaker: 'minji', text: '뭐 이런 거 처음 본 것 마냥 구경하고 있어?', voice: 'ep1/민지2', cg: null },
+      { speaker: 'minji', text: '여기 포도주 맛있더라~. 소 피를 섞어서 더 풍미가 돋아.', expression: 'smile', voice: 'ep1/민지3' },
+      { speaker: 'player', text: '(소 피?…)' },
+      { text: '한 모금 마셔보려고 했는데 그 마음이 싹 가셨다.' },
+      { speaker: 'minji', text: '음? 안 먹는 걸 보니 귀족 자제분인가? 인간 피 아니면 안 먹는 거야?', voice: 'ep1/민지4' },
+      { speaker: 'player', text: '아… 아니. 그냥 내가 오늘 속이 좀.' },
+      { speaker: 'minji', text: '그냥 술을 싫어하나? 그럴 수 있지! 나는 완전 좋아하는데~', expression: 'bigsmile', voice: 'ep1/민지5' },
       { speaker: 'minji', text: '살아있는 인간 피를 섞은 포도주를 먹는 게 내 소원이야… 특히 20대 남자 피.', expression: 'shy_smile', voice: 'ep1/민지6' },
       { speaker: 'minji', text: '완전 드라이한 맛으로 풍미가 몸속 구석구석 퍼진다던데~ 음.', expression: 'smile', voice: 'ep1/민지7' },
       { speaker: 'player', text: '(아… 진짜 도망치고 싶다. 도저히 제정신으로 대화할 수가 없네.)' },
-      { speaker: 'player', text: '(정신 차리자. 들키면 바로 도축행이다…)' },
-      { speaker: 'player', text: '응 나도야… 한 번 먹어보고 싶네.' },
-      { speaker: 'minji', text: '그래? 귀족 자제는 아니었구나! 아 이름 교환을 안 했네. 나는 송민지라고 해.', expression: 'bigsmile', voice: 'ep1/민지8' },
-      { text: '민지가 내 쪽으로 손을 내밀었다.' },
-      { speaker: 'player', text: '나는… {name}(이)라고 해…' },
-      { text: '나는 민지의 손을 잡았다.' },
-      { text: '오랜만에 여자와 손을 잡으니 좀 흥분이 됐다.' },
-      { text: '심장이 점점 빠르게 뛰기 시작했다.' },
-      // 위험 상황 ① 악수
-      { speaker: 'player', text: '(안 돼. 여기서 심장이 빨라지면…)', risk: { amount: 40, kind: 'excite' } },
-      { speaker: 'minji', text: '너 좀 맛있는 냄새가 난다…?', expression: 'surprised_soft', voice: 'ep1/민지21' },
+      // 선택지 1. 민지에게 대답하기 (위험도 100에 닿으면 즉시 배드엔딩)
+      {
+        speaker: 'player',
+        text: '(정신 차리자. 들키면 바로 도축행이다…)',
+        choices: [
+          {
+            text: '응, 나도야… 한 번 먹어보고 싶네.',
+            affection: { minji: 10 },
+            reply: [
+              { speaker: 'minji', text: '그래? 너도 뭘 좀 아네! 다음에 같이 먹어보자!', expression: 'bigsmile' },
+              { speaker: 'player', text: '(같이는 무슨… 내가 그 포도주가 될 것 같은데.)' },
+            ],
+          },
+          {
+            text: '나는 아직 잘 모르겠어.',
+            affection: { minji: 5 },
+            reply: [{ speaker: 'minji', text: '하긴, 아직 안 먹어봤으니까 모르겠지! 나중에 같이 도전해 보자.', expression: 'smile' }],
+          },
+          {
+            text: '그런 얘기는 좀 무서운데…',
+            affection: { minji: -5 },
+            reply: [{ speaker: 'minji', text: '에이, 뭘 그런 걸로 무서워해. 너 생각보다 겁이 많구나?', expression: 'less' }],
+          },
+          {
+            text: '인간 피를 먹고 싶다니, 너 진짜 역겹다.',
+            affection: { minji: -15 },
+            stats: { mental: -3 },
+            reply: [
+              { speaker: 'minji', text: '뭐? 지금 나한테 뭐라고 했어?', expression: 'less' },
+              { text: '민지가 내 쪽으로 다가왔다. 괜히 다투다 피 냄새까지 짙어질까 봐 긴장됐다.', risk: { amount: 40, kind: 'excite' } },
+              { speaker: 'player', text: '미안. 내가 너무 예민하게 말했어.' },
+              { speaker: 'minji', text: '다음부터 말조심해.', expression: 'less' },
+            ],
+          },
+        ],
+      },
+      { speaker: 'minji', text: '근데 너 내 가면 쓴 모습도 바로 알아보네?', expression: 'smile' },
+      { speaker: 'player', text: '목소리 듣자마자 알았어…' },
+      { text: '민지가 웃으며 내 손을 덥석 잡았다.' },
+      // 위험 상황 ① 민지가 손을 잡음
+      { text: '갑자기 여자와 손을 잡으니 좀 흥분이 됐다. 심장이 괜히 빠르게 뛰었다.', risk: { amount: 20, kind: 'excite' } },
+      // TODO(더빙): 대사가 바뀌어 기존 녹음(ep1/민지21)을 뺐음
+      { speaker: 'minji', text: '오늘도 너한테 맛있는 냄새가 난다…?', expression: 'surprised_soft' },
       { text: '민지는 내 목으로 코끝을 다가가 냄새를 맡으려고 한다.' },
-      { text: '점점 가까워지는 얼굴에 몸이 굳었다.' },
-      { speaker: 'player', text: '(이대로 냄새를 맡으면…)' },
-      { speaker: 'emily', text: '야 뭐하냐? 송민지.', stage: ['minji', 'emily'], voice: 'ep1/에밀리1' },
-      { text: '갑작스러운 목소리에 뒤를 돌아보니, 말도 못 걸 만큼 아름다운 은발의 미녀가 고양이 가면을 쓰고 있었다.', cg: ep01EmilyCg },
+      { speaker: 'emily', text: '야, 뭐 하냐? 송민지.', stage: ['minji', 'emily'], voice: 'ep1/에밀리1' },
+      { text: '갑작스러운 목소리에 뒤를 돌아보니 은발의 에밀리가 고양이 가면을 쓰고 서 있었다.', cg: ep01EmilyCg },
       { speaker: 'minji', text: '아니 얘 좀 향기가 좋아서.', voice: 'ep1/민지9', cg: null },
-      { speaker: 'emily', text: '그렇다고 처음 보는 사람한테 그렇게 다가가냐? 천박하게.', voice: 'ep1/에밀리2' },
+      // TODO(더빙): 대사가 바뀌어 기존 녹음(ep1/에밀리2)을 뺐음
+      { speaker: 'emily', text: '그렇다고 그렇게 달라붙냐? 천박하게.' },
       { speaker: 'minji', text: '응…? 너 진짜 죽을래?', expression: 'less', voice: 'ep1/민지10' },
       { text: '두 여자가 나를 두고 싸우는데 기쁘지 않고 그냥 무서웠다.' },
       { speaker: 'siyeong', text: '그… 그만하세요.', stage: ['minji', 'siyeong', 'emily'], voice: 'ep1/시영1', cg: ep01SiyeongCg },
-      { text: '음침하게 생기고 뭔가 공부 잘할 것 같이 생긴 애가 유령 가면을 쓰고 말했다.' },
-      { speaker: 'siyeong', text: '벌써부터 싸우면… 퇴학 당해요…', voice: 'ep1/시영2' },
-      { speaker: 'minji', text: '어우 그냥 내가 착하니까 한 번 참는다. 너 진짜 말 조심해라 에밀리.', expression: 'less', voice: 'ep1/민지11', cg: null },
+      { text: '유령 가면을 쓴 시영이가 조심스럽게 말했다.' },
+      { speaker: 'siyeong', text: '벌써부터 싸우면… 퇴학당해요…', voice: 'ep1/시영2' },
+      { speaker: 'minji', text: '어우 그냥 내가 착하니까 한 번 참는다. 너 진짜 말 조심해라, 에밀리.', expression: 'less', voice: 'ep1/민지11', cg: null },
       { speaker: 'minji', text: '귀족 자제라고 나는 봐주지 않아.', expression: 'less', voice: 'ep1/민지12' },
       { speaker: 'emily', text: '…천박하게. 이래서 못 사는 애들이랑 상종하지 말아야 한다니까.', voice: 'ep1/에밀리3' },
-      { speaker: 'minji', text: '아 진짜 현피 뜰까…?', expression: 'less', voice: 'ep1/민지13' },
+      { speaker: 'minji', text: '아, 진짜 현피 뜰까…?', expression: 'less', voice: 'ep1/민지13' },
       { speaker: 'siyeong', text: '그… 그만요.', voice: 'ep1/시영3' },
-      { speaker: 'minji', text: '아니 시영아… 얘 말하는 것 좀 봐. 내가 화가 나 안 나?', expression: 'less', voice: 'ep1/민지14' },
+      { speaker: 'minji', text: '아니 시영아… 얘 말하는 것 좀 봐. 내가 화가 나, 안 나?', expression: 'less', voice: 'ep1/민지14' },
       { speaker: 'minji', text: '근데 너 아까부터 왜 나만 막는 거야?', voice: 'ep1/민지15' },
       { speaker: 'minji', text: '너도 뒤질래?', expression: 'less', voice: 'ep1/민지16' },
       { speaker: 'siyeong', text: '아… 아니요!!! 죄송해요… 저분은 무서워서…', voice: 'ep1/시영4' },
       { speaker: 'minji', text: '뭐, 너도 죽자.', expression: 'less', voice: 'ep1/민지17' },
-      { text: '상황이 더 커지기 전, 대기하고 있던 선도부 무리가 다가와 민지라는 아이를 끌고 갔다.' },
-      { speaker: 'minji', text: '아니 잠깐만요! 제가 피해자인데요?!', expression: 'surprised_soft', voice: 'ep1/민지18' },
-      { text: '민지는 끌려가면서도 에밀리를 노려봤다.' },
-      { speaker: 'minji', text: '야! 너 나중에 보자!', expression: 'less', voice: 'ep1/민지20' },
-      { text: '에밀리라고 불린 고양이 가면의 여성은 끌려가는 민지를 가만히 바라보다가 말을 걸었다.', stage: ['siyeong', 'emily'] },
+      { text: '상황이 더 커지기 전, 대기하고 있던 선도부 무리가 다가와 민지를 끌고 갔다.', stage: ['siyeong', 'emily'] },
+
+      // 에밀리의 질문
+      { text: '고양이 가면을 쓴 에밀리도 끌려가는 민지를 바라보다가 말을 걸었다.' },
       { speaker: 'emily', text: '너도 귀족 자제인가? 계속 식욕이 도는 게 좋은 향수를 쓰는 것 같군.', voice: 'ep1/에밀리4' },
       { speaker: 'emily', text: '음. 어떤 걸 쓰는지 알 수 있나?', voice: 'ep1/에밀리5' },
       { speaker: 'player', text: '(돈 없어서 향수 안 쓰는데…)' },
-      // 위험 상황 ② 향수에 대한 대답 (긴장해서 피 냄새가 짙어짐: 정신력 회피 후 위장도 적용)
+      // 선택지 2. 무슨 향수를 쓰냐는 질문 (긴장해서 피 냄새가 짙어짐: 정신력 회피 후 위장도 적용)
       {
         speaker: 'player',
         text: '(뭔가 안 쓴다고 하면 들킬 것 같다.)',
@@ -279,9 +500,7 @@ const EPISODES: Record<number, Episode> = {
             affection: {},
             reply: [
               { speaker: 'emily', text: '그 브랜드에선 이런 향이 없는 거로 아는데?', voice: 'ep1/에밀리 호감1-1' },
-              { speaker: 'player', text: '어… 그게…' },
-              { text: '에밀리의 눈썹이 살짝 올라갔다.', risk: { amount: 10, kind: 'excite' } },
-              { speaker: 'player', text: '(아무거나 둘러댄 게 잘못이었나?)' },
+              { text: '아… 괜히 아는 척했나. 에밀리의 눈빛에 긴장하자 피 냄새가 조금 짙어졌다.', risk: { amount: 10, kind: 'excite' } },
             ],
           },
           {
@@ -289,9 +508,7 @@ const EPISODES: Record<number, Episode> = {
             affection: { emily: 5 },
             reply: [
               { speaker: 'emily', text: '그럼 그게 네 체향인 건가…? 그렇군…', voice: 'ep1/에밀리 호감2-1' },
-              { text: '에밀리는 잠깐 나를 바라보더니 고개를 돌렸다.' },
-              { speaker: 'emily', text: '특이하군. 향수를 쓰지 않는데도 이런 향이 나다니.', voice: 'ep1/에밀리 호감2-2' },
-              { speaker: 'player', text: '(괜히 둘러대는 것보다 솔직하게 말하는 게 나았나 보다.)' },
+              { text: '에밀리는 잠시 나를 바라보더니 고개를 돌렸다.' },
             ],
           },
           {
@@ -300,91 +517,85 @@ const EPISODES: Record<number, Episode> = {
             reply: [
               { speaker: 'emily', text: '흠. 알려줄 수 없다니… 별로 궁금하지도 않았어.', risk: { amount: 10, kind: 'excite' }, voice: 'ep1/에밀리 호감3-1' },
               { speaker: 'emily', text: '흥미가 떨어졌다. 이만 가보도록 하지.', voice: 'ep1/에밀리 호감3-2' },
-              { text: '에밀리는 고개를 돌리고는 그대로 가버렸다.' },
-              { speaker: 'player', text: '(…궁금해서 먼저 물어본 거 아니었나?)' },
+            ],
+          },
+          {
+            text: '네가 알 필요 없어. 향수도 모르는 게 귀족이야?',
+            affection: { emily: -15 },
+            stats: { mental: -3 },
+            reply: [
+              { speaker: 'emily', text: '방금 뭐라고 했니?' },
+              { text: '그녀가 정색하자 당황한 몸에서 피가 빠르게 돌았다.', risk: { amount: 40, kind: 'excite' } },
+              { speaker: 'player', text: '미안해. 그렇게 말하려던 건 아니었어.' },
+              { speaker: 'emily', text: '말은 제대로 고르고 하렴.' },
             ],
           },
         ],
       },
-      { text: '잠시 정신을 차리기도 전에, 옆에 있던 유령 가면의 여자애도 말을 걸었다.' },
-      { speaker: 'siyeong', text: '나는… 서시영이라고 해.', stage: ['siyeong'], voice: 'ep1/시영5' },
+
+      // 시영의 부탁
+      { text: '옆에 있던 시영이도 나에게 말을 걸었다.' },
+      { speaker: 'siyeong', text: '{name}… 너도 여기 있었네.', stage: ['siyeong'] },
       { speaker: 'siyeong', text: '나도 원래 말을 잘 못 거는데… 냄새에 이끌려 오니 너 앞이었어.', voice: 'ep1/시영6' },
       { speaker: 'siyeong', text: '뭔가 너한테 이끌리는 느낌…', voice: 'ep1/시영7' },
-      { text: '시영은 내 얼굴을 가만히 바라봤다.' },
-      { text: '유령 가면 때문에 표정은 잘 안 보이는데, 왠지 눈을 피하기가 어려웠다.' },
       { speaker: 'siyeong', text: '앗, 내가 무슨 말을 하는 거지… 다 잊어줘.', voice: 'ep1/시영8' },
-      { speaker: 'player', text: '아, 응…' },
       { speaker: 'siyeong', text: '아, 아니… 혹시 손목 한 번만 물어도 될까…?', voice: 'ep1/시영9' },
       { speaker: 'player', text: '뭐, 뭐라고?' },
-      { text: '시영의 시선이 내 손목으로 내려갔다.' },
-      { text: '웃으면서 하는 말도 아니었다.' },
-      // 위험 상황 ③ 시영의 부탁
+      { speaker: 'player', text: '(잠깐, 손목을 문다고? 여기서 피가 나면 바로 끝이다. 뭐라고 대답해야 하지?)' },
+      // 선택지 3. 시영의 부탁
       {
-        speaker: 'player',
-        text: '(진심이야…?)',
+        text: '시영이는 내가 소매로 가린 손목을 잠깐 바라봤다. 무언가 떠올린 듯했지만 이내 시선을 내렸다.',
         choices: [
           {
-            text: '미안, 그건 조금 무서운데…',
+            text: '손목은 안 돼. 대신 저기서 음료라도 마실래?',
             affection: {},
             reply: [
-              { text: '나는 천천히 손목을 뒤로 감췄다.' },
-              { speaker: 'siyeong', text: '아… 그렇지. 갑자기 이런 말 하면 무섭겠지…', voice: 'ep1/시영 호감1-1' },
-              { text: '시영은 민망한 듯 가면을 살짝 만졌다.' },
-              { speaker: 'player', text: '대신… 다음에 음료수라도 같이 마실래?' },
-              { speaker: 'siyeong', text: '어… 응.', voice: 'ep1/시영 호감1-2' },
-              { text: '시영의 목소리가 조금 작아졌지만, 싫은 눈치는 아니었다.' },
+              { speaker: 'siyeong', text: '아… 응. 괜히 이상한 부탁해서 미안해.' },
+              { text: '나는 손목을 뒤로 감추고 가볍게 웃었다. 일단 물리는 건 피했다.' },
             ],
           },
           {
             text: '손목은 좀 그렇고… 손 정도는 잡아도 돼.',
             affection: { siyeong: 5 },
             reply: [
-              { speaker: 'siyeong', text: '소, 손…?', voice: 'ep1/시영 호감2-1' },
-              { speaker: 'player', text: '아까 민지랑도 악수했으니까. 우리도 인사는 해야지.' },
-              { text: '시영은 조심스럽게 내 손을 잡았다.' },
-              { text: '생각보다 손이 차갑다.' },
-              { text: '그런데 내 손은 점점 뜨거워지는 것 같았다.' },
-              { speaker: 'player', text: '(이러면 또 심장이…)' },
-              { speaker: 'siyeong', text: '손이… 따뜻하네.', voice: 'ep1/시영 호감2-2' },
-              { text: '시영이 내 손목 쪽으로 손가락을 조금 옮겼다.' },
-              { speaker: 'player', text: '(잠깐, 거기는 맥박이 느껴질 텐데.)', risk: { amount: 50, kind: 'excite' } },
-              // 위험도 100 미만으로 살아남았을 때
-              { text: '시영은 갑자기 정신이 든 듯 내 손을 놓았다.' },
+              { speaker: 'siyeong', text: '소, 손을…? 그럼 잠깐만…' },
+              { text: '시영이 조심스럽게 내 손을 잡았다. 가까이서 얼굴을 보니 또 심장이 빨라지기 시작했다.', risk: { amount: 30, kind: 'excite' } },
             ],
           },
           {
             text: '너라면… 한 번 정도는 괜찮아.',
             affection: { siyeong: 10 },
             reply: [
-              { speaker: 'siyeong', text: '…정말?', voice: 'ep1/시영 호감3-1' },
-              { speaker: 'player', text: '(내가 왜 그랬지? 입이 먼저 나가버렸다.)' },
-              { speaker: 'player', text: '아, 아니. 그러니까…' },
-              { speaker: 'siyeong', text: '나… 진짜 물어버릴지도 모르는데.', voice: 'ep1/시영 호감3-2' },
-              { text: '시영이 내 손목을 잡고 천천히 입을 가까이 가져왔다.' },
-              { text: '가면 아래로 뾰족한 송곳니가 보였다.' },
-              { text: '심장이 미친 듯이 뛰기 시작했다.' },
-              { speaker: 'player', text: '(아, 잠깐만. 진짜 물겠다는 거야?)', risk: { amount: 90, kind: 'excite' } },
-              // 위험도 100 미만으로 살아남았을 때
-              { text: '시영은 내 손목 바로 앞에서 멈췄다.' },
-              { text: '나를 한 번 올려다보더니, 송곳니를 감추고 손을 놓았다.' },
+              { speaker: 'siyeong', text: '저, 정말…?' },
+              { text: '시영이 내 손목을 붙잡고 천천히 가까이 다가왔다.' },
+              { speaker: 'player', text: '(어쩌려고 이런 말을 한 거지? 심장이 터질 듯이 뛰었다.)', risk: { amount: 70, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '좋아. 지금 내 손목을 물어 봐.',
+            affection: {},
+            reply: [
+              { speaker: 'siyeong', text: '……정말?', voice: 'ep1/시영 호감3-1' },
+              // 실제로 피가 나 즉시 발각 (위장도·정신력으로 피할 수 없음)
+              {
+                text: '송곳니가 손목에 닿자 피가 흘렀다. 붉게 맺힌 피의 냄새가 곧바로 주위로 퍼졌다.',
+                risk: { amount: 100, kind: 'reveal' },
+                badEnding: [
+                  { text: '시영의 눈빛이 달라졌다. 나는 뒤늦게 손목을 감쌌지만 이미 늦었다.', hidePortrait: true },
+                  { name: 'BAD END', text: '직접 드러난 비밀' },
+                ],
+              },
             ],
           },
         ],
       },
       { speaker: 'siyeong', text: '아 아냐… 포도주를 너무 많이 마셨나… 계속 이상한 말을 하네… 미안해.', voice: 'ep1/시영 위험1' },
-      { speaker: 'player', text: '아, 아니야…' },
-      { speaker: 'player', text: '(다행이다. 진짜 물리는 줄 알았다.)' },
+      { text: '시영은 얼굴을 붉히며 한 걸음 뒤로 물러났다. 다행히 물리지는 않았다.' },
       { speaker: 'siyeong', text: '이만 나도 가 볼게… 뭔가 계속 실수할 것 같네.', voice: 'ep1/시영 위험2' },
-      { text: '시영은 몇 걸음 가다가 나를 한 번 돌아봤다.' },
-      { speaker: 'siyeong', text: '{name}.', voice: 'ep1/시영 위험3' },
-      { speaker: 'player', text: '응?' },
-      { speaker: 'siyeong', text: '우리… 다음에 또 볼 수 있겠지?', voice: 'ep1/시영 위험4' },
-      { speaker: 'player', text: '같은 학교니까… 아마?' },
-      { speaker: 'siyeong', text: '아… 그렇지.', voice: 'ep1/시영 위험5' },
-      { text: '시영은 조금 부끄러운 듯 고개를 숙이고 사람들 사이로 사라졌다.', hidePortrait: true },
-      { text: '이렇게 가면무도회는 끝났다.' },
-      { text: '하나 알 수 있는 점은, 살아남기 위해서 정신을 똑바로 차려야 한다는 점이었다.' },
+      { text: '이렇게 가면무도회는 끝났다.', hidePortrait: true },
+      { text: '하나 알 수 있는 점은 살아남기 위해서 정신을 똑바로 차려야 한다는 점이었다.' },
       { speaker: 'player', text: '(너무 피곤하다…)' },
+      { speaker: 'player', text: '(다음 수업에도 세 명을 마주칠 텐데… 최대한 조심해야겠다.)' },
     ],
     badEnding: [
       { speaker: 'siyeong', text: '잠깐만… {name}한테서 나는 이 냄새…?' },
@@ -395,25 +606,16 @@ const EPISODES: Record<number, Episode> = {
       { name: 'BAD END', text: '가면 뒤의 인간' },
     ],
   },
-  // EP 2. 중간고사 뒤 술자리
-  5: {
+  // EP 3. 기말고사 뒤 술자리
+  6: {
     id: 'month-5',
-    title: '중간고사 뒤 술자리',
+    title: '기말고사 뒤 술자리',
     icon: '🍷',
     time: '밤',
     lines: [
-      // 뱀파이어 대학에서의 수업
-      { text: '그동안 수업은 대체적으로 현대 사회 생존학이나 인간 심리학, 예절, 혈액양조학, 우주학 등 다양하게 배웠다.', background: roomImg },
-      { text: '그래서 알게 된 점은 뱀파이어는 다른 차원에 살아가고 있고, 20살이 되던 해에 인간 세상을 가서 80살까지 살아남아야 진정한 뱀파이어로 인정받고 다시 넘어갈 수 있다는 것이었다.' },
-      { text: '그래서 대학교 4년 동안 생존에 관한 수업을 받고, 야간 직종으로 인간과 섞여 살아간다는 걸 알았다.' },
-      { text: '또한 이성의 피에 이끌리는데, 뜨거운 피의 냄새만 맡아도 발정하게 되는 경향이 있다는 걸 알게 되었다.', },
-      { text: '그래서 가면무도회 때 왜 그렇게 나한테 좋은 냄새가 난다고 했는지 알게 되었다.' },
-      { speaker: 'player', text: '(내가 흥분하거나 심장이 빠르게 뛰는 건 최대한 자제해야겠다.)', cg: null },
-      { speaker: 'player', text: '(그리고 최대한 아싸처럼 지내야겠다.)' },
-      { text: '이러면서 5월에 술자리를 가지게 되었다.' },
-      { text: '바로 도망가고 싶었지만 중간고사가 끝난 기념으로 다 참여하라고 해서 결국 참여하게 됐다.' },
+      { text: '기말고사가 끝난 기념으로 술자리가 열렸다. 바로 도망가고 싶었지만 다 참여하라고 해서 결국 가게 됐다.', background: roomImg },
 
-      // 중간고사 뒤 술자리
+      // 기말고사 뒤 술자리
       { text: '여기 음식은 고기와 포도주가 전부였다.', background: barImg },
       { text: '그래서 고기 요리는 진짜 차원이 달랐다. 레어를 싫어하는데 딱 알맞은 굽기였다.' },
       { text: '나도 모르게 고기를 먹으면서 포도주를 마시게 됐다.' },
@@ -422,9 +624,10 @@ const EPISODES: Record<number, Episode> = {
       { speaker: 'player', text: '(아, 맞다. 흥분하면 안 되는데. 벌써부터 이러면 어떡하지?)', risk: { amount: 20, kind: 'excite' } },
       { speaker: 'minji', text: '야, 너 오랜만이다. 가면무도회 때 그 웃긴 가면 너 맞지?', expression: 'smile', voice: 'ep2/민지1' },
       { text: '고개를 돌리자 송민지가 내 옆자리에 털썩 앉았다.' },
-      { speaker: 'minji', text: '그때 선도부한테 끌려가서 정신이 없었어. 너 이름이… 뭐였지?', voice: 'ep2/민지2' },
-      { speaker: 'player', text: '나는 {name}…' },
-      { speaker: 'minji', text: '아, 맞다. {name}!', expression: 'bigsmile', voice: 'ep2/민지3' },
+      // TODO(더빙): 대사가 바뀌어 기존 녹음(ep2/민지2)을 뺐음
+      { speaker: 'minji', text: '그때 선도부한테 끌려가서 아직도 짜증 나. 오늘은 누가 막지도 않잖아?', expression: 'less' },
+      { speaker: 'player', text: '뭘 하려고…?' },
+      { speaker: 'minji', text: '좀만 가까이 있어 봐.', expression: 'shy_smile' },
       { speaker: 'minji', text: '음, 역시 너 옆에 앉으니까 더 알 것 같아. 너 옆에 있으면 좀 오싹오싹하고 흥분되는 게…', expression: 'shy_smile', voice: 'ep2/민지4' },
       { speaker: 'player', text: '흥분되는 게…?' },
       { text: '약간 눈이 돌아 있는 듯한 모습으로 나를 바라봐서 들키는 건가 무서웠다.' },
@@ -442,7 +645,7 @@ const EPISODES: Record<number, Episode> = {
         choices: [
           {
             text: '나도 너랑 더 친해지고 싶어.',
-            affection: { minji: 10 },
+            affection: { minji: 5 },
             reply: [
               { speaker: 'minji', text: '오? 그럼 가능성 있다는 거네? 좋았어!', expression: 'bigsmile', voice: 'ep2/민지 호감1' },
               { speaker: 'player', text: '(아니, 친해지고 싶다고 했지 사귀겠다고는 안 했는데…)' },
@@ -458,21 +661,33 @@ const EPISODES: Record<number, Episode> = {
             affection: { minji: -5 },
             reply: [{ speaker: 'minji', text: '뭐야, 나 나름 진지했는데? 너 은근 상처 준다.', expression: 'less', voice: 'ep2/민지 호감3' }],
           },
+          {
+            text: '너랑 친해지고 싶은 사람은 없을걸?',
+            affection: { minji: -15 },
+            stats: { mental: -3 },
+            reply: [
+              { speaker: 'minji', text: '야, 내가 우습게 보여?', expression: 'less' },
+              { text: '민지가 잔을 내려놓고 내 얼굴을 노려봤다.', risk: { amount: 40, kind: 'excite' } },
+              { speaker: 'player', text: '미안해. 갑자기 놀라서 말이 심했어.' },
+              { speaker: 'minji', text: '다음에는 그렇게 말하지 마.', expression: 'less' },
+            ],
+          },
         ],
       },
       { speaker: 'emily', text: '야, 또 얘 괴롭히지?', stage: ['minji', 'emily'], voice: 'ep2/에밀리1' },
       { text: '은발 초미녀가 말을 걸었다.' },
-      { text: '진짜 다행이다. 민지가 더 다가왔으면 심장 두근거리는 걸 멈출 수 없어서 들켰을 것이다.' },
-      { text: '에밀리라는 애였고, 얘는 귀족 자제로 싸가지가 좀 없는 듯했다.' },
+      { text: '진짜 다행이다. 민지가 더 다가왔으면 심장이 더 빨리 뛰어서 피 냄새가 짙어졌을 것이다.' },
+      { text: '가면무도회와 수업에서 봤던 에밀리였다. 귀족 자제라 그런지 여전히 싸가지가 좀 없는 듯했다.' },
       { speaker: 'minji', text: '아, 또 너냐. 내가 그때 너 때문에 창피당한 거 생각하면 진짜…', expression: 'less', voice: 'ep2/민지6' },
       { speaker: 'emily', text: '뭐, 네가 잘못한 건데. 창피할 것도 따로 있나. 행동을 바르게 하면 그럴 일도 없거든.', voice: 'ep2/에밀리2 쯧쯧 삭제' },
       { speaker: 'minji', text: '와, 진짜 내가 원래 이런 애가 아닌데 너는 진짜… 죽이고 싶다. 현피 한 번만 뜨면 안 될까?', expression: 'less', voice: 'ep2/민지7' },
       { speaker: 'emily', text: '꺼져. 혼자나 하시고.', voice: 'ep2/에밀리3' },
       { speaker: 'player', text: '(아니, 지금 막으러 온 거 아니었어? 둘이 또 싸우려고 하는데…)' },
       { speaker: 'emily', text: '흠, 오랜만에 이 냄새를 맡으니 더 이끌리네.', voice: 'ep2/에밀리4' },
-      { speaker: 'emily', text: '다시 한 번 더 물어보도록 하지. 너 향수를 뭐 쓴다고?', voice: 'ep2/에밀리5' },
-      { speaker: 'player', text: '안… 안 쓴다니까…' },
-      { speaker: 'emily', text: '안 쓴다고? 그럼 그냥 너 향기라는 건가…', voice: 'ep2/에밀리6' },
+      // TODO(더빙): 대사가 바뀌어 기존 녹음(ep2/에밀리5, 에밀리6)을 뺐음
+      { speaker: 'emily', text: '그래서 그때 물어봤던 향수 말이다.' },
+      { speaker: 'player', text: '향수? 그 얘기를 또 왜…' },
+      { speaker: 'emily', text: '네 향인지 아직도 궁금하거든.' },
       { text: '에밀리가 냄새를 맡으려 가까이 왔다.', cg: ep03EmilyCg },
 
       // 쏟아진 포도주
@@ -521,6 +736,18 @@ const EPISODES: Record<number, Episode> = {
               { text: '나는 화들짝 놀라 뒤를 돌아봤다. 하지만 이미 너무 늦은 건 아닐까?' },
             ],
           },
+          {
+            text: '에밀리가 수건을 달라고 해도 계속 쳐다보며 놀린다.',
+            affection: { emily: -15 },
+            stats: { charm: -3 },
+            reply: [
+              { speaker: 'emily', text: '야! 재밌어? 수건이나 달라고!' },
+              { text: '얼굴이 뜨거워지자 나는 뒤늦게 고개를 돌리고 수건을 건넸다.', risk: { amount: 60, kind: 'excite' } },
+              // 위험도 100 미만으로 살아남았을 때
+              { speaker: 'player', text: '미안해. 내가 잘못했어.' },
+              { speaker: 'emily', text: '다시는 그러지 마.' },
+            ],
+          },
         ],
       },
       { text: '에밀리는 시영에게 무슨 일을 당했는지 모르는 표정으로 상황을 파악하려고 했다. 평소와 다른 모습이 조금 웃겼다.' },
@@ -538,7 +765,7 @@ const EPISODES: Record<number, Episode> = {
         choices: [
           {
             text: '시영아, 괜찮아? 에밀리한텐 같이 사과하자.',
-            affection: { siyeong: 10 },
+            affection: { siyeong: 5 },
             reply: [{ speaker: 'siyeong', text: '{name}이(가) 같이 가준다면… 저도 제대로 사과할게요.', voice: 'ep2/시영 호감1' }],
           },
           {
@@ -550,6 +777,16 @@ const EPISODES: Record<number, Episode> = {
             text: '시영아, 좀 무섭다…',
             affection: { siyeong: -5 },
             reply: [{ speaker: 'siyeong', text: '아… 미안해요. 무섭게 하려던 건 아닌데…', voice: 'ep2/시영 호감3' }],
+          },
+          {
+            text: '네가 분위기 다 망쳤어. 그냥 가.',
+            affection: { siyeong: -15 },
+            stats: { mental: -3 },
+            reply: [
+              { speaker: 'siyeong', text: '……미안해. 나 때문에 다들 화났지.' },
+              { text: '시영이가 손을 떨며 고개를 숙이자 나는 내가 심하게 말했다는 걸 깨달았다.', risk: { amount: 40, kind: 'excite' } },
+              { speaker: 'player', text: '미안해. 일부러 그런 것도 아닌데 내가 화풀이했어.' },
+            ],
           },
         ],
       },
@@ -574,207 +811,6 @@ const EPISODES: Record<number, Episode> = {
       { name: 'BAD END', text: '술자리의 인간' },
     ],
   },
-  // EP 3. 기말고사 공부모임
-  6: {
-    id: 'month-6',
-    title: '기말고사 공부모임',
-    icon: '📚',
-    time: '오후',
-    lines: [
-      { text: '이제는 기말고사 기간이 되었고, 뱀파이어랑 우리 생각이 다른지 중간고사를 너무 망쳐서 같이 공부할 사람을 찾다가 어쩌다 그 3명이랑 공부를 하게 되었다.', background: studyroomImg },
-      { speaker: 'player', text: '(그래도 얘네들이 상위권이니까 공부하는 데 도움이 되겠지…?)' },
-      { speaker: 'siyeong', text: '어떤 게 궁금해ㅐㅐㅐㅐ 다 물어봐. 내가 다…… 모두…… 다 알려줄게……', stage: ['minji', 'siyeong', 'emily'], voice: 'ep3/시영1' },
-      { speaker: 'siyeong', text: '나에 대한 것도……ㅎ', voice: 'ep3/시영2' },
-      { speaker: 'minji', text: '시영아, 지금 너 얼굴 너무 무서워.', expression: 'less', voice: 'ep3/민지1' },
-      { text: '시영이는 내 옆으로 의자를 끌고 오더니 갑자기 머리끈을 꺼냈다.' },
-      { speaker: 'siyeong', text: '으으… 아… 머리가 자꾸 내려와서… {name}, 나 머리 좀 묶을게…', voice: 'ep3/시영3' },
-      { text: '아니, 머리 묶는데 왜 이상한 소리를 내는 거야. 시영이는 일부러 내 쪽을 힐끔 보면서 머리를 천천히 묶었다.' },
-      { text: '머리를 묶으니 목덜미가 보였다. 괜히 시선을 어디에 둬야 할지 모르겠고 심장이 조금씩 빨리 뛰는 것 같았다.' },
-      // 선택지 1. 시영의 묶은 머리 (흥분 위험 ①, 생존 시 호감도 적용)
-      {
-        speaker: 'siyeong',
-        text: '{name}… 나 머리 묶은 거… 어때?',
-        voice: 'ep3/시영4',
-        choices: [
-          {
-            text: '머리 묶으니까 공부하기 편하겠다.',
-            affection: {},
-            reply: [
-              { speaker: 'siyeong', text: '응… 이제 {name}한테 문제도 더 잘 알려줄 수 있겠다…ㅎ', risk: { amount: 10, kind: 'excite' }, voice: 'ep3/시영 호감1' },
-            ],
-          },
-          {
-            text: '시영아, 머리 묶으니까 잘 어울려.',
-            affection: { siyeong: 5 },
-            reply: [
-              { speaker: 'siyeong', text: '저, 정말…? 그럼 앞으로 {name} 앞에서는 계속 묶고 있을게…', voice: 'ep3/시영 호감2' },
-              { text: '이렇게 좋아할 줄 알았으면 좀 더 덤덤하게 말할걸… 심장이 점점 빨라진다.', risk: { amount: 20, kind: 'excite' } },
-            ],
-          },
-          {
-            text: '그렇게 가까이 있으면 나도 두근거리잖아.',
-            affection: { siyeong: 10 },
-            reply: [
-              { speaker: 'siyeong', text: '{name}도 두근거려…? 나랑 똑같네…ㅎ', voice: 'ep3/시영 호감3' },
-              { text: '시영이가 더 가까이 다가왔다. 아, 내가 왜 그런 말을 했지? 심장이 터질 것 같다.', risk: { amount: 40, kind: 'excite' } },
-            ],
-          },
-        ],
-      },
-
-      // 공부는 뒷전
-      { speaker: 'minji', text: '{name}…… 나는 문제 좀 알려줄래?! 나는 이거, 이거, 이것까지!!!!!!! 다 모르겠어.', expression: 'bigsmile', voice: 'ep3/민지2' },
-      { speaker: 'minji', text: '좀만 더 붙어서 설명해줘.', expression: 'shy_smile', voice: 'ep3/민지3' },
-      { text: '민지가 내 쪽으로 바짝 붙어오자 에밀리가 민지의 책을 날려버리면서 말했다.' },
-      { speaker: 'emily', text: '에휴 진짜 저급하다. 진짜 꺼지고 {name} 편하게 공부하게 다 꺼져.', voice: 'ep3/에밀리1' },
-      { speaker: 'emily', text: '시끄러워서 집중을 할 수가 없네.', voice: 'ep3/에밀리2' },
-      { speaker: 'emily', text: '혹시 연필로 찍혀 본 적은 없는 거지? 내가 경험시켜줘도 될까?', voice: 'ep3/에밀리3' },
-      { speaker: 'player', text: '얘들아 제발 조용히 좀 해줘ㅠㅠㅠㅠ 나도 공부 좀 하자.' },
-      { text: '내가 너무나도 실수했다. 얘네들이 그래도 상위권이고 그나마 같이 하자고 해서 도움이 될 줄 알았는데 공부에 집중을 하나도 못 하겠다.' },
-      { speaker: 'minji', text: '그래그래 다 닥쳐. 진짜 집중하자.', voice: 'ep3/민지4' },
-      { text: '민지가 다시 주워 온 책을 펴는 척하더니 나한테 바짝 다가와 귓속말했다.' },
-      { speaker: 'minji', text: '모르는 문제 있으면 이따가 같이 몰래 나가서 물어볼게, {name}.', expression: 'shy_smile', voice: 'ep3/민지5' },
-      { speaker: 'player', text: '힉!!!' },
-      { text: '갑자기 귀에 바람이 닿아서 놀랐다. 얼굴이 뜨거워지고 심장도 두근거리기 시작했다.' },
-      { speaker: 'minji', text: '으으으… 아, 가슴 무거워. 공부 못 하겠다.', voice: 'ep3/민지6' },
-      { text: '민지는 일부러 들으라는 듯 이상한 소리를 내더니 가슴을 책상 위에 턱 올려놓고 나를 바라봤다.' },
-      { speaker: 'minji', text: '{name}, 나 이렇게 힘든데 좀 봐주면 안 돼?', expression: 'shy_smile', voice: 'ep3/민지7' },
-      // 선택지 2. 민지의 귓속말 (흥분 위험 ②, 귓속말과 책상 장면을 합쳐 한 번만 판정)
-      {
-        text: '아니 얘도 대체 왜 이러는 거야. 지금 기말고사 공부하러 온 거 맞아?',
-        choices: [
-          {
-            text: '여기 이 문제부터 풀어보자.',
-            affection: {},
-            reply: [
-              { speaker: 'minji', text: '에이, 반응이 왜 그래. 알았어, 일단 이거부터 알려줘.', expression: 'less', voice: 'ep3/민지 호감1' },
-              { text: '나는 애써 문제집을 바라봤다. 그래도 아직 심장이 조금 빨랐다.', risk: { amount: 10, kind: 'excite' } },
-            ],
-          },
-          {
-            text: '그렇게 가까이 오니까 집중이 안 되잖아.',
-            affection: { minji: 5 },
-            reply: [
-              { speaker: 'minji', text: '어? 나 때문에 집중이 안 돼? 그럼 좀 더 가까이 가볼까?', expression: 'smile', voice: 'ep3/민지 호감2' },
-              { speaker: 'player', text: '아, 아니! 그런 뜻이 아닌데…!', risk: { amount: 30, kind: 'excite' } },
-            ],
-          },
-          {
-            text: '둘이 몰래 나가서 더 가까이 알려줄까?',
-            affection: { minji: 10 },
-            reply: [
-              { speaker: 'minji', text: '뭐야, 너도 나랑 단둘이 있고 싶었어? 지금 나갈까?', expression: 'bigsmile', voice: 'ep3/민지 호감3' },
-              { speaker: 'player', text: '지, 지금 말고… 일단 공부부터 하자!' },
-              { text: '내가 무슨 소리를 한 거지. 민지가 웃으면서 더 다가오자 심장이 미친 듯이 뛰었다.', risk: { amount: 50, kind: 'excite' } },
-            ],
-          },
-        ],
-      },
-      { text: '그때 시영이가 필통에서 슬며시 가위를 꺼내길래 얼른 집어넣게 했다.' },
-      { speaker: 'player', text: '시, 시영아. 가위는 왜 꺼내는 거야? 다시 넣자…' },
-      { speaker: 'siyeong', text: '아… 그냥… 연필을 깎으려고…', voice: 'ep3/시영5' },
-      { text: '시영아, 그거 샤프잖아…' },
-
-      // 에밀리와 단둘이
-      { speaker: 'emily', text: '음, 집중 많이 했네. 조금만 쉴까?', voice: 'ep3/에밀리4' },
-      { text: '민지는 자고 있고 시영이는 집중하고 있었다. 민지 자고 있는 모습이 꽤나 귀여워 보이기도 했다.', cg: ep04StudyCg },
-      { speaker: 'player', text: '음, 그러면 커피 좀 먹을까?', cg: null },
-      { speaker: 'emily', text: '좋은 생각이다. 시영아, 커피 좀 가져오도록.', voice: 'ep3/에밀리5' },
-      { speaker: 'siyeong', text: '내…… 내가…… 왜……', stage: ['siyeong', 'emily'], voice: 'ep3/시영6' },
-      { speaker: 'emily', text: '둘이서 할 이야기가 있어서 어쩔 수 없다. 빨리 다녀오도록……', voice: 'ep3/에밀리6' },
-      { speaker: 'siyeong', text: '하…… {name}(이)랑 두…… 둘이……? 그럼 안…… 갈래……', voice: 'ep3/시영7' },
-      { text: '에밀리가 눈을 부릅뜨며 시영이를 노려봤다.' },
-      { speaker: 'siyeong', text: '히익!!! 아…… 알겠어, 다녀올게……ㅠㅠㅠ', voice: 'ep3/시영8' },
-      { text: '시영이가 커피를 가지러 가고, 자고 있는 민지를 빼면 나와 에밀리 둘만 남았다.', stage: ['emily'] },
-      { speaker: 'emily', text: '드디어 갔네. 둘이서만 공부하는 게 너한테도 더 좋았을 텐데 쓰레기들이 너무 많이 꼈군.', voice: 'ep3/에밀리7 갔네로 변경' },
-      { speaker: 'emily', text: '그래, 너는 인간의 어느 부위를 좋아하지? 나는 아무래도 손목의 피를 좋아한다네. 제일 깔끔하고 고급진 맛이 난다랄까.', voice: 'ep3/에밀리8' },
-      { speaker: 'player', text: '(아…… 대체 뭐라고 답해야 하지……)' },
-      { text: '에밀리가 내 손목을 보더니 의자를 조금씩 내 쪽으로 끌고 왔다.' },
-      { speaker: 'emily', text: '이렇게 단둘이 있으니 굳이 책만 보고 있을 필요는 없지 않나?', voice: 'ep3/에밀리9' },
-      { speaker: 'player', text: '채, 책 말고 뭘 보려고…?' },
-      { speaker: 'emily', text: '글쎄. 네 손목에 내 입술을 가까이 대면… 그때도 그렇게 아무렇지 않은 척할 수 있나 궁금하군.', voice: 'ep3/에밀리10' },
-      { speaker: 'player', text: '뭐, 뭐라고?!' },
-      { speaker: 'emily', text: '걱정하지 마라. 네가 원하기 전까지는… 물지 않을 테니.', voice: 'ep3/에밀리11' },
-      { text: '얘 지금 무슨 말을 하는 거야?! 얼굴은 뜨겁고, 에밀리는 자꾸 가까이 오고, 심장은 점점 더 빨라진다.' },
-      // 선택지 3. 에밀리의 유혹 (흥분 위험 ③, 위험도 100에 닿으면 즉시 배드엔딩)
-      {
-        speaker: 'emily',
-        text: '얼굴이 빨개졌군. 내가 그렇게 가까이 오는 게 싫지만은 않은 모양이지?',
-        voice: 'ep3/에밀리12',
-        choices: [
-          {
-            text: '그런 이야기는 그만하고, 문제부터 풀자.',
-            affection: {},
-            reply: [
-              { speaker: 'emily', text: '흥, 재미없는 녀석. 그래도 내가 특별히 알려주도록 하지.', voice: 'ep3/에밀리 호감1' },
-              { text: '나는 손목을 슬쩍 감추고 다시 책을 폈다.', risk: { amount: 10, kind: 'excite' } },
-            ],
-          },
-          {
-            text: '네가 그렇게 말하니까 더 긴장되잖아.',
-            affection: { emily: 5 },
-            reply: [
-              { speaker: 'emily', text: '내 말 한마디에 긴장하는 건가? 후후, 생각보다 귀여운 구석이 있군.', voice: 'ep3/에밀리 호감2' },
-              { text: '에밀리가 웃으며 조금 더 다가왔다. 피 냄새가 짙어져서 들키는 건 아니겠지…?', risk: { amount: 40, kind: 'excite' } },
-            ],
-          },
-          {
-            text: '손목이 궁금하면 더 가까이 와서 봐.',
-            affection: { emily: 10 },
-            reply: [
-              { speaker: 'emily', text: '…정말 내가 가까이 가도 괜찮겠나?', voice: 'ep3/에밀리 호감3' },
-              { text: '에밀리가 내 손목을 잡고 천천히 얼굴을 가까이했다. 그 순간 심장이 터질 듯이 뛰기 시작했다.' },
-              { speaker: 'player', text: '(잠깐만, 나 지금 무슨 짓을 한 거야!!! 이러다 진짜 들키겠는데?!)', risk: { amount: 60, kind: 'excite' } },
-            ],
-          },
-        ],
-      },
-      { text: '에밀리가 무언가 더 말하려던 순간, 문 쪽에서 익숙한 목소리가 들렸다.' },
-
-      // 쏟아진 커피
-      { speaker: 'siyeong', text: '커피…… 가…… 가져왔어ㅓㅓㅓㅓㅓㅓ!!!', stage: ['minji', 'siyeong', 'emily'], voice: 'ep3/시영9', cg: ep04SiyeongCg },
-      { text: '시영이가 문턱에 걸려 넘어지면서 커피를 에밀리한테 부어버렸고, 그 커피가 민지와 나한테도 튀었다.' },
-      { speaker: 'minji', text: '아 뜨ㅡ드드드드드거워ㅓ!!!!!!!!', expression: 'surprised_soft', voice: 'ep3/민지8' },
-      { text: '에밀리가 정통으로 맞아버려 그 도도하던 에밀리가 그렇게 날뛰는 모습을 처음 봤다. 그냥 막 펄쩍펄쩍하고 뛰는 게 개웃겼다.', cg: ep04EmilyCg },
-      { speaker: 'emily', text: '아 뜨거워!!! 야, 서시영! 너 지금 뭐 하는 거야!!!', voice: 'ep3/에밀리13' },
-      { speaker: 'siyeong', text: '아… 아… 죄, 죄송해요…… 일부러 그런 게 아니라……', voice: 'ep3/시영10', cg: null },
-      { speaker: 'emily', text: '너 지난번 술자리에서도 그러더니!!!', voice: 'ep3/에밀리14' },
-      { text: '에밀리는 뜨거움이 가신 뒤에 시영이의 귓방망이를 개 세게 때렸다.' },
-      { speaker: 'siyeong', text: '아……', voice: 'ep3/시영11' },
-      { speaker: 'emily', text: '감히……? 내가 피부에 화상이라도 입었으면 어쩌려고! 진짜 미친 건가?!', voice: 'ep3/에밀리15' },
-      { text: '에밀리가 또 때리려고 하는 걸 내가 가서 간신히 막았다.' },
-      { speaker: 'player', text: '일부러 한 거 아니니까 거기까지만 하자.' },
-      { text: '에밀리는 억울하다는 듯이 나를 바라봤다.' },
-      { speaker: 'emily', text: '아니 얘가 한 짓을 봐. 내 얼굴이 이렇게 화상을 입었을지도 모르는데……', voice: 'ep3/에밀리16 봐로 변경' },
-      { text: '에밀리는 갑자기 눈물을 보이면서 그냥 가버렸다.', stage: ['minji', 'siyeong'] },
-      { speaker: 'player', text: '(아, 많이 밉보인 것 같은데…… 어쩌지……)' },
-      { speaker: 'minji', text: '에휴, 저 싸가지. 아주 꼴이 좋아. 시영아 잘했어! 셔츠 세탁비는 청구할게.', expression: 'smile', voice: 'ep3/민지9' },
-      { speaker: 'player', text: '민지……야, 제발 눈치 좀……' },
-      { speaker: 'minji', text: '아니, 할 건 해야지!!!', expression: 'less', voice: 'ep3/민지10' },
-      { text: '시영이는 뺨을 맞은 그 상태에서 울먹거리고 있었다.' },
-      { speaker: 'siyeong', text: '히그히극… 제가 하는 일 다 이런 식으로 되고… 잘하는 것도 없고… 흑흐그흐엉…', voice: 'ep3/시영12' },
-      { speaker: 'player', text: '아냐, 시영이 과탑이잖아. 에밀리도 순간적으로 화나서 그랬을 거야.' },
-      { speaker: 'player', text: '너무 걱정하지 말고 표정 풀어. 공부 다시 하자. 나 모르는 부분들이 너무 많더라.' },
-      { speaker: 'minji', text: '어! 내가, 내가, 내가 알려줄게!!!!', expression: 'bigsmile', voice: 'ep3/민지11' },
-      { text: '민지도 신나서 따라붙었다. 민지의 책을 다시 내 쪽으로 당겨 같이 문제를 보기 시작했다.' },
-
-      // 다시 함께 공부하기
-      { text: '그러던 중 에밀리가 다시 돌아왔다. 가방을 두고 갔던 것이다.', stage: ['minji', 'siyeong', 'emily'] },
-      { text: '우리가 다 쳐다보니까 에밀리도 미안했는지 시영이에게 말했다.' },
-      { speaker: 'emily', text: '시영아… 미안하다.', voice: 'ep3/에밀리17' },
-      { speaker: 'siyeong', text: '아니에요… 저도 일부러 그런 건 아니었지만… 죄송해요.', voice: 'ep3/시영13' },
-      { text: '나도 그 모습을 보고 안쓰러워서 에밀리에게 말했다.' },
-      { speaker: 'player', text: '다시 앉아, 에밀리. 다 같이 다시 공부하자.' },
-      { speaker: 'minji', text: '응응, 앉아라 왕싸가지. 뭐 혼자 집 가서 할 것도 없잖아.', expression: 'smile', voice: 'ep3/민지12' },
-      { speaker: 'emily', text: '흥, 그렇도록 하지. 내가 미안하니까 이번 기말고사가 끝나면 우리 가문의 전용 워터파크에 초대해주지……', voice: 'ep3/에밀리18' },
-      { speaker: 'minji', text: '워터파크?! 진짜?!', expression: 'bigsmile', voice: 'ep3/민지13' },
-      { speaker: 'siyeong', text: '{name}(이)랑… 같이 가는 거야…?', voice: 'ep3/시영14' },
-      { speaker: 'player', text: '워터파크라니, 갑자기?!' },
-      { name: '다 같이', text: '야호ㅗㅗㅗ 너무 좋아ㅏㅏㅏ!!!', voice: ['ep3/에밀리19', 'ep3/시영15'] },
-      { text: '이렇게 기말고사 공부를 하다가 갑자기 워터파크까지 가게 되었다.', hidePortrait: true },
-      { speaker: 'player', text: '(근데 우리… 오늘 공부는 얼마나 한 거지?)' },
-    ],
-  },
   // EP 4. 워터파크 (여름방학)
   7: {
     id: 'month-7',
@@ -782,7 +818,8 @@ const EPISODES: Record<number, Episode> = {
     icon: '🌊',
     time: '낮',
     lines: [
-      { text: '오늘은 에밀리 가문 전용의 워터파크를 가기로 한 날이다.', background: roomImg },
+      { text: '기말고사가 끝나고 여름방학이 시작되자, 에밀리가 갑자기 우리 셋을 가문 전용 워터파크에 초대했다.', background: roomImg },
+      { text: '술자리에서 그렇게 싸워 놓고 왜 부르는 건지는 모르겠지만, 아무튼 오늘이 바로 그날이다.' },
       { speaker: 'player', text: '(내가 여자랑 워터파크를 가다니…… 그것도 여자 3명이랑…… 이게 대체 무슨 복이란 말인가.)' },
       { text: '뱀파이어라는 점을 제외하고는 일반 사람과 똑같아서 이제는 별다른 느낌이 들지 않는다.' },
       { text: '근데 오늘은 비키니 볼 생각에 벌써 흥분되기 시작했다. 하, 오늘은 진짜 조심해야 하는데.' },
@@ -1000,8 +1037,210 @@ const EPISODES: Record<number, Episode> = {
       { name: 'BAD END', text: '피 냄새가 퍼진 워터파크' },
     ],
   },
-  // EP 5. 메이드카페의 첫 출근
+  // EP 5. 중간고사 공부모임
   9: {
+    id: 'month-6',
+    title: '중간고사 공부모임',
+    icon: '📚',
+    time: '오후',
+    lines: [
+      { text: '어느새 2학기 중간고사 기간이 되었다. 뱀파이어랑 우리 생각이 다른지 1학기 기말고사를 너무 망쳐서 같이 공부할 사람을 찾다가, 어쩌다 그 3명이랑 공부를 하게 되었다.', background: studyroomImg },
+      { speaker: 'player', text: '(그래도 얘네들이 상위권이니까 공부하는 데 도움이 되겠지…?)' },
+      { speaker: 'siyeong', text: '어떤 게 궁금해ㅐㅐㅐㅐ 다 물어봐. 내가 다…… 모두…… 다 알려줄게……', stage: ['minji', 'siyeong', 'emily'], voice: 'ep3/시영1' },
+      { speaker: 'siyeong', text: '나에 대한 것도……ㅎ', voice: 'ep3/시영2' },
+      { speaker: 'minji', text: '시영아, 지금 너 얼굴 너무 무서워.', expression: 'less', voice: 'ep3/민지1' },
+      { text: '시영이는 내 옆으로 의자를 끌고 오더니 갑자기 머리끈을 꺼냈다.' },
+      { speaker: 'siyeong', text: '으으… 아… 머리가 자꾸 내려와서… {name}, 나 머리 좀 묶을게…', voice: 'ep3/시영3' },
+      { text: '아니, 머리 묶는데 왜 이상한 소리를 내는 거야. 시영이는 일부러 내 쪽을 힐끔 보면서 머리를 천천히 묶었다.' },
+      { text: '머리를 묶으니 목덜미가 보였다. 괜히 시선을 어디에 둬야 할지 모르겠고 심장이 조금씩 빨리 뛰는 것 같았다.' },
+      // 선택지 1. 시영의 묶은 머리 (흥분 위험 ①, 생존 시 호감도 적용)
+      {
+        speaker: 'siyeong',
+        text: '{name}… 나 머리 묶은 거… 어때?',
+        voice: 'ep3/시영4',
+        choices: [
+          {
+            text: '머리 묶으니까 공부하기 편하겠다.',
+            affection: {},
+            reply: [
+              { speaker: 'siyeong', text: '응… 이제 {name}한테 문제도 더 잘 알려줄 수 있겠다…ㅎ', risk: { amount: 10, kind: 'excite' }, voice: 'ep3/시영 호감1' },
+            ],
+          },
+          {
+            text: '시영아, 머리 묶으니까 잘 어울려.',
+            affection: { siyeong: 5 },
+            reply: [
+              { speaker: 'siyeong', text: '저, 정말…? 그럼 앞으로 {name} 앞에서는 계속 묶고 있을게…', voice: 'ep3/시영 호감2' },
+              { text: '이렇게 좋아할 줄 알았으면 좀 더 덤덤하게 말할걸… 심장이 점점 빨라진다.', risk: { amount: 20, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '그렇게 가까이 있으면 나도 두근거리잖아.',
+            affection: { siyeong: 10 },
+            reply: [
+              { speaker: 'siyeong', text: '{name}도 두근거려…? 나랑 똑같네…ㅎ', voice: 'ep3/시영 호감3' },
+              { text: '시영이가 더 가까이 다가왔다. 아, 내가 왜 그런 말을 했지? 심장이 터질 것 같다.', risk: { amount: 40, kind: 'excite' } },
+            ],
+          },
+        ],
+      },
+
+      // 공부는 뒷전
+      { speaker: 'minji', text: '{name}…… 나는 문제 좀 알려줄래?! 나는 이거, 이거, 이것까지!!!!!!! 다 모르겠어.', expression: 'bigsmile', voice: 'ep3/민지2' },
+      { speaker: 'minji', text: '좀만 더 붙어서 설명해줘.', expression: 'shy_smile', voice: 'ep3/민지3' },
+      { text: '민지가 내 쪽으로 바짝 붙어오자 에밀리가 민지의 책을 날려버리면서 말했다.' },
+      { speaker: 'emily', text: '에휴 진짜 저급하다. 진짜 꺼지고 {name} 편하게 공부하게 다 꺼져.', voice: 'ep3/에밀리1' },
+      { speaker: 'emily', text: '시끄러워서 집중을 할 수가 없네.', voice: 'ep3/에밀리2' },
+      { speaker: 'emily', text: '혹시 연필로 찍혀 본 적은 없는 거지? 내가 경험시켜줘도 될까?', voice: 'ep3/에밀리3' },
+      { speaker: 'player', text: '얘들아 제발 조용히 좀 해줘ㅠㅠㅠㅠ 나도 공부 좀 하자.' },
+      { text: '내가 너무나도 실수했다. 얘네들이 그래도 상위권이고 그나마 같이 하자고 해서 도움이 될 줄 알았는데 공부에 집중을 하나도 못 하겠다.' },
+      { speaker: 'minji', text: '그래그래 다 닥쳐. 진짜 집중하자.', voice: 'ep3/민지4' },
+      { text: '민지가 다시 주워 온 책을 펴는 척하더니 나한테 바짝 다가와 귓속말했다.' },
+      { speaker: 'minji', text: '모르는 문제 있으면 이따가 같이 몰래 나가서 물어볼게, {name}.', expression: 'shy_smile', voice: 'ep3/민지5' },
+      { speaker: 'player', text: '힉!!!' },
+      { text: '갑자기 귀에 바람이 닿아서 놀랐다. 얼굴이 뜨거워지고 심장도 두근거리기 시작했다.' },
+      { speaker: 'minji', text: '으으으… 아, 가슴 무거워. 공부 못 하겠다.', voice: 'ep3/민지6' },
+      { text: '민지는 일부러 들으라는 듯 이상한 소리를 내더니 가슴을 책상 위에 턱 올려놓고 나를 바라봤다.' },
+      { speaker: 'minji', text: '{name}, 나 이렇게 힘든데 좀 봐주면 안 돼?', expression: 'shy_smile', voice: 'ep3/민지7' },
+      // 선택지 2. 민지의 귓속말 (흥분 위험 ②, 귓속말과 책상 장면을 합쳐 한 번만 판정)
+      {
+        text: '아니 얘도 대체 왜 이러는 거야. 지금 중간고사 공부하러 온 거 맞아?',
+        choices: [
+          {
+            text: '여기 이 문제부터 풀어보자.',
+            affection: {},
+            reply: [
+              { speaker: 'minji', text: '에이, 반응이 왜 그래. 알았어, 일단 이거부터 알려줘.', expression: 'less', voice: 'ep3/민지 호감1' },
+              { text: '나는 애써 문제집을 바라봤다. 그래도 아직 심장이 조금 빨랐다.', risk: { amount: 10, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '그렇게 가까이 오니까 집중이 안 되잖아.',
+            affection: { minji: 5 },
+            reply: [
+              { speaker: 'minji', text: '어? 나 때문에 집중이 안 돼? 그럼 좀 더 가까이 가볼까?', expression: 'smile', voice: 'ep3/민지 호감2' },
+              { speaker: 'player', text: '아, 아니! 그런 뜻이 아닌데…!', risk: { amount: 30, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '둘이 몰래 나가서 더 가까이 알려줄까?',
+            affection: { minji: 10 },
+            reply: [
+              { speaker: 'minji', text: '뭐야, 너도 나랑 단둘이 있고 싶었어? 지금 나갈까?', expression: 'bigsmile', voice: 'ep3/민지 호감3' },
+              { speaker: 'player', text: '지, 지금 말고… 일단 공부부터 하자!' },
+              { text: '내가 무슨 소리를 한 거지. 민지가 웃으면서 더 다가오자 심장이 미친 듯이 뛰었다.', risk: { amount: 50, kind: 'excite' } },
+            ],
+          },
+        ],
+      },
+      { text: '그때 시영이가 필통에서 슬며시 가위를 꺼내길래 얼른 집어넣게 했다.' },
+      { speaker: 'player', text: '시, 시영아. 가위는 왜 꺼내는 거야? 다시 넣자…' },
+      { speaker: 'siyeong', text: '아… 그냥… 연필을 깎으려고…', voice: 'ep3/시영5' },
+      { text: '시영아, 그거 샤프잖아…' },
+
+      // 에밀리와 단둘이
+      { speaker: 'emily', text: '음, 집중 많이 했네. 조금만 쉴까?', voice: 'ep3/에밀리4' },
+      { text: '민지는 자고 있고 시영이는 집중하고 있었다. 민지 자고 있는 모습이 꽤나 귀여워 보이기도 했다.', cg: ep04StudyCg },
+      { speaker: 'player', text: '음, 그러면 커피 좀 먹을까?', cg: null },
+      { speaker: 'emily', text: '좋은 생각이다. 시영아, 커피 좀 가져오도록.', voice: 'ep3/에밀리5' },
+      { speaker: 'siyeong', text: '내…… 내가…… 왜……', stage: ['siyeong', 'emily'], voice: 'ep3/시영6' },
+      { speaker: 'emily', text: '둘이서 할 이야기가 있어서 어쩔 수 없다. 빨리 다녀오도록……', voice: 'ep3/에밀리6' },
+      { speaker: 'siyeong', text: '하…… {name}(이)랑 두…… 둘이……? 그럼 안…… 갈래……', voice: 'ep3/시영7' },
+      { text: '에밀리가 눈을 부릅뜨며 시영이를 노려봤다.' },
+      { speaker: 'siyeong', text: '히익!!! 아…… 알겠어, 다녀올게……ㅠㅠㅠ', voice: 'ep3/시영8' },
+      { text: '시영이가 커피를 가지러 가고, 자고 있는 민지를 빼면 나와 에밀리 둘만 남았다.', stage: ['emily'] },
+      { speaker: 'emily', text: '드디어 갔네. 둘이서만 공부하는 게 너한테도 더 좋았을 텐데 쓰레기들이 너무 많이 꼈군.', voice: 'ep3/에밀리7 갔네로 변경' },
+      { speaker: 'emily', text: '그래, 너는 인간의 어느 부위를 좋아하지? 나는 아무래도 손목의 피를 좋아한다네. 제일 깔끔하고 고급진 맛이 난다랄까.', voice: 'ep3/에밀리8' },
+      { speaker: 'player', text: '(아…… 대체 뭐라고 답해야 하지……)' },
+      { text: '에밀리가 내 손목을 보더니 의자를 조금씩 내 쪽으로 끌고 왔다.' },
+      { speaker: 'emily', text: '이렇게 단둘이 있으니 굳이 책만 보고 있을 필요는 없지 않나?', voice: 'ep3/에밀리9' },
+      { speaker: 'player', text: '채, 책 말고 뭘 보려고…?' },
+      { speaker: 'emily', text: '글쎄. 네 손목에 내 입술을 가까이 대면… 그때도 그렇게 아무렇지 않은 척할 수 있나 궁금하군.', voice: 'ep3/에밀리10' },
+      { speaker: 'player', text: '뭐, 뭐라고?!' },
+      { speaker: 'emily', text: '걱정하지 마라. 네가 원하기 전까지는… 물지 않을 테니.', voice: 'ep3/에밀리11' },
+      { text: '얘 지금 무슨 말을 하는 거야?! 얼굴은 뜨겁고, 에밀리는 자꾸 가까이 오고, 심장은 점점 더 빨라진다.' },
+      // 선택지 3. 에밀리의 유혹 (흥분 위험 ③, 위험도 100에 닿으면 즉시 배드엔딩)
+      {
+        speaker: 'emily',
+        text: '얼굴이 빨개졌군. 내가 그렇게 가까이 오는 게 싫지만은 않은 모양이지?',
+        voice: 'ep3/에밀리12',
+        choices: [
+          {
+            text: '그런 이야기는 그만하고, 문제부터 풀자.',
+            affection: {},
+            reply: [
+              { speaker: 'emily', text: '흥, 재미없는 녀석. 그래도 내가 특별히 알려주도록 하지.', voice: 'ep3/에밀리 호감1' },
+              { text: '나는 손목을 슬쩍 감추고 다시 책을 폈다.', risk: { amount: 10, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '네가 그렇게 말하니까 더 긴장되잖아.',
+            affection: { emily: 5 },
+            reply: [
+              { speaker: 'emily', text: '내 말 한마디에 긴장하는 건가? 후후, 생각보다 귀여운 구석이 있군.', voice: 'ep3/에밀리 호감2' },
+              { text: '에밀리가 웃으며 조금 더 다가왔다. 피 냄새가 짙어져서 들키는 건 아니겠지…?', risk: { amount: 40, kind: 'excite' } },
+            ],
+          },
+          {
+            text: '손목이 궁금하면 더 가까이 와서 봐.',
+            affection: { emily: 10 },
+            reply: [
+              { speaker: 'emily', text: '…정말 내가 가까이 가도 괜찮겠나?', voice: 'ep3/에밀리 호감3' },
+              { text: '에밀리가 내 손목을 잡고 천천히 얼굴을 가까이했다. 그 순간 심장이 터질 듯이 뛰기 시작했다.' },
+              { speaker: 'player', text: '(잠깐만, 나 지금 무슨 짓을 한 거야!!! 이러다 진짜 들키겠는데?!)', risk: { amount: 60, kind: 'excite' } },
+            ],
+          },
+        ],
+      },
+      { text: '에밀리가 무언가 더 말하려던 순간, 문 쪽에서 익숙한 목소리가 들렸다.' },
+
+      // 쏟아진 커피
+      { speaker: 'siyeong', text: '커피…… 가…… 가져왔어ㅓㅓㅓㅓㅓㅓ!!!', stage: ['minji', 'siyeong', 'emily'], voice: 'ep3/시영9', cg: ep04SiyeongCg },
+      { text: '시영이가 문턱에 걸려 넘어지면서 커피를 에밀리한테 부어버렸고, 그 커피가 민지와 나한테도 튀었다.' },
+      { speaker: 'minji', text: '아 뜨ㅡ드드드드드거워ㅓ!!!!!!!!', expression: 'surprised_soft', voice: 'ep3/민지8' },
+      { text: '에밀리가 정통으로 맞아버려 그 도도하던 에밀리가 그렇게 날뛰는 모습을 처음 봤다. 그냥 막 펄쩍펄쩍하고 뛰는 게 개웃겼다.', cg: ep04EmilyCg },
+      { speaker: 'emily', text: '아 뜨거워!!! 야, 서시영! 너 지금 뭐 하는 거야!!!', voice: 'ep3/에밀리13' },
+      { speaker: 'siyeong', text: '아… 아… 죄, 죄송해요…… 일부러 그런 게 아니라……', voice: 'ep3/시영10', cg: null },
+      { speaker: 'emily', text: '너 지난번 술자리에서도 그러더니!!!', voice: 'ep3/에밀리14' },
+      { text: '에밀리는 뜨거움이 가신 뒤에 시영이의 귓방망이를 개 세게 때렸다.' },
+      { speaker: 'siyeong', text: '아……', voice: 'ep3/시영11' },
+      { speaker: 'emily', text: '감히……? 내가 피부에 화상이라도 입었으면 어쩌려고! 진짜 미친 건가?!', voice: 'ep3/에밀리15' },
+      { text: '에밀리가 또 때리려고 하는 걸 내가 가서 간신히 막았다.' },
+      { speaker: 'player', text: '일부러 한 거 아니니까 거기까지만 하자.' },
+      { text: '에밀리는 억울하다는 듯이 나를 바라봤다.' },
+      { speaker: 'emily', text: '아니 얘가 한 짓을 봐. 내 얼굴이 이렇게 화상을 입었을지도 모르는데……', voice: 'ep3/에밀리16 봐로 변경' },
+      { text: '에밀리는 갑자기 눈물을 보이면서 그냥 가버렸다.', stage: ['minji', 'siyeong'] },
+      { speaker: 'player', text: '(아, 많이 밉보인 것 같은데…… 어쩌지……)' },
+      { speaker: 'minji', text: '에휴, 저 싸가지. 아주 꼴이 좋아. 시영아 잘했어! 셔츠 세탁비는 청구할게.', expression: 'smile', voice: 'ep3/민지9' },
+      { speaker: 'player', text: '민지……야, 제발 눈치 좀……' },
+      { speaker: 'minji', text: '아니, 할 건 해야지!!!', expression: 'less', voice: 'ep3/민지10' },
+      { text: '시영이는 뺨을 맞은 그 상태에서 울먹거리고 있었다.' },
+      { speaker: 'siyeong', text: '히그히극… 제가 하는 일 다 이런 식으로 되고… 잘하는 것도 없고… 흑흐그흐엉…', voice: 'ep3/시영12' },
+      { speaker: 'player', text: '아냐, 시영이 과탑이잖아. 에밀리도 순간적으로 화나서 그랬을 거야.' },
+      { speaker: 'player', text: '너무 걱정하지 말고 표정 풀어. 공부 다시 하자. 나 모르는 부분들이 너무 많더라.' },
+      { speaker: 'minji', text: '어! 내가, 내가, 내가 알려줄게!!!!', expression: 'bigsmile', voice: 'ep3/민지11' },
+      { text: '민지도 신나서 따라붙었다. 민지의 책을 다시 내 쪽으로 당겨 같이 문제를 보기 시작했다.' },
+
+      // 다시 함께 공부하기
+      { text: '그러던 중 에밀리가 다시 돌아왔다. 가방을 두고 갔던 것이다.', stage: ['minji', 'siyeong', 'emily'] },
+      { text: '우리가 다 쳐다보니까 에밀리도 미안했는지 시영이에게 말했다.' },
+      { speaker: 'emily', text: '시영아… 미안하다.', voice: 'ep3/에밀리17' },
+      { speaker: 'siyeong', text: '아니에요… 저도 일부러 그런 건 아니었지만… 죄송해요.', voice: 'ep3/시영13' },
+      { text: '나도 그 모습을 보고 안쓰러워서 에밀리에게 말했다.' },
+      { speaker: 'player', text: '다시 앉아, 에밀리. 다 같이 다시 공부하자.' },
+      { speaker: 'minji', text: '응응, 앉아라 왕싸가지. 뭐 혼자 집 가서 할 것도 없잖아.', expression: 'smile', voice: 'ep3/민지12' },
+      // TODO(더빙): 대사가 바뀌어 기존 녹음(ep3/에밀리18)을 뺐음. 다시 녹음하면 voice 추가
+      { speaker: 'emily', text: '흥, 그렇도록 하지. 내가 미안하니까 이번 중간고사가 끝나면 우리 가문의 전용 워터파크에 다시 초대해주지……' },
+      { speaker: 'minji', text: '워터파크?! 진짜?!', expression: 'bigsmile', voice: 'ep3/민지13' },
+      { speaker: 'siyeong', text: '{name}(이)랑… 같이 가는 거야…?', voice: 'ep3/시영14' },
+      { speaker: 'player', text: '워터파크에 또 가자고?!' },
+      { name: '다 같이', text: '야호ㅗㅗㅗ 너무 좋아ㅏㅏㅏ!!!', voice: ['ep3/에밀리19', 'ep3/시영15'] },
+      { text: '이렇게 중간고사 공부를 하다가 또 워터파크에 가게 되었다.', hidePortrait: true },
+      { speaker: 'player', text: '(근데 우리… 오늘 공부는 얼마나 한 거지?)' },
+    ],
+  },
+  // EP 6. 메이드카페의 첫 출근
+  10: {
     id: 'month-9',
     title: '메이드카페의 첫 출근',
     icon: '☕',
@@ -1654,7 +1893,7 @@ export function getDateLabel(episode: Episode) {
   }
 }
 
-// 이름 입력 직후 한 번 보는 프롤로그 (오프닝)
+// 새 게임 시작 직후 한 번 보는 프롤로그 (오프닝)
 export const PROLOGUE_DATE = '2026-03-02';
 
 export const PROLOGUE: Episode = {
@@ -1664,15 +1903,14 @@ export const PROLOGUE: Episode = {
   time: '저녁',
   lines: [
     { speaker: 'player', text: '내 이름은 {name}, 23살.' },
-    { speaker: 'player', text: '평범한 남중을 나와 특성화 남고에 진학했다.' },
-    { speaker: 'player', text: '만나본 여자는 0명, 대화해본 여자도… 손에 꼽는다.' },
-    { speaker: 'player', text: '특성화고를 졸업한 뒤 3년 동안 뼈 빠지게 회사에 다니며 재직 기간을 채웠다.' },
+    { speaker: 'player', text: '평범한 남중을 나와 특성화 남고에 진학한 탓에 만나본 여자는 0명, 대화해본 여자도… 손에 꼽는다.' },
+    { speaker: 'player', text: '특성화고를 졸업한 뒤에는 3년 동안 뼈 빠지게 회사에 다니며 재직 기간을 채웠다.' },
     { speaker: 'player', text: '그리고 드디어, 재직자 특별전형으로 대학교 원서를 넣을 수 있게 되었다.' },
     { speaker: 'player', text: '...거기까지는 좋았다.' },
     { text: '"{name} 씨, 오늘부터 일이 좀 많을 것 같아. 사정 알지? 조금만 고생해 줘."' },
     { text: '원서 접수 3개월 전, 친하게 지내던 동기들이 줄줄이 퇴사했고 팀장님은 육아휴직에 들어갔다.' },
     { text: '회사는 요즘은 AI로 대체할 수 있다며 사람을 아예 뽑지 않았고, 모든 업무가 나한테 떨어졌다.' },
-    { speaker: 'player', text: '(인수인계 없이 사라진 동기, 2년 육아휴직을 떠난 팀장님, 하루 10번씩 30분짜리 담배 타임을 즐기는 대리님… 이 회사는 답이 없다. 빨리 탈출해야겠다.)' },
+    // { speaker: 'player', text: '(인수인계 없이 사라진 동기, 2년 육아휴직을 떠난 팀장님, 하루 10번씩 30분짜리 담배 타임을 즐기는 대리님… 이 회사는 답이 없다. 빨리 탈출해야겠다.)' },
     // 모집 공고: 어두운 배경 → 종이가 펼쳐짐 → '4년간 숙식비 전액 무료' 부분 확대 → 다시 독백
     { text: '그리고 그 결과는 하나였다.', dim: true },
     { text: '일에 치이다가 대학교 원서 접수 기간을 전부 놓쳤다.', dim: true },

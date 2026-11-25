@@ -1,9 +1,14 @@
 import { useEffect } from 'react';
 import Box from './Box';
+import { loopSound, usePlayOnce } from '../utils/sfx';
 import { getStatMax, type DangerKind, type Stats } from './StatsBox';
 
-// 체력이 경고 수치에 닿아 있는 동안 화면 가장자리가 심장 박동처럼 붉게 일렁임
-export default function DangerWarning() {
+// 체력이 경고 수치에 닿아 있는 동안(에피소드에서는 위험도가 높은 동안) 화면 가장자리가 심장 박동처럼 붉게 일렁이고 빠른 심장 소리가 반복됨
+// sound가 false면 붉은 테두리만 보이고 심장 소리는 멈춤
+export default function DangerWarning({ sound = true }: { sound?: boolean }) {
+  useEffect(() => {
+    if (sound) return loopSound('fastHeartbeat');
+  }, [sound]);
   return <div className="danger-vignette" aria-hidden />;
 }
 
@@ -29,6 +34,7 @@ interface AlertProps {
 
 // 체력이 경고 수치에 처음 닿았을 때 띄우는 경고
 export function DangerAlert({ kind, stats, onClose }: AlertProps) {
+  usePlayOnce('warning');
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();

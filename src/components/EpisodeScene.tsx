@@ -8,13 +8,14 @@ import Dialog from './ui/Dialog';
 import Panel from './ui/Panel';
 import ProgressBar from './ui/ProgressBar';
 import TalkBox from './ui/TalkBox';
-import { INITIAL_STATS, type Stats } from './StatsBox';
-import { READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type Heroine, type Poster, type Speaker } from '../utils/episode';
+import { INITIAL_STATS, type StatKey, type Stats } from './StatsBox';
+import { PLAYER_NAME, READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type Heroine, type Poster, type Speaker } from '../utils/episode';
 import { RISK_LIMIT, boostAffection, rollRisk } from '../utils/storyStats';
 import { getWeekIndex } from '../utils/gameDate';
 import { voiceUrl } from '../utils/voice';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 import DangerWarning from './DangerWarning';
+import { playSound, usePlayOnce } from '../utils/sfx';
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
@@ -50,13 +51,12 @@ interface Props {
   date?: string;
   // 배경 이미지 주소, 또는 직접 그린 배경
   background?: string | ReactNode;
-  playerName: string;
   // 주인공 대사에서도 주인공 이미지를 보여줄지 (기본은 대사만)
   showPlayer?: boolean;
   // 컬렉션에서 다시 볼 때 그때 고른 선택지 번호들 (선택지 대신 고른 대사가 바로 나오고, 호감도는 바뀌지 않음)
   replay?: number[];
-  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 고른 선택지 번호들
-  onDone: (affection: Partial<Affection>, picks?: number[]) => void;
+  // 이번 에피소드에서 선택지로 바뀐 호감도 합계, 고른 선택지 번호들, 선택지로 바뀐 스탯 합계
+  onDone: (affection: Partial<Affection>, picks?: number[], stats?: Partial<Record<StatKey, number>>) => void;
   // 설정의 게임 종료 (넘기지 않으면 설정 창에 게임 종료 버튼이 없음)
   onExit?: () => void;
   // 다시 보기 도중 설정에서 끝내고 나감 (넘기지 않으면 버튼이 없음)
@@ -67,7 +67,7 @@ interface Props {
   onExposed?: () => void;
 }
 
-export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? schoolImg, playerName, showPlayer = false, replay, onDone, onExit, onEndReplay, stats = INITIAL_STATS, onExposed }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? schoolImg, showPlayer = false, replay, onDone, onExit, onEndReplay, stats = INITIAL_STATS, onExposed }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
   const [lines, setLines] = useState(() => (replay ? getReplayLines(episode.lines, replay) : episode.lines));
   // 고른 선택지 번호 (나온 순서대로 기록해 다시 보기에 씀)
@@ -75,6 +75,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [index, setIndex] = useState(0);
   const [typed, setTyped] = useState(0);
   const [affection, setAffection] = useState<Partial<Affection>>({});
+  // 선택지로 바뀐 스탯 합계 (에피소드를 무사히 끝내면 반영)
+  const [statChanges, setStatChanges] = useState<Partial<Record<StatKey, number>>>({});
   // 이번 에피소드의 위험도 (다시 보기에서는 오르지 않음)
   const hitRisk = (l: EpisodeLine): RiskHit | null => (l.risk && !replay ? rollRisk(l.risk, stats.disguise, stats.mental) : null);
   // total: 쌓인 위험도 · last: 방금 대사에서 오른 위험도 (다음 대사로 넘어가면 사라짐)
@@ -89,6 +91,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [badEnd, setBadEnd] = useState(false);
   // 발각 연출 중
   const [exposed, setExposed] = useState(false);
+  usePlayOnce('exposed', exposed);
   // 대사를 넘길 수 없는 동안 (들킨 직후 · 발각 연출 중)
   const blocked = (caught && !badEnd) || exposed;
   // 방금 고른 선택지의 호감도 변화 (다음 대사로 넘어가면 사라짐)
@@ -107,8 +110,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [voicePlaying, setVoicePlaying] = useState(false);
   const typeMs = (TEXT_SPEEDS.find((s) => s.key === textSpeed) ?? TEXT_SPEEDS[1]).ms;
 
-  const fill = (text: string) => text.split('{name}').join(playerName);
-  const nameOf = (speaker: keyof typeof SPEAKERS) => (speaker === 'player' ? playerName : SPEAKERS[speaker].name);
+  const fill = (text: string) => text.split('{name}').join(PLAYER_NAME);
+  const nameOf = (speaker: keyof typeof SPEAKERS) => SPEAKERS[speaker].name;
 
   const line = lines[index];
   const text = fill(line.text);
@@ -143,6 +146,14 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const choosing = !typing && !!line.choices;
   // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
   const systemError = line.effect === 'system-error';
+
+  // 새 대사가 나올 때마다 대사 출력 소리 (개발 모드 StrictMode에서 두 번 울리지 않게 마지막 대사를 기억)
+  const spokenLine = useRef<EpisodeLine | null>(null);
+  useEffect(() => {
+    if (spokenLine.current === line || !text) return;
+    spokenLine.current = line;
+    playSound('speech');
+  }, [line, text]);
   const poster = line.poster;
   // 일러스트(CG): 마지막으로 지정된 cg (그 사이에 배경이 바뀌었거나 null로 지웠으면 없음)
   let cg: string | undefined;
@@ -231,7 +242,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
       return sum;
     });
     // 다시 보기에서는 호감도가 바뀌지 않으므로 표시하지 않음
-    if (!replay) setFeedback(gained);
+    if (!replay) {
+      setFeedback(gained);
+      if (Object.values(gained).some((v) => v > 0)) playSound('likability');
+    }
   };
 
   // target 번째 대사로 이동하며 그 사이(건너뛴 대사 포함)에 나온 위험·호감도를 반영
@@ -256,7 +270,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const next = (current = lines) => moveTo(index + 1, current);
 
   // 배드엔딩 장면이 끝나면 발각 연출로
-  const finish = () => (badEnd ? setExposed(true) : onDone(affection, picks));
+  const finish = () => (badEnd ? setExposed(true) : onDone(affection, picks, statChanges));
 
   // 다음 대사로 (마지막 대사였으면 에피소드 종료)
   const proceed = () => {
@@ -298,6 +312,13 @@ export default function EpisodeScene({ number, label, episode, date, background 
     const current = [...lines.slice(0, index + 1), ...choice.reply, ...lines.slice(index + 1)];
     setLines(current);
     gainAffection([choice.affection]);
+    if (choice.stats && !replay) {
+      setStatChanges((prev) => {
+        const sum = { ...prev };
+        for (const [key, value] of Object.entries(choice.stats!) as [StatKey, number][]) sum[key] = (sum[key] ?? 0) + value;
+        return sum;
+      });
+    }
     next(current);
   };
 
@@ -305,7 +326,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
   useEffect(() => {
     if (!caught || typing || exposed || badEnd) return;
     const timer = setTimeout(() => {
-      const { badEnding } = episode;
+      const badEnding = lines[index].badEnding ?? episode.badEnding;
       if (!badEnding) {
         setExposed(true);
         return;
@@ -505,7 +526,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
               </svg>
               자동
             </Button>
-            <Button variant="ghost" onClick={() => setLogOpen(true)}>
+            <Button variant="ghost" data-sfx="page" onClick={() => setLogOpen(true)}>
               <svg viewBox="0 0 10 10" aria-hidden>
                 <path d="M1 2h8v1.2H1zM1 4.4h8v1.2H1zM1 6.8h8V8H1z" />
               </svg>

@@ -2,7 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import Dialog from './ui/Dialog';
 import Button from './ui/Button';
 import { SETTINGS_KEYS, TEXT_SPEEDS, useStoredState, type TextSpeed } from '../utils/storage';
-import { DEFAULT_SFX_VOLUME, playClick } from '../utils/sfx';
+import { DEFAULT_SFX_VOLUME, playSound } from '../utils/sfx';
 
 interface Props {
   volume: number;
@@ -94,7 +94,7 @@ export default function SettingsModal({
             style={{ '--fill': `${sfxVolume}%` } as CSSProperties}
             onChange={(e) => setSfxVolume(Number(e.target.value))}
             // 손을 뗄 때 바뀐 크기로 한 번 들려줌
-            onPointerUp={() => setTimeout(playClick)}
+            onPointerUp={() => setTimeout(() => playSound('select'))}
           />
           <span className="settings__value">{sfxVolume}</span>
         </label>

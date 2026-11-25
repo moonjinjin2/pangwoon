@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-export const NAME_KEY = 'playerName';
 export const DATE_KEY = 'gameDate';
 
 // 게임 진행 상황 (새 게임 시작 시 모두 지움)
@@ -17,7 +16,7 @@ export const PROGRESS_KEYS = {
   seenDates: 'seenDates',
   dangerWarned: 'dangerWarned',
   exposed: 'exposed',
-  // 메인 화면 가이드를 아직 안 봤음 (프롤로그를 마치면 true로 저장)
+  // 메인 화면 가이드를 아직 안 봤음 (오프닝 영상 전에 true로 저장)
   guidePending: 'guidePending',
 } as const;
 

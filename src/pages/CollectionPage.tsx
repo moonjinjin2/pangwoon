@@ -13,6 +13,7 @@ import {
   PROLOGUE,
   PROLOGUE_DATE,
   READY_BACKGROUNDS,
+  PLAYER_NAME,
   SPEAKERS,
   MAIN_EPISODE_MONTHS,
   getEpisodeCgs,
@@ -21,7 +22,7 @@ import {
   getReplayLines,
   type Episode,
 } from '../utils/episode';
-import { NAME_KEY, PROGRESS_KEYS, load, loadChoices, loadSeenDates, useStoredState, type Collection } from '../utils/storage';
+import { PROGRESS_KEYS, loadChoices, loadSeenDates, useStoredState, type Collection } from '../utils/storage';
 
 // 에피소드의 대표 배경: 지정된 에피소드 배경, 없으면 대사가 가장 많이 나오는 배경
 // 에피소드 장면처럼 아직 준비 안 된 배경은 school.jpg로 (프롤로그는 방에서 진행)
@@ -76,8 +77,7 @@ function nearestMonth(list: { month?: number }[], i: number) {
 
 // 에피소드 대사를 다시 보기처럼 그때 고른 선택지대로 이어 붙여 보여줌
 function EpisodeLog({ episode, onClose }: { episode: Episode; onClose: () => void }) {
-  const playerName = load(NAME_KEY) ?? '';
-  const nameOf = (speaker: keyof typeof SPEAKERS) => (speaker === 'player' ? playerName : SPEAKERS[speaker].name);
+  const nameOf = (speaker: keyof typeof SPEAKERS) => SPEAKERS[speaker].name;
   const lines = getReplayLines(episode.lines, loadChoices(episode.id) ?? []);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ function EpisodeLog({ episode, onClose }: { episode: Episode; onClose: () => voi
                 {(l.speaker || l.name) && <span className="vn-log__name">{l.speaker ? nameOf(l.speaker) : l.name}</span>}
                 <p className={l.speaker || l.name ? 'vn-log__text' : 'vn-log__text vn-log__text--narration'}>
                   {l.effect === 'system-error' && '[SYSTEM ERROR] '}
-                  {l.text.split('{name}').join(playerName)}
+                  {l.text.split('{name}').join(PLAYER_NAME)}
                 </p>
               </li>
             ))}

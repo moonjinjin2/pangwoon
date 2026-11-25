@@ -41,7 +41,7 @@ export default function BookView({ title, badge, cardCount, renderCard, onClose 
   return (
     <div className="collection">
       <Backdrop src={backgroundImg} tint />
-      <button className="wardrobe__back" onClick={onClose}>
+      <button className="wardrobe__back" data-sfx="back" onClick={onClose}>
         <Glyph grid={glyphs.prev} />
         BACK
       </button>

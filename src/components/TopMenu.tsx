@@ -1,6 +1,7 @@
 import type { IconName } from './Icon';
 import MenuButton from './ui/MenuButton';
 import Plate from './ui/Plate';
+import type { ClickSound } from '../utils/sfx';
 
 interface Props {
   coins: number;
@@ -10,9 +11,9 @@ interface Props {
 }
 
 export default function TopMenu({ coins, onShop, onCollection, onSettings }: Props) {
-  const buttons: { label: string; icon: IconName; onClick?: () => void }[] = [
+  const buttons: { label: string; icon: IconName; onClick?: () => void; sfx?: ClickSound }[] = [
     { label: '상점', icon: 'shop', onClick: onShop },
-    { label: '앨범', icon: 'book', onClick: onCollection },
+    { label: '앨범', icon: 'book', onClick: onCollection, sfx: 'page' },
     { label: '설정', icon: 'gear', onClick: onSettings },
   ];
 
@@ -22,8 +23,8 @@ export default function TopMenu({ coins, onShop, onCollection, onSettings }: Pro
         <span className="topmenu__coin" aria-hidden>G</span>
         <span className="topmenu__amount">{coins.toLocaleString('en-US')}</span>
       </Plate>
-      {buttons.map(({ label, icon, onClick }) => (
-        <MenuButton key={label} icon={icon} label={label} onClick={onClick} />
+      {buttons.map(({ label, icon, onClick, sfx }) => (
+        <MenuButton key={label} icon={icon} label={label} onClick={onClick} sfx={sfx} />
       ))}
     </nav>
   );

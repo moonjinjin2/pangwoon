@@ -1,4 +1,5 @@
 import Icon, { type IconName } from '../Icon';
+import type { ClickSound } from '../../utils/sfx';
 
 interface Props {
   icon: IconName;
@@ -7,13 +8,16 @@ interface Props {
   selected?: boolean;
   onClick?: () => void;
   onSelect?: () => void;
+  // 누를 때 기본 클릭 대신 낼 소리
+  sfx?: ClickSound;
 }
 
 // 육각형 행동 버튼 (일정 진행)
-export default function HexButton({ icon, label, selected = false, onClick, onSelect }: Props) {
+export default function HexButton({ icon, label, selected = false, onClick, onSelect, sfx }: Props) {
   return (
     <button
       type="button"
+      data-sfx={sfx}
       className={selected ? 'g-hex g-hex--selected' : 'g-hex'}
       onClick={onClick}
       onMouseEnter={onSelect}

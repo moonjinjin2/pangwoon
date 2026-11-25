@@ -5,7 +5,6 @@ import IllustView from '../components/IllustView';
 import { DATE_EPISODES, HEROINES, MAIN_EPISODE_LIST, SPEAKERS, getDateLabel, type Affection, type Episode } from '../utils/episode';
 
 interface Props {
-  name: string;
   gameDate: string;
   onClose: () => void;
 }
@@ -26,7 +25,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
 // 개발자 모드: 메인 에피소드·히로인별 데이트를 골라 바로 봄
 // 컬렉션·호감도·스탯·데이트 진행 순서는 바뀌지 않음
-export default function DevEpisodePage({ name, gameDate, onClose }: Props) {
+export default function DevEpisodePage({ gameDate, onClose }: Props) {
   const [playing, setPlaying] = useState<Playing | null>(null);
   const [illust, setIllust] = useState<Episode | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
@@ -125,7 +124,6 @@ export default function DevEpisodePage({ name, gameDate, onClose }: Props) {
           label={playing.label}
           episode={playing.isDate ? { icon: '💗', ...playing.episode } : playing.episode}
           date={gameDate}
-          playerName={name}
           onDone={finish}
         />
       )}

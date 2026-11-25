@@ -18,6 +18,7 @@ import {
 } from '../utils/activity';
 import { STAT_LABELS } from './StatsBox';
 import { useFreshGif } from '../utils/media';
+import { playSound, usePlayOnce, type Sound } from '../utils/sfx';
 
 // 주간 활동 화면 모음: 고르기(ActivityModal) → 진행 연출(ActivityScene) → 결과(ActivityResult)
 
@@ -51,6 +52,7 @@ export function ActivityModal({ title, current, onSelect, onClose }: ModalProps)
             <button
               key={key}
               type="button"
+              data-sfx="confirm"
               className={key === current ? 'g-activity g-activity--current' : 'g-activity'}
               onClick={() => onSelect(key)}
             >
@@ -65,6 +67,7 @@ export function ActivityModal({ title, current, onSelect, onClose }: ModalProps)
       </div>
       <button
         type="button"
+        data-sfx="confirm"
         className={['g-activity g-activity--blood', current === 'blood' && 'g-activity--current'].filter(Boolean).join(' ')}
         onClick={() => onSelect('blood')}
       >
@@ -105,6 +108,10 @@ export function ActivityScene({ weekLabel, activity, days, onFinish }: SceneProp
   const animationUrl = useFreshGif(animation);
   const [frame, setFrame] = useState(0);
   const [revealed, setRevealed] = useState(0);
+  // 요일 판정이 뜰 때마다 성공·보통·실패 소리
+  useEffect(() => {
+    if (revealed > 0) playSound(DAY_SOUNDS[days[revealed - 1]]);
+  }, [revealed, days]);
 
   useEffect(() => {
     // 움짤이 없을 때만 컷을 직접 넘김
@@ -157,6 +164,8 @@ export function ActivityScene({ weekLabel, activity, days, onFinish }: SceneProp
 
 const DAY_NAMES = ['월', '화', '수', '목', '금'];
 
+const DAY_SOUNDS: Record<Grade, Sound> = { success: 'daySuccess', normal: 'daySoso', fail: 'dayFail' };
+
 const MARK_ICONS: Record<Grade, ReactNode> = {
   success: <circle cx="10" cy="10" r="6.5" />,
   normal: <path d="M10 3.5 16.5 15.5H3.5z" />,
@@ -208,6 +217,7 @@ interface ResultProps {
 // 주차 활동이 끝난 뒤 메인 화면 위에 띄우는 결과창
 export function ActivityResult({ activity, days, onConfirm }: ResultProps) {
   const info = ACTIVITIES[activity];
+  usePlayOnce('weekResult');
 
   return (
     <ResultDialog

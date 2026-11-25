@@ -84,7 +84,6 @@ export default function StartPage({ onNewGame, onContinue }: Props) {
         }}
       />
       <div className="start__panel">
-        <p className="start__kicker">뱀파이어 대학교에 인간이 입학했다</p>
         <h1 className="start__title">
           <span>
             야(<em className="start__title-accent">夜</em>)행성

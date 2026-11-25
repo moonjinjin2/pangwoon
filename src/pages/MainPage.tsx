@@ -23,12 +23,11 @@ import ShopPage from './ShopPage';
 import { MAIN_GUIDE } from '../utils/guide';
 import { ACTIVITIES, getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
 import type { Item } from '../utils/gacha';
-import { HEROINES, getEpisode, hasMainEpisode, type Affection, type Heroine } from '../utils/episode';
+import { HEROINES, PLAYER_NAME, getEpisode, hasMainEpisode, type Affection, type Heroine } from '../utils/episode';
 import { getWeekIndex, isEpisodeDay } from '../utils/gameDate';
 import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
 
 interface Props {
-  name: string;
   gameDate: string;
   // 설정의 게임 종료: 시작 화면으로
   onExit: () => void;
@@ -49,7 +48,7 @@ const initialDangerWarned: Record<DangerKind, boolean> = { health: false };
 // 호감도는 비공개, 골드를 내야 볼 수 있음
 const initialRevealed: Record<Heroine, boolean> = { minji: false, siyeong: false, emily: false };
 
-export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed }: Props) {
+export default function MainPage({ gameDate, onExit, onGameOver, onProceed }: Props) {
   // 진행 상황은 새로고침해도 유지되도록 저장
   const [storedPlans, setPlans] = useStoredState(PROGRESS_KEYS.plans, initialPlans);
   // 예전 저장에 지금은 없는 활동(공부·쉬기 등)이 남아 있으면 그 주는 기본 활동으로
@@ -129,9 +128,10 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
     });
   };
 
-  // 말일 에피소드가 끝나면 다음 달로
-  const finishEpisode = (changes: Partial<Affection>, picks?: number[]) => {
+  // 말일 에피소드가 끝나면 선택지 스탯 변화를 반영하고 다음 달로
+  const finishEpisode = (changes: Partial<Affection>, picks?: number[], statChanges?: Effect) => {
     completeEpisode(getNextEpisodeNumber(), getEpisode(month).id, changes, picks);
+    if (statChanges) applyEffect(statChanges);
     setPlaying(false);
     onProceed?.();
   };
@@ -198,14 +198,15 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
       <Backdrop src={backgroundImg} />
       {/* 밝은 배경 위에 어두운 막을 덮어 고딕풍 HUD가 잘 보이게 */}
       <div className="main__shade" aria-hidden />
-      {healthDanger && <DangerWarning />}
+      {/* 체력 경고 심장 소리는 메인 화면에서만 (에피소드·활동·상점·앨범 화면으로 넘어가면 멈춤) */}
+      {healthDanger && <DangerWarning sound={!playing && !devEpisodesOpen && !shopOpen && !collectionOpen} />}
       <div className="main__left">
         <div className="school">
           <span className="school__crest">
             <Icon name="crest" />
           </span>
           <span className="school__text">
-            <strong className="school__name">{name}</strong>
+            <strong className="school__name">{PLAYER_NAME}</strong>
             <span className="school__en">PANGWOON UNIVERSITY</span>
           </span>
         </div>
@@ -225,7 +226,7 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
       </div>
       {/* 하단: 대화창 + 행동 선택 창 */}
       <div className="main__bottom">
-        <TalkBox className="main__talk" speaker={name}>
+        <TalkBox className="main__talk" speaker={PLAYER_NAME}>
           오늘은 어떤 걸 해볼까?
         </TalkBox>
         <div className="main__action">
@@ -250,7 +251,6 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
             episode={getEpisode(month)}
             number={getNextEpisodeNumber()}
             date={gameDate}
-            playerName={name}
             stats={stats}
             onExposed={expose}
             onDone={finishEpisode}
@@ -273,12 +273,12 @@ export default function MainPage({ name, gameDate, onExit, onGameOver, onProceed
         />
       )}
       {devEpisodesOpen && (
-        <DevEpisodePage name={name} gameDate={gameDate} onClose={() => setDevEpisodesOpen(false)} />
+        <DevEpisodePage gameDate={gameDate} onClose={() => setDevEpisodesOpen(false)} />
       )}
       {collectionOpen && <CollectionPage onClose={() => setCollectionOpen(false)} />}
       {guideOpen && <GuideTour steps={MAIN_GUIDE} onClose={() => setGuideOpen(false)} />}
       {dangerAlert && !ending && <DangerAlert kind={dangerAlert} stats={stats} onClose={() => setDangerAlert(null)} />}
-      {ending && !busy && <BadEnding kind={ending} name={name} gameDate={gameDate} onRestart={onGameOver} />}
+      {ending && !busy && <BadEnding kind={ending} gameDate={gameDate} onRestart={onGameOver} />}
       {settingsOpen && (
         <SettingsModal
           volume={volume}
@@ -317,7 +317,7 @@ function ActionBox({ onProceed, notice }: ActionBoxProps) {
     <div className="g-actions">
       <div className="g-actions__item">
         {notice && <span className="main__bubble">{notice}</span>}
-        <HexButton icon="calendar" label="진행하기" selected onClick={onProceed} />
+        <HexButton icon="calendar" label="진행하기" selected sfx="confirm" onClick={onProceed} />
       </div>
     </div>
   );

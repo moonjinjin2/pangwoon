@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { PLAYER_NAME } from '../utils/episode';
 import { formatFullDate } from '../utils/gameDate';
+import { usePlayOnce } from '../utils/sfx';
 import type { EndingKind } from './StatsBox';
 
 interface Props {
   // health: 건강 악화(체력 0), exposed: 정체 발각(에피소드 위험도 100)
   kind: EndingKind;
-  name: string;
   gameDate: string;
   onRestart: () => void;
 }
@@ -25,10 +26,13 @@ const ENDINGS: Record<EndingKind, { title: string; story: (name: string) => stri
 const PHASE_TIMES = [1600, 3000, 4600];
 
 // 체력이 0이 되거나 정체가 들키면 보는 배드 엔딩 (게임 끝)
-export default function BadEnding({ kind, name, gameDate, onRestart }: Props) {
+export default function BadEnding({ kind, gameDate, onRestart }: Props) {
   const [phase, setPhase] = useState(0);
   const done = phase >= 3;
   const { title, story } = ENDINGS[kind];
+
+  // 숨이 죽어가는 소리
+  usePlayOnce('dead');
 
   useEffect(() => {
     const timers = PHASE_TIMES.map((ms, i) => window.setTimeout(() => setPhase((p) => Math.max(p, i + 1)), ms));
@@ -59,7 +63,7 @@ export default function BadEnding({ kind, name, gameDate, onRestart }: Props) {
         <h2 className="bad-ending__title">{title}</h2>
         <p className="bad-ending__date">{formatFullDate(gameDate)}</p>
         <p className="bad-ending__story">
-          {story(name).map((line, i) => (
+          {story(PLAYER_NAME).map((line, i) => (
             <span key={i}>
               {i > 0 && <br />}
               {line}

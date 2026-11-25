@@ -114,11 +114,11 @@ export default function GuideTour({ steps, onClose }: Props) {
             </button>
             <div className="guide__buttons">
               {index > 0 && (
-                <Button className="guide__prev" onClick={prev}>
+                <Button className="guide__prev" data-sfx="page" onClick={prev}>
                   이전
                 </Button>
               )}
-              <Button onClick={next}>{last ? '시작하기' : '다음'}</Button>
+              <Button data-sfx="page" onClick={next}>{last ? '시작하기' : '다음'}</Button>
             </div>
           </div>
         </Panel>

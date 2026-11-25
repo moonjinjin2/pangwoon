@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { loopSound } from '../utils/sfx';
 
 interface Props {
   // 0~1
@@ -19,6 +20,12 @@ const HEART_HEIGHT = 110;
 // 이미지를 다 불러오기 전까지 깨진 그림 대신 보여주는 화면
 export default function LoadingScreen({ progress, leaving = false }: Props) {
   const percent = Math.round(progress * 100);
+
+  // 불러오는 동안 심장 소리 (사라지기 시작하면 서서히 멈춤)
+  // 브라우저는 사용자가 화면을 누르기 전에는 소리를 막아서, 처음 접속하면 들리지 않을 수 있음
+  useEffect(() => {
+    if (!leaving) return loopSound('startHeartbeat');
+  }, [leaving]);
 
   // 뒤에 미리 깔린 화면(시작 화면의 Enter 등)에 키 입력이 가지 않게 먼저 받아서 막음
   useEffect(() => {

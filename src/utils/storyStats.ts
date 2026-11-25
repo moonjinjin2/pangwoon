@@ -7,7 +7,8 @@ export const RISK_LIMIT = 100;
 // excite: 흥분·당황 (정신력으로 피할 수 있음) · bleed: 출혈처럼 실제로 피가 나는 위험 (위장도 감소만 적용)
 // suspect: 대답 때문에 의심을 사는 위험 (정신력 회피 없이 위장도 감소만 적용)
 // calm: 진정하거나 상처를 가려 위험도가 내려감 (amount는 음수, 보정 없이 그대로 적용)
-export type RiskKind = 'excite' | 'bleed' | 'suspect' | 'calm';
+// reveal: 직접 정체를 드러내거나 피를 맛보게 함 (위장도·정신력과 상관없이 바로 위험도 100, amount는 무시)
+export type RiskKind = 'excite' | 'bleed' | 'suspect' | 'calm' | 'reveal';
 
 export interface Risk {
   // 기본 위험 상승량 (위장도 0 기준)
@@ -35,6 +36,7 @@ export function getAvoidChance(kind: RiskKind, mental: number) {
 
 // 이번 위험의 결과: 피했으면 0, 아니면 위장도를 반영한 상승량 (내려가는 건 그대로)
 export function rollRisk({ amount, kind }: Risk, disguise: number, mental: number) {
+  if (kind === 'reveal') return { avoided: false, amount: RISK_LIMIT };
   if (amount < 0) return { avoided: false, amount };
   const avoided = Math.random() < getAvoidChance(kind, mental);
   return { avoided, amount: avoided ? 0 : getRiskAmount(amount, disguise) };

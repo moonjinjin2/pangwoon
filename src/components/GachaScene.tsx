@@ -3,7 +3,7 @@ import crystalImg from '../img/gacha/crystal.png';
 import crackImg from '../img/gacha/crack.png';
 import burstImg from '../img/gacha/burst.png';
 import { Sparkle } from './DecoFrame';
-import { playCardFlip, playGachaResult, playGachaSpin } from '../utils/sfx';
+import { playGachaOpen, playItemReveal, playSound } from '../utils/sfx';
 import { RARITY_META, getEffectParts, rarityRank, type Item } from '../utils/gacha';
 
 interface Props {
@@ -54,8 +54,9 @@ function CardBack() {
 
 // 단계별로 머무는 시간(ms). SSS가 나왔을 때만 빛 폭발 단계를 거침
 const PHASE_MS: Record<Exclude<Phase, 'reveal'>, number> = {
-  crystal: 1100,
-  crack: 1300,
+  crystal: 1200,
+  // 슈우우욱 모으는 시간 (CSS gacha-charge-* 애니메이션 길이와 같게)
+  crack: 2800,
   burst: 1400,
 };
 
@@ -84,21 +85,21 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
   // 여러 개 결과: 카드 번호 → 공개했는지
   const [flipped, setFlipped] = useState<boolean[]>(() => items.map(() => single));
   const allFlipped = flipped.every(Boolean);
-  // 뒤집을 때마다 카드 소리 (모두 열기 도중 직접 연 카드는 다시 울리지 않게 연 카드를 기억)
+  // 뒤집을 때마다 카드 소리 + 그 카드 등급의 공개 소리 (모두 열기 도중 직접 연 카드는 다시 울리지 않게 연 카드를 기억)
   const opened = useRef(new Set<number>());
-  const flip = (index: number) => {
+  const flip = (index: number, reveal = true) => {
     if (opened.current.has(index)) return;
     opened.current.add(index);
-    playCardFlip();
+    playSound('cardFlip');
+    if (reveal) playItemReveal(items[index].rarity);
     setFlipped((prev) => prev.map((v, i) => (i === index ? true : v)));
   };
-  // 모두 열기: 남은 카드를 차례로 뒤집음
+  // 모두 열기: 남은 카드를 차례로 뒤집음 (공개 소리가 겹치지 않게 남은 카드 중 가장 높은 등급 카드에서만 울림)
   const flipTimers = useRef<number[]>([]);
   const flipAll = () => {
-    let order = 0;
-    flipped.forEach((done, i) => {
-      if (!done) flipTimers.current.push(window.setTimeout(() => flip(i), order++ * FLIP_GAP_MS));
-    });
+    const left = items.map((_, i) => i).filter((i) => !opened.current.has(i));
+    const top = left.reduce((a, b) => (rarityRank(items[b].rarity) > rarityRank(items[a].rarity) ? b : a), left[0]);
+    left.forEach((i, order) => flipTimers.current.push(window.setTimeout(() => flip(i, i === top), order * FLIP_GAP_MS)));
   };
   useEffect(() => () => flipTimers.current.forEach((t) => window.clearTimeout(t)), []);
 
@@ -113,20 +114,19 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
     setStep(phases.length - 1);
   };
 
-  // 연출이 시작될 때 차오르는 소리, 결과가 나오기 전에 건너뛰면 서서히 줄임
+  // 개봉 연출 소리, 결과가 나오기 전에 건너뛰면 서서히 줄임
   const stopSpin = useRef<() => void>(() => {});
   useEffect(() => {
-    stopSpin.current = playGachaSpin();
+    stopSpin.current = playGachaOpen();
     return () => stopSpin.current();
   }, []);
 
-  // 결과가 나타날 때 효과음
-  // (개발 모드 StrictMode에서 효과가 두 번 돌아도 한 번만 울리게 함)
+  // 결과가 나타날 때: 1개면 그 등급의 공개 소리, 여러 개면 등급이 드러나지 않게 N·R 공개 소리 (카드를 열 때 등급별로 울림)
   const resultPlayed = useRef(false);
   useEffect(() => {
     if (!revealed || resultPlayed.current) return;
     resultPlayed.current = true;
-    playGachaResult();
+    playItemReveal(single ? best.rarity : 'N');
   }, [revealed]);
 
   useEffect(() => {
@@ -153,7 +153,16 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
     >
       {!revealed && (
         <>
-          <img key={phase} className="gacha-scene__crystal" src={PHASE_IMAGES[phase]} alt="" />
+          <div className="gacha-scene__stage">
+            <img key={phase} className="gacha-scene__crystal" src={PHASE_IMAGES[phase]} alt="" />
+            {phase === 'crack' && (
+              <span className="gacha-scene__charge" aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
+            )}
+          </div>
           <span className="gacha-scene__skip">화면을 누르면 건너뛰기</span>
         </>
       )}
