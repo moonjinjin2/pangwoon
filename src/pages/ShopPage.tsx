@@ -54,7 +54,8 @@ interface PullButtonProps {
 // 금속 테 + 벨벳 네모 버튼 (일정 진행·데이트 육각 버튼과 같은 재질, 테는 src/img/ui/pull*.svg)
 function PullButton({ label, price, note, disabled, onClick }: PullButtonProps) {
   return (
-    <button className="gacha__pull" onClick={onClick} disabled={disabled}>
+    // 결제·개봉 소리가 따로 나므로 클릭음 없음
+    <button className="gacha__pull" data-sfx="none" onClick={onClick} disabled={disabled}>
       <span className="gacha__pull-frame" aria-hidden />
       <span className="gacha__pull-text">
         <span className="gacha__pull-label">{label}</span>

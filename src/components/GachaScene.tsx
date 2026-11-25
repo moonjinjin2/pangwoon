@@ -244,7 +244,7 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
 
             {allFlipped ? (
               <div className="gacha-result__actions">
-                <button type="button" className="gacha-result__btn" onClick={() => onAgain(picked)} disabled={!canAgain}>
+                <button type="button" className="gacha-result__btn" data-sfx="none" onClick={() => onAgain(picked)} disabled={!canAgain}>
                   한 번 더
                   <small className="gacha-result__btn-sub">{againLabel}</small>
                 </button>
@@ -254,6 +254,7 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
                 <button
                   type="button"
                   className="gacha-result__btn gacha-result__btn--primary"
+                  data-sfx="none"
                   onClick={() => onDone(single ? items : picked.length > 0 ? picked : items)}
                 >
                   {single ? '바로 사용' : picked.length > 0 ? `선택 사용 (${picked.length})` : '모두 사용'}
@@ -261,7 +262,7 @@ export default function GachaScene({ items, onDone, againLabel, canAgain, onAgai
               </div>
             ) : (
               <div className="gacha-result__actions gacha-result__actions--open">
-                <button type="button" className="gacha-result__btn gacha-result__btn--primary" onClick={flipAll} autoFocus>
+                <button type="button" className="gacha-result__btn gacha-result__btn--primary" data-sfx="none" onClick={flipAll} autoFocus>
                   모두 열기
                 </button>
               </div>

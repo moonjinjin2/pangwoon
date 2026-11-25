@@ -306,11 +306,16 @@ export default function EpisodeScene({ number, label, episode, date, background 
     setTyped(Infinity);
   };
 
+  // 호감도가 오르는 선택지 (고르면 호감도 효과음만 나게 클릭음·대사 출력음을 뺌)
+  const raisesAffection = (choice: Choice) => !replay && Object.values(choice.affection).some((v) => v > 0);
+
   const choose = (choice: Choice) => {
     setChoiceIndex(0);
     setPicks((prev) => [...prev, line.choices!.indexOf(choice)]);
     const current = [...lines.slice(0, index + 1), ...choice.reply, ...lines.slice(index + 1)];
     setLines(current);
+    // 바로 이어지는 대사는 출력음 없이 (이미 울린 것으로 기억)
+    if (raisesAffection(choice)) spokenLine.current = current[index + 1] ?? null;
     gainAffection([choice.affection]);
     if (choice.stats && !replay) {
       setStatChanges((prev) => {
@@ -483,6 +488,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
                   <ChoiceButton
                     number={i + 1}
                     selected={choiceIndex === i}
+                    silent={raisesAffection(choice)}
                     onSelect={() => setChoiceIndex(i)}
                     onClick={() => choose(choice)}
                   >
