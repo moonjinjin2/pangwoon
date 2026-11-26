@@ -407,8 +407,15 @@ export default function EpisodeScene({ number, label, episode, date, background 
         shownBackground
       )}
 
-      {/* 일러스트가 바뀌면 새로 그려서 페이드인 */}
-      {cg && <img key={cg} className="episode__bg" src={cg} alt="" aria-hidden />}
+      {/* 일러스트(CG): 원본보다 크게 늘리지 않게 대사창 위에 액자로 띄우고, 남는 화면은 같은 그림을 흐리게 깔아 채움 (바뀌면 새로 그려서 등장) */}
+      {cg && (
+        <>
+          <img key={`backdrop-${cg}`} className="episode__cg-backdrop" src={cg} alt="" aria-hidden />
+          <div className="episode__cg" aria-hidden>
+            <img key={cg} className="episode__cg-img" src={cg} alt="" />
+          </div>
+        </>
+      )}
 
       <div className="episode__cast" hidden={!!cg}>
         {shownSpeakers.map((s, i) => (

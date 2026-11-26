@@ -1261,6 +1261,54 @@ body {
   }
 }
 
+/* 일러스트(CG) 뒤에 까는 흐린 같은 그림 (늘어나도 흐려서 깨져 보이지 않음) */
+.episode__cg-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(28px) brightness(0.4) saturate(1.15);
+  transform: scale(1.12);
+  animation: episode-bg-in 0.6s ease;
+}
+
+/* 일러스트(CG) 액자: 상단 상황 창과 대사창 사이에 가운데 정렬 (1920×1080 기준 위 150 · 아래 290) */
+.episode__cg {
+  position: absolute;
+  top: calc(150 * var(--u));
+  bottom: calc(290 * var(--u));
+  left: calc(36 * var(--u));
+  right: calc(36 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* 크기를 지정하지 않아 원본 크기보다 커지지 않고, 자리가 좁으면 비율대로 줄어듦 */
+.episode__cg-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 3px;
+  outline: 1px solid var(--g-line);
+  outline-offset: calc(8 * var(--u));
+  box-shadow:
+    0 0 0 calc(3 * var(--u)) rgba(30, 9, 18, 0.9),
+    0 0 0 calc(4 * var(--u)) var(--g-line),
+    0 calc(24 * var(--u)) calc(60 * var(--u)) rgba(0, 0, 0, 0.65);
+  animation: episode-cg-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes episode-cg-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(12 * var(--u))) scale(0.97);
+    filter: blur(6px);
+  }
+}
+
 /* 캐릭터끼리의 앞뒤 순서가 대사창·선택지 위로 올라가지 않게 따로 묶음 */
 .episode__cast {
   position: absolute;

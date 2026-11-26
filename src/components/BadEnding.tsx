@@ -14,7 +14,7 @@ interface Props {
 const ENDINGS: Record<EndingKind, { title: string; story: (name: string) => string[] }> = {
   health: {
     title: '건강 악화',
-    story: (name) => ['몸을 돌보지 않고 버텨온 나날들.', '바닥난 체력은 결국 한계를 넘었고,', `${name}은(는) 병상에서 다시 일어나지 못했다...`],
+    story: (name) => ['몸을 돌보지 않고 버텨온 나날들.', '바닥난 체력은 결국 한계를 넘었고,', `${name}은 병상에서 다시 일어나지 못했다...`],
   },
   exposed: {
     title: '정체 발각',

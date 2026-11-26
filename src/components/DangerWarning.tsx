@@ -57,7 +57,7 @@ export function DangerAlert({ kind, stats, onClose }: AlertProps) {
               <span className="result__value result__value--bad">{value(stats)}</span>
             </div>
             <p className="danger-alert__msg">
-              {ending} <strong>{ENDING_NAMES[kind]}</strong>(으)로 쓰러집니다.
+              {ending} <strong>{ENDING_NAMES[kind]}</strong>로 쓰러집니다.
               <br />
               {hint}
             </p>
