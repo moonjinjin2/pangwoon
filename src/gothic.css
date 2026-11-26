@@ -1308,6 +1308,19 @@
   text-shadow: 0 1px calc(3 * var(--u)) rgba(0, 0, 0, 0.9);
 }
 
+/* 효과 설명: 이름 아래 작게 */
+.g-activity__desc {
+  font-size: calc(14 * var(--u));
+  line-height: 1.45;
+  text-align: center;
+  word-break: keep-all;
+  color: var(--g-sub);
+}
+
+.g-activity--current .g-activity__desc {
+  color: #f3cfd3;
+}
+
 /* 비용: 양옆 짧은 금선 사이에 작게 */
 .g-activity__cost {
   display: flex;
@@ -1384,7 +1397,6 @@
 }
 
 .g-activity__warning {
-  font-family: var(--font-body);
   font-size: calc(14 * var(--u));
   line-height: 1.55;
   color: #f0a3b2;

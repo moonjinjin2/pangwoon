@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Box from '../components/Box';
 import EpisodeScene from '../components/EpisodeScene';
 import IllustView from '../components/IllustView';
@@ -46,6 +46,8 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
     if (playing.isDate && playing.episode.illust) setIllust(playing.episode);
     setPlaying(null);
   };
+
+  const closeScene = useCallback(() => setPlaying(null), []);
 
   const changes = result && HEROINES.filter((h) => result.affection[h]).map((h) => `${SPEAKERS[h].name} ${signed(result.affection[h]!)}`);
 
@@ -125,6 +127,8 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
           episode={playing.isDate ? { icon: '💗', ...playing.episode } : playing.episode}
           date={gameDate}
           onDone={finish}
+          // 위험도 100이면 배드엔딩·발각 연출까지 보고 목록으로 (실제 게임오버는 없음)
+          onExposed={closeScene}
         />
       )}
       {illust?.illust && (

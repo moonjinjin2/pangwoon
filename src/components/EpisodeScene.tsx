@@ -86,7 +86,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   });
   const showRisk = !replay && hasRisk(episode.lines);
   // 위험도가 100에 닿음 (잠시 대사를 넘길 수 없고, 배드엔딩 장면이 있으면 그 장면을 본 뒤 발각 연출)
-  const caught = risk.total >= RISK_LIMIT && !!onExposed;
+  const caughtAt = (total: number) => total >= RISK_LIMIT && !!onExposed;
+  const caught = caughtAt(risk.total);
   // 배드엔딩 장면을 보는 중
   const [badEnd, setBadEnd] = useState(false);
   // 발각 연출 중
@@ -261,10 +262,12 @@ export default function EpisodeScene({ number, label, episode, date, background 
       }
       if (current[i].affection && !replay) changes.push(current[i].affection!);
     }
-    setRisk({ total: Math.max(0, Math.min(RISK_LIMIT, total)), last });
+    total = Math.max(0, Math.min(RISK_LIMIT, total));
+    setRisk({ total, last });
     gainAffection(changes);
     setIndex(target);
     setTyped(0);
+    return total;
   };
 
   const next = (current = lines) => moveTo(index + 1, current);
@@ -298,7 +301,10 @@ export default function EpisodeScene({ number, label, episode, date, background 
     if (choosing || blocked) return;
     const target = lines.findIndex((l, i) => i >= index && l.choices);
     if (target === -1) {
-      finish();
+      // 남은 대사의 위험도도 반영해서, 100에 닿으면 마지막 대사에서 들킴
+      const total = badEnd ? 0 : moveTo(lines.length - 1);
+      if (caughtAt(total)) setTyped(Infinity);
+      else finish();
       return;
     }
     setFeedback(null);

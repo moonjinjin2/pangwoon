@@ -182,7 +182,7 @@ export default function MainPage({ gameDate, onExit, onGameOver, onProceed }: Pr
         setFundsAlert(true);
         return;
       }
-      setDays(rollDays(plans[week], stats));
+      setDays(rollDays());
     }
     setPlaying(true);
   };

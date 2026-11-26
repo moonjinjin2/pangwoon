@@ -1,11 +1,13 @@
-import { getStatMax, type StatKey, type Stats } from '../components/StatsBox';
-import restGif from '../img/rest.gif';
+import type { StatKey } from '../components/StatsBox';
 import jobSuccessGif from '../img/activity/학사근로_성공.gif';
 import jobNormalGif from '../img/activity/학사근로_보통.gif';
 import jobFailGif from '../img/activity/학사근로_실패.gif';
 import gymSuccessGif from '../img/activity/침대뒹굴기_성공.gif';
 import gymNormalGif from '../img/activity/침대뒹굴기_보통.gif';
 import gymFailGif from '../img/activity/침대뒹굴기_실패.gif';
+import meditateSuccessGif from '../img/activity/명상_성공.gif';
+import meditateNormalGif from '../img/activity/명상_보통.gif';
+import meditateFailGif from '../img/activity/명상_실패.gif';
 import tanningSuccessGif from '../img/activity/화이트태닝_성공.gif';
 import tanningNormalGif from '../img/activity/화이트태닝_보통.gif';
 import tanningFailGif from '../img/activity/화이트태닝_실패.gif';
@@ -22,6 +24,8 @@ export const GRADES: Grade[] = ['fail', 'normal', 'success'];
 
 interface ActivityInfo {
   label: string;
+  // 활동 선택 창에 보여줄 한 줄 효과 설명
+  description: string;
   icon: string;
   color: string;
   message: string;
@@ -39,6 +43,7 @@ interface ActivityInfo {
 export const ACTIVITIES: Record<Activity, ActivityInfo> = {
   job: {
     label: '학사 알바',
+    description: '돈을 벌 수 있지만 체력이 조금 깎여요.',
     icon: '💼',
     color: '#8fd8f5',
     message: '학사 사무실에서 알바를 합니다...',
@@ -53,6 +58,7 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
   },
   blood: {
     label: '피 뽑기',
+    description: '돈을 많이 벌 수 있지만 체력이 크게 깎여요. 몸 상태를 꼭 확인하세요.',
     icon: '🩸',
     color: '#d8475f',
     message: '헌혈의 집에서 피를 뽑습니다...',
@@ -66,6 +72,7 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
   },
   rest: {
     label: '침대에서 뒹굴거리기',
+    description: '푹 쉬면서 체력을 회복해요.',
     icon: '🛏️',
     color: '#f5a98a',
     message: '침대에서 뒹굴거리며 쉽니다...',
@@ -80,10 +87,11 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
   },
   meditate: {
     label: '명상',
+    description: '정신력이 오르지만 체력이 조금 깎여요.',
     icon: '🕯️',
     color: '#a99cf5',
     message: '조용히 명상을 합니다...',
-    animation: restGif,
+    animation: { success: meditateSuccessGif, normal: meditateNormalGif, fail: meditateFailGif },
     frames: ['🕯️', '🌙', '🧘'],
     cost: 0,
     perDay: {
@@ -94,6 +102,7 @@ export const ACTIVITIES: Record<Activity, ActivityInfo> = {
   },
   tanning: {
     label: '화이트태닝',
+    description: '매력이 오르지만 체력이 꽤 깎여요.',
     icon: '✨',
     color: '#f5c6dc',
     message: '창백하고 매혹적인 피부를 가꿉니다...',
@@ -131,17 +140,9 @@ function rollGrade(): Grade {
 }
 
 // 하루마다 ✕/△/○를 랜덤으로 정함
-// 체력이 0이 되면 즉시 사망하므로 그날까지만 진행하고 남은 요일은 진행하지 않음
-export function rollDays(activity: Activity, stats: Stats): Grade[] {
-  const { perDay } = ACTIVITIES[activity];
-  const days: Grade[] = [];
-  let health = stats.health;
-  while (days.length < DAYS_PER_WEEK && health > 0) {
-    const grade = rollGrade();
-    days.push(grade);
-    health = Math.min(getStatMax('health'), health + (perDay[grade].health ?? 0));
-  }
-  return days;
+// 중간에 체력이 0이 되더라도 5일치를 모두 보여주고, 사망은 결과를 반영한 뒤 판정
+export function rollDays(): Grade[] {
+  return Array.from({ length: DAYS_PER_WEEK }, rollGrade);
 }
 
 const GRADE_SCORES: Record<Grade, number> = { fail: 0, normal: 1, success: 2 };

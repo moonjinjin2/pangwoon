@@ -60,6 +60,7 @@ export function ActivityModal({ title, current, onSelect, onClose }: ModalProps)
                 <Icon name={ACTIVITY_ICONS[key]} />
               </span>
               <span className="g-activity__label">{ACTIVITIES[key].label}</span>
+              <span className="g-activity__desc">{ACTIVITIES[key].description}</span>
               {cost > 0 && <span className="g-activity__cost">-{cost.toLocaleString()}원</span>}
             </button>
           );
@@ -76,7 +77,7 @@ export function ActivityModal({ title, current, onSelect, onClose }: ModalProps)
         </span>
         <span className="g-activity__info">
           <span className="g-activity__label">{ACTIVITIES.blood.label}</span>
-          <span className="g-activity__warning">돈을 많이 벌 수 있지만 체력이 크게 깎여요. 몸 상태를 꼭 확인하세요.</span>
+          <span className="g-activity__warning">{ACTIVITIES.blood.description}</span>
         </span>
       </button>
     </Dialog>,
