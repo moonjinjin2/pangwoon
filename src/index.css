@@ -3911,6 +3911,59 @@ body {
   list-style: none;
 }
 
+/* 보관함 효과 필터: 누르면 그 스탯을 올려 주는 아이템만 */
+.gacha-bag__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 24px 0;
+}
+
+.gacha-bag__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--g-sub);
+  background: rgba(16, 4, 9, 0.6);
+  border: 1px solid var(--g-line-soft);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.gacha-bag__filter:hover,
+.gacha-bag__filter:focus-visible {
+  outline: none;
+  color: var(--g-text);
+  border-color: var(--g-line);
+}
+
+.gacha-bag__filter[aria-pressed='true'] {
+  color: #fff3ef;
+  background: var(--g-crimson);
+  border-color: var(--g-line-strong);
+}
+
+.gacha-bag__filter .icon,
+.gacha-bag__filter .heart-mark {
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--filter-color);
+  fill: none;
+}
+
+.gacha-bag__filter .heart-mark {
+  fill: var(--filter-color);
+}
+
+.gacha-bag__filter:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 .gacha-bag__empty {
   display: grid;
   place-items: center;
@@ -3971,31 +4024,32 @@ body {
 
 .item-card__effects {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 3px;
+  gap: 8px;
 }
 
 .item-card__stat {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 1px 6px;
-  font-size: 0.7rem;
+  gap: 2px;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--g-sub);
-  background: rgba(30, 9, 18, 0.92);
-  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.item-card__stat-icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
 }
 
 .item-card__stat--gift {
   color: var(--g-rose);
-  background: rgba(30, 9, 18, 0.92);
 }
 
 .item-card__stat .heart-mark {
-  width: 1em;
-  height: 1em;
+  fill: currentColor;
 }
 
 .item-card--SSR {
@@ -4567,52 +4621,359 @@ body {
   border-bottom-color: var(--g-line-strong);
 }
 
-/* 보관함 카드 아래 사용 버튼 */
-/* 뽑기 버튼과 같은 계열: 어두운 바탕 + 크림 금선 두 겹 + 양옆 작은 마름모. 올리면 핏빛이 돎 */
-.item-card__use {
+/* 보관함 카드: 눌러서 상세 창 열기 */
+.item-card--button {
+  width: 100%;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.item-card--button:hover,
+.item-card--button:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px rgba(234, 217, 176, 0.6), 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.item-card--button:active {
+  transform: none;
+}
+
+/* 아이템 상세 창: 어떤 아이템이든 같은 틀. 모든 크기를 창 너비의 1%(--k) 단위로 잡아 화면이 작아져도 배치가 그대로 */
+.item-detail {
+  --w: min(680px, calc(100vw - 48px), calc((100vh - 48px) * 1.7));
+  --k: calc(var(--w) / 100);
+  --corner: calc(5 * var(--k));
+  position: relative;
+  display: grid;
+  grid-template-columns: calc(38 * var(--k)) 1fr;
+  gap: calc(4 * var(--k));
+  align-items: center;
+  width: var(--w);
+  aspect-ratio: 1.7;
+  padding: calc(4.5 * var(--k)) calc(5 * var(--k));
+  color: var(--g-text);
+  background:
+    url('./img/ui/corner.svg') left top / var(--corner) no-repeat,
+    url('./img/ui/corner_tr.svg') right top / var(--corner) no-repeat,
+    url('./img/ui/corner_bl.svg') left bottom / var(--corner) no-repeat,
+    url('./img/ui/corner_br.svg') right bottom / var(--corner) no-repeat,
+    var(--g-grain),
+    radial-gradient(circle at 25% 50%, color-mix(in srgb, var(--rarity) 22%, transparent), transparent 45%),
+    linear-gradient(180deg, #2a0b17, #14040b);
+  outline: 1px solid color-mix(in srgb, var(--rarity) 55%, transparent);
+  outline-offset: calc(-1.4 * var(--k));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 calc(var(--glow, 0) * var(--k)) var(--rarity);
+  cursor: default;
+  animation: item-detail-in 0.25s ease-out both;
+}
+
+/* 등급 테두리: 창 바깥을 두르는 금속 테. 등급이 높을수록 화려하게 (N·R·SR 금속 → SSR 빛이 흐르는 금 → SSS 무지갯빛 + 맥동) */
+.item-detail::before {
+  content: '';
+  position: absolute;
+  inset: calc(-0.9 * var(--k));
+  padding: calc(0.9 * var(--k));
+  background: var(--frame) 0 0 / var(--frame-size, 100% 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+  animation: var(--frame-anim, none);
+}
+
+.item-detail--N {
+  --frame: linear-gradient(135deg, #4e4c57, #dddbe4 22%, #6e6c78 45%, #c9c7d0 70%, #4e4c57);
+  --glow: 0;
+}
+
+.item-detail--R {
+  --frame: linear-gradient(135deg, #18356a, #9fcbff 22%, #2d5ea8 45%, #b8daff 70%, #18356a);
+  --glow: 2;
+}
+
+.item-detail--SR {
+  --frame: linear-gradient(135deg, #3d1763, #e6c3ff 22%, #7b3cb5 45%, #f2dcff 70%, #3d1763);
+  --glow: 3.5;
+}
+
+/* SSR: 금테 위로 빛줄기가 천천히 흐름 */
+.item-detail--SSR {
+  --frame: linear-gradient(115deg, #7a5a12, #e8b23a 12%, #fff4c4 18%, #e8b23a 24%, #8a6516 37%, #e8b23a 50%, #7a5a12 62%, #e8b23a 74%, #fff4c4 80%, #e8b23a 86%, #7a5a12);
+  --frame-size: 200% 100%;
+  --frame-anim: item-frame-flow 3.5s linear infinite;
+  --glow: 5;
+}
+
+/* SSS: 무지갯빛이 테를 따라 흐르고 바깥 빛이 맥박처럼 번짐 */
+.item-detail--SSS {
+  --frame: linear-gradient(135deg, #ff6fae, #ffd36f 12.5%, #7ff0d0 25%, #8cb8ff 37.5%, #ff6fae 50%, #ffd36f 62.5%, #7ff0d0 75%, #8cb8ff 87.5%, #ff6fae);
+  --frame-size: 200% 100%;
+  --frame-anim: item-frame-flow 4s linear infinite;
+  --glow: 6;
+  animation:
+    item-detail-in 0.25s ease-out both,
+    item-frame-pulse 2.4s ease-in-out infinite;
+}
+
+.item-detail--SSS::after {
+  content: '';
+  position: absolute;
+  inset: calc(-0.9 * var(--k));
+  background: var(--frame) 0 0 / 200% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  padding: calc(0.9 * var(--k));
+  filter: blur(calc(1.2 * var(--k)));
+  opacity: 0.8;
+  pointer-events: none;
+  animation: item-frame-flow 4s linear infinite;
+}
+
+@keyframes item-frame-flow {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes item-frame-pulse {
+  50% {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 calc(12 * var(--k)) var(--rarity);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-detail::before,
+  .item-detail--SSS,
+  .item-detail--SSS::after {
+    animation: none;
+  }
+}
+
+.item-detail__close {
+  position: absolute;
+  top: calc(2.2 * var(--k));
+  right: calc(2.2 * var(--k));
+  width: calc(5 * var(--k));
+  height: calc(5 * var(--k));
+  color: var(--g-sub);
+}
+
+.item-detail__close svg {
+  width: calc(2.2 * var(--k));
+  height: calc(2.2 * var(--k));
+}
+
+/* 그림: 등급 색으로 은은하게 빛나는 받침 위 */
+.item-detail__art {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--k));
+}
+
+.item-detail__art img {
+  width: calc(34 * var(--k));
+  height: calc(34 * var(--k));
+  object-fit: contain;
+  filter: drop-shadow(0 calc(1 * var(--k)) calc(3 * var(--k)) rgba(0, 0, 0, 0.6));
+}
+
+.item-detail__count {
+  padding: calc(0.5 * var(--k)) calc(2 * var(--k));
+  font-weight: 700;
+  font-size: calc(2 * var(--k));
+  color: #f3dcb6;
+  background: rgba(20, 6, 12, 0.88);
+  border: 1px solid var(--g-line);
+  border-radius: 2px;
+}
+
+/* 정보: 칸마다 높이를 고정해서 이름·설명·효과 길이가 달라도 위치가 같음 */
+.item-detail__info {
+  display: grid;
+  grid-template-rows: calc(8 * var(--k)) calc(16.5 * var(--k)) calc(9 * var(--k)) auto;
+  gap: calc(2 * var(--k));
+  justify-items: center;
+  min-width: 0;
+}
+
+.item-detail__name {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: 0 calc(3 * var(--k));
+  font-family: var(--font-heading);
+  font-size: calc(3.6 * var(--k));
+  line-height: 1.1;
+  white-space: nowrap;
+  color: #fff3ef;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  background:
+    var(--g-grain) padding-box,
+    linear-gradient(180deg, #8e1c39, var(--g-crimson) 55%, #5c0f23) padding-box,
+    var(--g-metal) border-box;
+  border: 1.5px solid transparent;
+  clip-path: polygon(calc(2.5 * var(--k)) 0, calc(100% - 2.5 * var(--k)) 0, 100% 50%, calc(100% - 2.5 * var(--k)) 100%, calc(2.5 * var(--k)) 100%, 0 50%);
+}
+
+.item-detail__desc {
+  display: grid;
+  place-items: center;
+  font-size: calc(2.05 * var(--k));
+  line-height: 1.6;
+  text-align: center;
+  word-break: keep-all;
+  color: #ead9b0;
+}
+
+/* 효과: 금선 상자 + 위 테두리에 걸친 '효과' 명판. 효과가 많으면 두 줄로 */
+.item-detail__effects {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: calc(1.5 * var(--k)) calc(1.5 * var(--k)) calc(1 * var(--k));
+  background: rgba(16, 4, 9, 0.6);
+  border: 1px solid var(--g-line);
+}
+
+.item-detail__effects-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  padding: calc(0.2 * var(--k)) calc(2.4 * var(--k));
+  font-family: var(--font-heading);
+  font-size: calc(1.8 * var(--k));
+  color: #f3dcb6;
+  background: var(--g-crimson);
+  border: 1px solid var(--g-line-strong);
+  transform: translate(-50%, -50%);
+}
+
+.item-detail__effects ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(0.6 * var(--k)) calc(2.4 * var(--k));
+  list-style: none;
+}
+
+.item-detail__effects li {
+  display: flex;
+  align-items: center;
+  gap: calc(0.6 * var(--k));
+  font-size: calc(2.3 * var(--k));
+  white-space: nowrap;
+}
+
+.item-detail__effects b {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  color: #f3dcb6;
+}
+
+.item-detail__effect-label {
+  font-weight: 700;
+  color: var(--g-text);
+}
+
+.item-detail__effect-icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.item-detail__effect--gift {
+  color: var(--g-rose);
+}
+
+.item-detail__effect--gift .heart-mark {
+  fill: currentColor;
+}
+
+/* 사용 버튼: 뽑기 버튼 크기만 창에 맞춤 */
+.item-detail__actions {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: auto;
+  gap: calc(2.4 * var(--k));
   width: 100%;
-  padding: 5px 0;
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.3em;
-  text-indent: 0.3em;
-  color: #ead9b0;
-  background: rgba(16, 8, 12, 0.85);
-  border: 1px solid rgba(234, 217, 176, 0.75);
-  box-shadow: inset 0 0 0 2px rgba(16, 8, 12, 0.85), inset 0 0 0 3px rgba(234, 217, 176, 0.25);
+}
+
+/* 사용 개수: − 숫자 + */
+.item-detail__qty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(0.6 * var(--k));
+}
+
+.item-detail__stepper {
+  display: flex;
+  align-items: center;
+  height: calc(5.2 * var(--k));
+  background: rgba(16, 4, 9, 0.75);
+  border: 1px solid var(--g-line);
+}
+
+.item-detail__stepper button {
+  display: grid;
+  place-items: center;
+  width: calc(5 * var(--k));
+  height: 100%;
+  padding: 0;
+  font-size: calc(2.8 * var(--k));
+  line-height: 1;
+  color: #f3dcb6;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.item-card__use::before,
-.item-card__use::after {
-  content: '';
-  width: 4px;
-  height: 4px;
-  background: currentColor;
-  opacity: 0.7;
-  transform: rotate(45deg);
-}
-
-.item-card__use:hover,
-.item-card__use:focus-visible {
+.item-detail__stepper button:hover:not(:disabled),
+.item-detail__stepper button:focus-visible {
   outline: none;
-  color: #f6e8c8;
-  background: rgba(70, 14, 30, 0.95);
-  box-shadow:
-    inset 0 0 0 2px rgba(70, 14, 30, 0.95),
-    inset 0 0 0 3px rgba(234, 217, 176, 0.45),
-    0 0 10px rgba(234, 217, 176, 0.3);
+  background: var(--g-crimson);
 }
 
-.item-card__use:active {
-  transform: translateY(1px);
+.item-detail__stepper button:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+.item-detail__stepper output {
+  min-width: calc(6 * var(--k));
+  font-family: var(--font-heading);
+  font-size: calc(2.6 * var(--k));
+  text-align: center;
+  color: #fff3ef;
+  border-inline: 1px solid var(--g-line-soft);
+}
+
+.item-detail .item-detail__use {
+  width: calc(24 * var(--k));
+  padding: 0;
+}
+
+.item-detail__use .gacha__pull-label {
+  font-size: calc(2.5 * var(--k));
+  letter-spacing: 0.1em;
+}
+
+@keyframes item-detail-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 아직 얻지 못한 아이템은 흐리게 */

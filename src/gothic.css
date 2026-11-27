@@ -2025,14 +2025,6 @@
   border-radius: 2px;
 }
 
-/* 사용 버튼: 뽑기 버튼과 같은 계열 (어두운 바탕 + 크림 금선 두 겹). 올렸을 때 핏빛은 index.css의 :hover */
-.item-card__use {
-  font-family: var(--font-heading);
-  background: var(--g-grain), rgba(16, 8, 12, 0.88);
-  border: 1px solid rgba(234, 217, 176, 0.75);
-  box-shadow: inset 0 0 0 2px rgba(16, 8, 12, 0.85), inset 0 0 0 3px rgba(234, 217, 176, 0.25);
-}
-
 /* 사용 알림: 금속 테 진홍 명판 */
 .shop__notice {
   color: #fff3ef;

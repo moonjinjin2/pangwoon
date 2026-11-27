@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import backgroundImg from '../img/background/room.png';
 import chestImg from '../img/gacha/chest.png';
 import Backdrop from '../components/Backdrop';
 import GachaScene from '../components/GachaScene';
 import ItemCatalog from '../components/ItemCatalog';
 import { Glyph, glyphs } from '../components/DecoFrame';
-import Icon from '../components/Icon';
+import Icon, { HeartMark } from '../components/Icon';
 import ItemCard from '../components/ItemCard';
+import ItemDetail from '../components/ItemDetail';
 import Plate from '../components/ui/Plate';
 import { DANGER_COLOR, STAT_META, getStatMax, isDanger, type Stats } from '../components/StatsBox';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -17,9 +18,11 @@ import {
   RARITY_META,
   TEN_PULL_PRICE,
   describeEffects,
+  matchesFilter,
   pullItems,
   rarityRank,
   type Item,
+  type ItemFilter,
   type ItemInventory,
 } from '../utils/gacha';
 import { PROGRESS_KEYS, useStoredState } from '../utils/storage';
@@ -36,6 +39,13 @@ interface Props {
 }
 
 const formatGold = (amount: number) => amount.toLocaleString('en-US');
+
+// 보관함 효과 필터 버튼 (전체 · 스탯 넷 · 선물)
+const FILTERS: { key: ItemFilter; label: string; color?: string; icon?: (typeof STAT_META)[number]['icon'] }[] = [
+  { key: 'all', label: '전체' },
+  ...STAT_META.map(({ key, label, icon, color }) => ({ key, label, icon, color })),
+  { key: 'gift', label: '선물', color: '#ee6a82' },
+];
 
 // 보관함은 높은 등급부터 (같은 등급은 목록 순서대로)
 const SORTED_ITEMS = [...ITEMS].sort((a, b) => rarityRank(b.rarity) - rarityRank(a.rarity));
@@ -77,20 +87,37 @@ export default function ShopPage({ coins, stats, onSpend, onUseItems, onClose }:
   const [pullId, setPullId] = useState(0);
   const againPrice = results && results.length > 1 ? TEN_PULL_PRICE : PULL_PRICE;
   const [catalogOpen, setCatalogOpen] = useState(false);
+  // 보관함에서 눌러 상세 창을 연 아이템
+  const [detailItem, setDetailItem] = useState<Item | null>(null);
+  const detailCount = detailItem ? (inventory[detailItem.id] ?? 0) : 0;
   // 방금 사용한 아이템 알림
   const [notice, setNotice] = useState<{ id: number; text: string } | null>(null);
   const owned = SORTED_ITEMS.filter((item) => (inventory[item.id] ?? 0) > 0);
+  // 보관함 효과 필터 (고른 효과가 있는 아이템만)
+  const [filter, setFilter] = useState<ItemFilter>('all');
+  const shown = owned.filter((item) => matchesFilter(item, filter));
 
-  // Esc: 아이템 목록이 열려 있으면 그것만 닫음 (뽑기 연출 중에는 연출 쪽에서 처리)
+  // Esc: 아이템 목록·상세 창이 열려 있으면 그것만 닫음 (뽑기 연출 중에는 연출 쪽에서 처리)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (catalogOpen) setCatalogOpen(false);
+      else if (detailItem) setDetailItem(null);
       else if (!results) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, catalogOpen, results]);
+  }, [onClose, catalogOpen, detailItem, results]);
+
+  // 고른 효과의 아이템을 다 쓰면 전체 보기로
+  useEffect(() => {
+    if (filter !== 'all' && shown.length === 0) setFilter('all');
+  }, [filter, shown.length]);
+
+  // 상세 창의 아이템을 다 쓰면 창을 닫음
+  useEffect(() => {
+    if (detailItem && detailCount === 0) setDetailItem(null);
+  }, [detailItem, detailCount]);
 
   useEffect(() => {
     if (!notice) return;
@@ -112,7 +139,9 @@ export default function ShopPage({ coins, stats, onSpend, onUseItems, onClose }:
     });
     onUseItems(items);
     playSound('itemUse');
-    const what = items.length === 1 ? items[0].name : `아이템 ${items.length}개`;
+    // 같은 아이템 여러 개면 '이름 ×개수', 여러 종류면 '아이템 n개'
+    const what =
+      items.length === 1 ? items[0].name : items.every((i) => i.id === items[0].id) ? `${items[0].name} ×${items.length}` : `아이템 ${items.length}개`;
     setNotice({ id: Date.now(), text: `${what} 사용 · ${describeEffects(items)}` });
   };
 
@@ -210,17 +239,33 @@ export default function ShopPage({ coins, stats, onSpend, onUseItems, onClose }:
             </span>
           </div>
 
+          {owned.length > 0 && (
+            <div className="gacha-bag__filters" role="group" aria-label="효과로 거르기">
+              {FILTERS.map(({ key, label, icon, color }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="gacha-bag__filter"
+                  style={color ? ({ '--filter-color': color } as CSSProperties) : undefined}
+                  aria-pressed={filter === key}
+                  // 보유한 아이템 중 그 효과가 없으면 누를 수 없음
+                  disabled={key !== 'all' && !owned.some((item) => matchesFilter(item, key))}
+                  onClick={() => setFilter(key)}
+                >
+                  {key === 'gift' ? <HeartMark /> : icon && <Icon name={icon} />}
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {owned.length === 0 ? (
             <p className="gacha-bag__empty">아직 뽑은 아이템이 없어요</p>
           ) : (
             <ul className="gacha-bag__grid">
-              {owned.map((item) => (
+              {shown.map((item) => (
                 <li key={item.id}>
-                  <ItemCard item={item} count={inventory[item.id]}>
-                    <button type="button" className="item-card__use" onClick={() => consumeItems([item])}>
-                      사용
-                    </button>
-                  </ItemCard>
+                  <ItemCard item={item} count={inventory[item.id]} onClick={() => setDetailItem(item)} />
                 </li>
               ))}
             </ul>
@@ -248,6 +293,9 @@ export default function ShopPage({ coins, stats, onSpend, onUseItems, onClose }:
             pull(results.length, againPrice);
           }}
         />
+      )}
+      {detailItem && detailCount > 0 && (
+        <ItemDetail item={detailItem} count={detailCount} onUse={(amount) => consumeItems(Array.from({ length: amount }, () => detailItem))} onClose={() => setDetailItem(null)} />
       )}
       {catalogOpen && <ItemCatalog inventory={inventory} onClose={() => setCatalogOpen(false)} />}
     </div>
