@@ -1270,6 +1270,8 @@ body {
   object-fit: cover;
   filter: blur(28px) brightness(0.4) saturate(1.15);
   transform: scale(1.12);
+  /* 흐림 처리한 그림을 따로 한 번만 그려 두고, 대사가 바뀔 때마다 다시 흐리게 그리지 않게 함 */
+  will-change: transform;
   animation: episode-bg-in 0.6s ease;
 }
 
@@ -1299,13 +1301,13 @@ body {
     0 0 0 calc(4 * var(--u)) var(--g-line),
     0 calc(24 * var(--u)) calc(60 * var(--u)) rgba(0, 0, 0, 0.65);
   animation: episode-cg-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 @keyframes episode-cg-in {
   from {
     opacity: 0;
     transform: translateY(calc(12 * var(--u))) scale(0.97);
-    filter: blur(6px);
   }
 }
 

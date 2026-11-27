@@ -76,7 +76,7 @@ function isPlainObject(value: unknown): value is object {
 }
 
 // 저장된 JSON을 불러옴 (없거나 깨졌으면 기본값, 객체는 기본값 위에 덮어씌워 새 필드도 채움)
-function loadJSON<T>(key: string, fallback: T): T {
+export function loadJSON<T>(key: string, fallback: T): T {
   const raw = load(key);
   if (raw === null) return fallback;
   try {

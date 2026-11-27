@@ -43,6 +43,27 @@ function loadImage(url: string) {
   );
 }
 
+// 곧 보여줄 이미지를 미리 디코딩해 둠
+// (처음에 모두 불러왔어도 브라우저가 메모리를 아끼려고 디코딩한 그림을 버리면, 보여주는 순간 다시 디코딩하느라 화면이 멈칫함)
+const warming = new Map<string, HTMLImageElement>();
+const WARM_LIMIT = 8;
+
+export function warmImage(url: string) {
+  const prev = warming.get(url);
+  if (prev) {
+    // 최근에 쓴 순서로 다시 넣음
+    warming.delete(url);
+    warming.set(url, prev);
+    return;
+  }
+  const img = new Image();
+  img.src = url;
+  img.decode().catch(() => {});
+  warming.set(url, img);
+  // 오래된 것부터 놓아줌
+  while (warming.size > WARM_LIMIT) warming.delete(warming.keys().next().value!);
+}
+
 // 이미지를 모두 불러올 때까지 진행률(0~1)을 알려줌. 이미 불러온 이미지는 바로 끝남
 export function usePreload(urls: string[]) {
   const pending = urls.filter((url) => !loaded.has(url));

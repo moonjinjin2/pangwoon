@@ -7,7 +7,7 @@ import { HEROINES, SPEAKERS, type Affection, type Heroine } from '../utils/episo
 export const MAX_AFFECTION = 100;
 
 // 히로인 한 명의 호감도를 공개하는 가격 (한 번 공개하면 계속 보임)
-export const REVEAL_PRICE = 500000;
+export const REVEAL_PRICE = 100000;
 
 const AFFECTION_COLOR = '#ee6a82';
 

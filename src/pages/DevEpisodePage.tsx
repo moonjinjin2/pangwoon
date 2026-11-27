@@ -21,6 +21,10 @@ interface TestResult {
   affection: Partial<Affection>;
 }
 
+// 테스트에서 호감도 조건(11월 데이트 초대 등)을 보려고 쓰는 호감도
+const DEV_AFFECTION: Affection = { minji: 100, siyeong: 100, emily: 100 };
+const NO_AFFECTION: Affection = { minji: 0, siyeong: 0, emily: 0 };
+
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
 // 개발자 모드: 메인 에피소드·히로인별 데이트를 골라 바로 봄
@@ -29,6 +33,9 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
   const [playing, setPlaying] = useState<Playing | null>(null);
   const [illust, setIllust] = useState<Episode | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
+  // 끄면 호감도 0으로 테스트 (11월에 아무도 초대하지 않는 장면 확인용)
+  const [highAffection, setHighAffection] = useState(true);
+  const devAffection = highAffection ? DEV_AFFECTION : NO_AFFECTION;
 
   useEffect(() => {
     if (playing || illust) return;
@@ -65,6 +72,10 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
           >
             <Box title="에피소드 테스트" onClose={onClose}>
               <p className="dev-episodes__hint">테스트로 본 에피소드는 컬렉션·호감도·스탯에 반영되지 않아요.</p>
+              <label className="dev-episodes__hint">
+                <input type="checkbox" checked={highAffection} onChange={(e) => setHighAffection(e.target.checked)} /> 호감도 100으로
+                테스트 (끄면 0, 11월 데이트 초대 조건 확인용)
+              </label>
               {result && (
                 <p className="dev-episodes__result">
                   <strong>{result.title}</strong> 결과: {changes && changes.length > 0 ? changes.join(', ') : '변화 없음'}
@@ -126,6 +137,7 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
           label={playing.label}
           episode={playing.isDate ? { icon: '💗', ...playing.episode } : playing.episode}
           date={gameDate}
+          affection={devAffection}
           onDone={finish}
           // 위험도 100이면 배드엔딩·발각 연출까지 보고 목록으로 (실제 게임오버는 없음)
           onExposed={closeScene}

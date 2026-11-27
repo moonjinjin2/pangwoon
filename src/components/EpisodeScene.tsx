@@ -9,10 +9,12 @@ import Panel from './ui/Panel';
 import ProgressBar from './ui/ProgressBar';
 import TalkBox from './ui/TalkBox';
 import { INITIAL_STATS, type StatKey, type Stats } from './StatsBox';
-import { PLAYER_NAME, READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type Heroine, type Poster, type Speaker } from '../utils/episode';
+import { HEROINES, PLAYER_NAME, READY_BACKGROUNDS, SPEAKERS, EXPRESSIONS, portraitImage, getReplayLines, hasRisk, type Affection, type Choice, type Episode, type EpisodeLine, type Expression, type Heroine, type Poster, type Speaker } from '../utils/episode';
 import { RISK_LIMIT, boostAffection, rollRisk } from '../utils/storyStats';
 import { getWeekIndex } from '../utils/gameDate';
 import { voiceUrl } from '../utils/voice';
+import { warmImage } from '../utils/preload';
+import { loadSound, playUrl, type Playback } from '../utils/audio';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 import DangerWarning from './DangerWarning';
 import { playSound, usePlayOnce } from '../utils/sfx';
@@ -25,6 +27,9 @@ const AUTO_MS = 1500;
 const EXPOSE_DELAY_MS = 2000;
 // 발각 연출을 보여주는 시간 (끝나면 엔딩으로)
 const EXPOSED_MS = 4500;
+
+// 지금 대사부터 몇 대사 앞까지 이미지·음성을 미리 준비할지
+const PREPARE_AHEAD = 4;
 
 const RISK_COLOR = '#ff4d6a';
 // 위험도가 이 이상이면 위험도 상자 테를 붉게 강조하고 화면 가장자리도 붉게 맥박침
@@ -63,11 +68,13 @@ interface Props {
   onEndReplay?: () => void;
   // 위장도·정신력(위험도)과 매력(호감도 보너스)에 쓰는 현재 스탯
   stats?: Stats;
+  // 지금까지의 호감도 (호감도 조건이 있는 대사·선택지를 보여줄지 정할 때 씀)
+  affection?: Affection;
   // 위험도가 100에 닿아 정체가 들켰을 때 (넘기지 않으면 들켜도 계속 진행)
   onExposed?: () => void;
 }
 
-export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? schoolImg, showPlayer = false, replay, onDone, onExit, onEndReplay, stats = INITIAL_STATS, onExposed }: Props) {
+export default function EpisodeScene({ number, label, episode, date, background = episode.background ?? schoolImg, showPlayer = false, replay, onDone, onExit, onEndReplay, stats = INITIAL_STATS, affection: baseAffection, onExposed }: Props) {
   // 선택지를 고르면 그 답변 대사가 끼워지므로 대사 목록을 상태로 관리
   const [lines, setLines] = useState(() => (replay ? getReplayLines(episode.lines, replay) : episode.lines));
   // 고른 선택지 번호 (나온 순서대로 기록해 다시 보기에 씀)
@@ -76,6 +83,14 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [typed, setTyped] = useState(0);
   const [affection, setAffection] = useState<Partial<Affection>>({});
   // 선택지로 바뀐 스탯 합계 (에피소드를 무사히 끝내면 반영)
+  // 호감도 조건을 만족하는 대사·선택지인지 (지금까지의 호감도 + 이번 에피소드에서 오른 호감도)
+  const visible = (l: { when?: (affection: Affection) => boolean }) => {
+    if (!l.when) return true;
+    const total = Object.fromEntries(HEROINES.map((h) => [h, (baseAffection?.[h] ?? 0) + (affection[h] ?? 0)])) as Affection;
+    return l.when(total);
+  };
+  // from 번째부터 처음으로 보이는 대사 (없으면 -1)
+  const nextVisible = (from: number, current = lines) => current.findIndex((l, i) => i >= from && visible(l));
   const [statChanges, setStatChanges] = useState<Partial<Record<StatKey, number>>>({});
   // 이번 에피소드의 위험도 (다시 보기에서는 오르지 않음)
   const hitRisk = (l: EpisodeLine): RiskHit | null => (l.risk && !replay ? rollRisk(l.risk, stats.disguise, stats.mental) : null);
@@ -107,7 +122,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
   const [voiceVolume, setVoiceVolume] = useStoredState(SETTINGS_KEYS.voiceVolume, 80);
   // 지금 재생 중인 더빙 음성 (자동 진행은 음성이 끝날 때까지 기다림)
-  const voiceRef = useRef<HTMLAudioElement[]>([]);
+  const voiceRef = useRef<Playback[]>([]);
   const [voicePlaying, setVoicePlaying] = useState(false);
   const typeMs = (TEXT_SPEEDS.find((s) => s.key === textSpeed) ?? TEXT_SPEEDS[1]).ms;
 
@@ -144,7 +159,9 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 1명이면 가운데, 2명이면 좌우, 3명이면 좌·중·우 (화면 너비 기준 %)
   const stagePositions = [[50], [50], [30, 70], [28, 50, 72]][Math.min(shownSpeakers.length, 3)];
   const typing = typed < text.length;
-  const choosing = !typing && !!line.choices;
+  // 지금 보이는 선택지 (호감도 조건을 만족하지 않는 선택지는 숨김)
+  const options = line.choices?.filter(visible);
+  const choosing = !typing && !!options;
   // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
   const systemError = line.effect === 'system-error';
 
@@ -184,31 +201,33 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 대사가 바뀌면 그 대사의 더빙 음성을 재생 (넘기면 이전 음성은 끊음)
   // 여러 개면 동시에 재생하고, 모두 끝나야 자동 진행
+  // 다음 몇 대사에 나올 일러스트·배경·종이 이미지와 음성을 미리 준비해 둠 (나오는 순간 멈칫하지 않게)
+  useEffect(() => {
+    for (const l of lines.slice(index, index + PREPARE_AHEAD)) {
+      for (const url of [l.cg, l.background, l.poster?.image]) if (url) warmImage(url);
+      const keys = typeof l.voice === 'string' ? [l.voice] : (l.voice ?? []);
+      for (const key of keys) {
+        const url = voiceUrl(key);
+        if (url) loadSound(url);
+      }
+    }
+  }, [lines, index]);
+
   useEffect(() => {
     const keys = typeof line.voice === 'string' ? [line.voice] : (line.voice ?? []);
     const urls = keys.map(voiceUrl).filter((url): url is string => !!url);
     if (urls.length === 0) return;
-    const audios = urls.map((url) => new Audio(url));
-    voiceRef.current = audios;
-    let remaining = audios.length;
-    const stop = () => {
-      remaining--;
-      if (remaining <= 0) setVoicePlaying(false);
-    };
+    // 브라우저가 자동 재생을 막거나 파일이 없으면 음성 없이 끝난 것으로 처리됨
+    const playbacks = urls.map((url) => playUrl(url, { volume: voiceVolume / 100 }));
+    voiceRef.current = playbacks;
+    let alive = true;
     setVoicePlaying(true);
-    for (const audio of audios) {
-      audio.volume = voiceVolume / 100;
-      audio.addEventListener('ended', stop, { once: true });
-      audio.addEventListener('error', stop, { once: true });
-      // 브라우저가 자동 재생을 막으면 음성 없이 진행
-      audio.play().catch(stop);
-    }
+    Promise.all(playbacks.map((p) => p.ended)).then(() => {
+      if (alive) setVoicePlaying(false);
+    });
     return () => {
-      for (const audio of audios) {
-        audio.pause();
-        audio.removeEventListener('ended', stop);
-        audio.removeEventListener('error', stop);
-      }
+      alive = false;
+      for (const playback of playbacks) playback.stop();
       voiceRef.current = [];
       setVoicePlaying(false);
     };
@@ -216,7 +235,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   // 재생 중에 음성 음량을 바꾸면 바로 반영
   useEffect(() => {
-    for (const audio of voiceRef.current) audio.volume = voiceVolume / 100;
+    for (const playback of voiceRef.current) playback.setVolume(voiceVolume / 100);
   }, [voiceVolume]);
 
   // 한 글자씩 타이핑
@@ -255,6 +274,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
     let last: RiskHit | null = null;
     const changes: Partial<Affection>[] = [];
     for (let i = index + 1; i <= target; i++) {
+      if (!visible(current[i])) continue;
       const hit = hitRisk(current[i]);
       if (hit) {
         total += hit.amount;
@@ -270,14 +290,18 @@ export default function EpisodeScene({ number, label, episode, date, background 
     return total;
   };
 
-  const next = (current = lines) => moveTo(index + 1, current);
+  const next = (current = lines) => {
+    const target = nextVisible(index + 1, current);
+    if (target === -1) finish();
+    else moveTo(target, current);
+  };
 
   // 배드엔딩 장면이 끝나면 발각 연출로
   const finish = () => (badEnd ? setExposed(true) : onDone(affection, picks, statChanges));
 
   // 다음 대사로 (마지막 대사였으면 에피소드 종료)
   const proceed = () => {
-    if (index < lines.length - 1) {
+    if (nextVisible(index + 1) !== -1) {
       setFeedback(null);
       next();
     } else {
@@ -299,10 +323,12 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 다음 선택지까지 건너뜀 (더 없으면 에피소드 종료)
   const skip = () => {
     if (choosing || blocked) return;
-    const target = lines.findIndex((l, i) => i >= index && l.choices);
+    const target = lines.findIndex((l, i) => i >= index && l.choices && visible(l));
     if (target === -1) {
       // 남은 대사의 위험도도 반영해서, 100에 닿으면 마지막 대사에서 들킴
-      const total = badEnd ? 0 : moveTo(lines.length - 1);
+      let last = lines.length - 1;
+      while (last > index && !visible(lines[last])) last--;
+      const total = badEnd || last === index ? 0 : moveTo(last);
       if (caughtAt(total)) setTyped(Infinity);
       else finish();
       return;
@@ -318,7 +344,8 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const choose = (choice: Choice) => {
     setChoiceIndex(0);
     setPicks((prev) => [...prev, line.choices!.indexOf(choice)]);
-    const current = [...lines.slice(0, index + 1), ...choice.reply, ...lines.slice(index + 1)];
+    // 에피소드를 끝내는 선택지면 남은 대사를 버림
+    const current = [...lines.slice(0, index + 1), ...choice.reply, ...(choice.ends ? [] : lines.slice(index + 1))];
     setLines(current);
     // 바로 이어지는 대사는 출력음 없이 (이미 울린 것으로 기억)
     if (raisesAffection(choice)) spokenLine.current = current[index + 1] ?? null;
@@ -379,18 +406,18 @@ export default function EpisodeScene({ number, label, episode, date, background 
         skip();
       } else if (choosing && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         e.preventDefault();
-        const count = line.choices!.length;
+        const count = options!.length;
         setChoiceIndex((prev) => (prev + (e.key === 'ArrowUp' ? count - 1 : 1)) % count);
       } else if (choosing && e.key === 'Enter') {
         // 스페이스는 대사 넘기기용이라 연타하다 선택지가 골라지지 않게 Enter로만 선택
         e.preventDefault();
-        choose(line.choices![choiceIndex]);
+        choose(options![choiceIndex]);
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         advance();
       } else if (choosing) {
         // 숫자 키로 선택
-        const choice = line.choices![Number(e.key) - 1];
+        const choice = options![Number(e.key) - 1];
         if (choice) choose(choice);
       }
     };
@@ -400,7 +427,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
 
   const [tag, ...labelRest] = label.split(' · ');
   const dateText = date && `${Number(date.split('-')[1])}월 ${getWeekIndex(date) + 1}주차`;
-  const subtitle = [dateText, episode.time ?? labelRest.join(' · ')].filter(Boolean).join(' · ');
+  const subtitle = [dateText, labelRest.join(' · ')].filter(Boolean).join(' · ');
 
   const feedbackItems = feedback ? (Object.entries(feedback) as [Heroine, number][]).filter(([, v]) => v !== 0) : [];
 
@@ -496,7 +523,7 @@ export default function EpisodeScene({ number, label, episode, date, background 
         <div className="g-episode__choices" onClick={(e) => e.stopPropagation()}>
           <Panel title="선택" icon="sparkle">
             <ul className="g-choices">
-              {line.choices!.map((choice, i) => (
+              {options!.map((choice, i) => (
                 <li key={i}>
                   <ChoiceButton
                     number={i + 1}

@@ -252,6 +252,7 @@ export default function MainPage({ gameDate, onExit, onGameOver, onProceed }: Pr
             number={getNextEpisodeNumber()}
             date={gameDate}
             stats={stats}
+            affection={affection}
             onExposed={expose}
             onDone={finishEpisode}
             onExit={onExit}
