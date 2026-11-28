@@ -1067,6 +1067,15 @@
   cursor: default;
 }
 
+/* 잠긴 선택지 안내 (예: 호감도 80 필요) */
+.g-choice__locked {
+  margin-left: calc(14 * var(--u));
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: calc(17 * var(--u));
+  color: var(--g-muted);
+}
+
 .g-choice__gem {
   width: calc(10 * var(--u));
   height: calc(10 * var(--u));

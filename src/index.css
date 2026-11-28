@@ -3533,6 +3533,45 @@ body {
   color: var(--g-sub);
 }
 
+/* 위험도 테스트 스탯: 설정 창과 같은 슬라이더를 두 칸으로 */
+.dev-episodes__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  margin-bottom: 14px;
+  padding: 10px 14px 12px;
+  background: var(--g-row);
+  border-radius: 4px;
+}
+
+.dev-episodes__stats-title {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: var(--g-sub);
+}
+
+.dev-episodes__stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.dev-episodes__stat-label {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--g-text);
+}
+
+.dev-episodes__stat-value {
+  width: 3ch;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--g-text);
+}
+
 .dev-episodes__result {
   margin-bottom: 14px;
   padding: 8px 14px;

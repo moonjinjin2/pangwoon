@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import Box from '../components/Box';
 import EpisodeScene from '../components/EpisodeScene';
 import IllustView from '../components/IllustView';
+import { INITIAL_STATS, STAT_LABELS, type Stats } from '../components/StatsBox';
 import { DATE_EPISODES, HEROINES, MAIN_EPISODE_LIST, SPEAKERS, getDateLabel, type Affection, type Episode } from '../utils/episode';
 
 interface Props {
@@ -25,6 +26,9 @@ interface TestResult {
 const DEV_AFFECTION: Affection = { minji: 100, siyeong: 100, emily: 100 };
 const NO_AFFECTION: Affection = { minji: 0, siyeong: 0, emily: 0 };
 
+// 테스트에서 바꿔 볼 수 있는 스탯 (위험도 계산에 쓰는 위장도·정신력)
+const RISK_STATS = ['disguise', 'mental'] as const;
+
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
 // 개발자 모드: 메인 에피소드·히로인별 데이트를 골라 바로 봄
@@ -36,6 +40,10 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
   // 끄면 호감도 0으로 테스트 (11월에 아무도 초대하지 않는 장면 확인용)
   const [highAffection, setHighAffection] = useState(true);
   const devAffection = highAffection ? DEV_AFFECTION : NO_AFFECTION;
+  // 위험도 테스트용 스탯 (위장도: 위험 상승량 감소, 정신력: 흥분 위험 회피). 나머지는 기본값
+  const [devStats, setDevStats] = useState<Stats>(INITIAL_STATS);
+  const setStat = (key: (typeof RISK_STATS)[number], value: number) =>
+    setDevStats((prev) => ({ ...prev, [key]: Math.min(100, Math.max(0, Math.round(value) || 0)) }));
 
   useEffect(() => {
     if (playing || illust) return;
@@ -76,6 +84,24 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
                 <input type="checkbox" checked={highAffection} onChange={(e) => setHighAffection(e.target.checked)} /> 호감도 100으로
                 테스트 (끄면 0, 11월 데이트 초대 조건 확인용)
               </label>
+              <div className="dev-episodes__stats">
+                <span className="dev-episodes__stats-title">위험도 테스트 스탯</span>
+                {RISK_STATS.map((key) => (
+                  <label key={key} className="dev-episodes__stat">
+                    <span className="dev-episodes__stat-label">{STAT_LABELS[key]}</span>
+                    <input
+                      className="settings__slider"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={devStats[key]}
+                      style={{ '--fill': `${devStats[key]}%` } as CSSProperties}
+                      onChange={(e) => setStat(key, Number(e.target.value))}
+                    />
+                    <span className="dev-episodes__stat-value">{devStats[key]}</span>
+                  </label>
+                ))}
+              </div>
               {result && (
                 <p className="dev-episodes__result">
                   <strong>{result.title}</strong> 결과: {changes && changes.length > 0 ? changes.join(', ') : '변화 없음'}
@@ -138,6 +164,7 @@ export default function DevEpisodePage({ gameDate, onClose }: Props) {
           episode={playing.isDate ? { icon: '💗', ...playing.episode } : playing.episode}
           date={gameDate}
           affection={devAffection}
+          stats={devStats}
           onDone={finish}
           // 위험도 100이면 배드엔딩·발각 연출까지 보고 목록으로 (실제 게임오버는 없음)
           onExposed={closeScene}

@@ -102,6 +102,9 @@ export interface Choice {
   when?: (affection: Affection) => boolean;
   // 있으면 답변 대사가 끝나면 남은 대사 없이 에피소드를 끝냄
   ends?: boolean;
+  // 있으면 이 조건을 만족할 때만 고를 수 있음 (만족하지 않으면 잠긴 채로 보이고 lockedText를 덧붙임)
+  enabledWhen?: (affection: Affection) => boolean;
+  lockedText?: string;
 }
 
 export interface EpisodeLine {
@@ -201,6 +204,8 @@ const DATE_AFFECTION = 80;
 const canDate = (heroine: Heroine) => (affection: Affection) => affection[heroine] >= DATE_AFFECTION;
 const anyDate = (affection: Affection) => HEROINES.some((h) => affection[h] >= DATE_AFFECTION);
 const noDate = (affection: Affection) => !anyDate(affection);
+// 호감도가 모자라 고를 수 없는 데이트 선택지에 붙는 안내
+const DATE_LOCKED = `호감도 ${DATE_AFFECTION} 필요`;
 
 // 조건을 만족할 때만 나오는 장면
 function onlyIf(when: (affection: Affection) => boolean, lines: EpisodeLine[]): EpisodeLine[] {
@@ -2165,24 +2170,27 @@ const EPISODES: Record<number, Episode> = {
         { text: '나는 시영이를 복도의 의자에 앉히고 잠시 이야기를 들어 주었다.', background: dormHallBg, stage: ['siyeong'] },
       ]),
 
-      // 데이트 상대 선택 (호감도 80 이상인 히로인만 나옴)
+      // 데이트 상대 선택 (세 히로인 모두 보이고, 호감도 80 이상인 히로인만 고를 수 있음)
       {
         text: '오늘 밤은 누구와 함께할까?',
         hidePortrait: true,
-        when: anyDate,
         choices: [
-          { text: '민지와 함께 몰래 인간 세상으로 간다.', affection: {}, when: canDate('minji'), reply: MINJI_ROUTE },
-          { text: '에밀리가 부른 학교 뒤 정원으로 간다.', affection: {}, when: canDate('emily'), reply: EMILY_ROUTE },
-          { text: '시영이와 함께 나가 이야기를 듣는다.', affection: {}, when: canDate('siyeong'), reply: SIYEONG_ROUTE },
+          { text: '민지와 함께 몰래 인간 세상으로 간다.', affection: {}, enabledWhen: canDate('minji'), lockedText: DATE_LOCKED, reply: MINJI_ROUTE },
+          { text: '에밀리가 부른 학교 뒤 정원으로 간다.', affection: {}, enabledWhen: canDate('emily'), lockedText: DATE_LOCKED, reply: EMILY_ROUTE },
+          { text: '시영이와 함께 나가 이야기를 듣는다.', affection: {}, enabledWhen: canDate('siyeong'), lockedText: DATE_LOCKED, reply: SIYEONG_ROUTE },
+          // 아무도 고를 수 없을 때만 나옴 (세 히로인 모두 호감도 80 미만)
+          {
+            text: '오늘 밤은 혼자 보낸다.',
+            affection: {},
+            when: noDate,
+            reply: [
+              { text: '나는 다시 휴대폰에 켜 둔 인간 세상의 사진을 바라봤다. 누군가에게 속마음을 털어놓고 싶었지만, 아직은 누구도 믿을 만큼 가까워지지 못한 것 같다.', hidePortrait: true },
+              { speaker: 'player', text: '조금만 더 버티자…….' },
+              { text: '나는 휴대폰을 끄고 침대에 누웠다. 창문 밖에는 차가운 밤이 이어지고 있었다.' },
+            ],
+          },
         ],
       },
-
-      // 아무도 선택할 수 없을 때 (세 히로인 모두 호감도 80 미만)
-      ...onlyIf(noDate, [
-        { text: '나는 다시 휴대폰에 켜 둔 인간 세상의 사진을 바라봤다. 누군가에게 속마음을 털어놓고 싶었지만, 아직은 누구도 믿을 만큼 가까워지지 못한 것 같다.', hidePortrait: true },
-        { speaker: 'player', text: '조금만 더 버티자…….' },
-        { text: '나는 휴대폰을 끄고 침대에 누웠다. 창문 밖에는 차가운 밤이 이어지고 있었다.' },
-      ]),
     ],
   },
 };

@@ -177,6 +177,14 @@ export default function EpisodeScene({ number, label, episode, date, background 
   // 지금 보이는 선택지 (호감도 조건을 만족하지 않는 선택지는 숨김)
   const options = line.choices?.filter(visible);
   const choosing = !typing && !!options;
+  // 보이지만 조건이 모자라 고를 수 없는 선택지 (잠긴 채로 표시)
+  const enabled = (choice: Choice) => {
+    if (!choice.enabledWhen) return true;
+    const total = Object.fromEntries(HEROINES.map((h) => [h, (baseAffection?.[h] ?? 0) + (affection[h] ?? 0)])) as Affection;
+    return choice.enabledWhen(total);
+  };
+  // 강조된 선택지가 잠겨 있으면 고를 수 있는 첫 선택지를 강조
+  const selectedChoice = options && !enabled(options[choiceIndex] ?? options[0]) ? Math.max(0, options.findIndex(enabled)) : choiceIndex;
   // 시스템 오류 효과: 오류 대사마다 창을 새로 띄움
   const systemError = line.effect === 'system-error';
 
@@ -421,19 +429,24 @@ export default function EpisodeScene({ number, label, episode, date, background 
         skip();
       } else if (choosing && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         e.preventDefault();
+        // 잠긴 선택지는 건너뛰고 다음으로
         const count = options!.length;
-        setChoiceIndex((prev) => (prev + (e.key === 'ArrowUp' ? count - 1 : 1)) % count);
+        const step = e.key === 'ArrowUp' ? count - 1 : 1;
+        let i = selectedChoice;
+        do i = (i + step) % count;
+        while (!enabled(options![i]) && i !== selectedChoice);
+        setChoiceIndex(i);
       } else if (choosing && e.key === 'Enter') {
         // 스페이스는 대사 넘기기용이라 연타하다 선택지가 골라지지 않게 Enter로만 선택
         e.preventDefault();
-        choose(options![choiceIndex]);
+        if (enabled(options![selectedChoice])) choose(options![selectedChoice]);
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         advance();
       } else if (choosing) {
         // 숫자 키로 선택
         const choice = options![Number(e.key) - 1];
-        if (choice) choose(choice);
+        if (choice && enabled(choice)) choose(choice);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -542,12 +555,14 @@ export default function EpisodeScene({ number, label, episode, date, background 
                 <li key={i}>
                   <ChoiceButton
                     number={i + 1}
-                    selected={choiceIndex === i}
+                    selected={selectedChoice === i}
+                    disabled={!enabled(choice)}
                     silent={raisesAffection(choice)}
-                    onSelect={() => setChoiceIndex(i)}
+                    onSelect={() => enabled(choice) && setChoiceIndex(i)}
                     onClick={() => choose(choice)}
                   >
                     {fill(choice.text)}
+                    {!enabled(choice) && choice.lockedText && <span className="g-choice__locked">🔒 {choice.lockedText}</span>}
                   </ChoiceButton>
                 </li>
               ))}
