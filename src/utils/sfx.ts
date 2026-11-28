@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { load, SETTINGS_KEYS } from './storage';
 import type { Rarity } from './gacha';
 import { loadSound, playUrl, type Playback } from './audio';
+import { isBgmName } from './bgm';
 
 // 효과음 (src/sfx). 더빙 음성과 같이 Web Audio로 재생 (audio.ts)
 // 파일 이름 앞 번호(01_ ~ 21_)로 찾으므로, 효과음 목록 번호대로 파일을 넣기만 하면 자동으로 적용됨 (없는 번호는 조용히 넘어감)
@@ -9,11 +10,12 @@ const files = import.meta.glob<string>('../sfx/*.{mp3,wav}', { eager: true, quer
 
 // '01' 같은 번호, 번호가 없는 파일은 이름 그대로 ('click', 'card_flip', 'gacha_ing')
 // macOS에서 넣은 한글 파일 이름은 자모가 분리된 형태(NFD)라 NFC로 맞춤
+// 같은 폴더의 배경음악(main_bgm, '5월 …')은 bgm.ts에서 따로 재생하므로 뺌 (효과음처럼 미리 풀어 두면 메모리를 많이 씀)
 const FILES: Record<string, string> = Object.fromEntries(
-  Object.entries(files).map(([path, url]) => {
-    const name = path.slice('../sfx/'.length).replace(/\.(mp3|wav)$/, '').normalize('NFC');
-    return [name.match(/^(\d+)_/)?.[1] ?? name, url];
-  }),
+  Object.entries(files)
+    .map(([path, url]) => [path.slice('../sfx/'.length).replace(/\.(mp3|wav)$/, '').normalize('NFC'), url])
+    .filter(([name]) => !isBgmName(name))
+    .map(([name, url]) => [name.match(/^(\d+)_/)?.[1] ?? name, url]),
 );
 
 // 효과음 목록 번호

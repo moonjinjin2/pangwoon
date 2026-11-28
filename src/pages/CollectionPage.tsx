@@ -22,7 +22,7 @@ import {
   getReplayLines,
   type Episode,
 } from '../utils/episode';
-import { PROGRESS_KEYS, loadChoices, loadSeenDates, useStoredState, type Collection } from '../utils/storage';
+import { PROGRESS_KEYS, loadChoices, loadEpisodeAffection, loadSeenDates, useStoredState, type Collection } from '../utils/storage';
 
 // 에피소드의 대표 배경: 지정된 에피소드 배경, 없으면 대사가 가장 많이 나오는 배경
 // 에피소드 장면처럼 아직 준비 안 된 배경은 school.jpg로 (프롤로그는 방에서 진행)
@@ -41,14 +41,14 @@ function episodeBackground(episode: Episode) {
   return picked && READY_BACKGROUNDS.has(picked) ? picked : schoolImg;
 }
 
-// 일러스트가 없는 에피소드는 대표 배경 + 대표 캐릭터로 대신 그림 (showIllust가 false면 아직 공개 전이라 일러스트를 가림)
+// 일러스트가 없는 에피소드는 대표 배경 + 대표 캐릭터(이번 에피소드에서 호감도가 가장 많이 오른 히로인)로 대신 그림 (showIllust가 false면 아직 공개 전이라 일러스트를 가림)
 export function EpisodeArt({ episode, showIllust = true }: { episode: Episode; showIllust?: boolean }) {
   if (showIllust && episode.illust) return <img className="ep-card__illust" src={episode.illust} alt="" />;
   const isPrologue = episode.id === PROLOGUE.id;
   return (
     <div className={isPrologue ? 'ep-card__art ep-card__art--night' : 'ep-card__art'}>
       <Backdrop src={episodeBackground(episode)} />
-      <img className="ep-card__char" src={SPEAKERS[getMainSpeaker(episode)].image} alt="" />
+      <img className="ep-card__char" src={SPEAKERS[getMainSpeaker(episode, loadChoices(episode.id), loadEpisodeAffection(episode.id))].image} alt="" />
     </div>
   );
 }
@@ -189,8 +189,8 @@ export default function CollectionPage({ onClose }: Props) {
   const [tab, setTab] = useState<'episodes' | 'cg'>('episodes');
   const [viewingCg, setViewingCg] = useState<{ cg: string; episode: Episode } | null>(null);
 
-  // 메인 화면은 프롤로그를 본 뒤에만 오므로 #0 프롤로그는 항상 수집된 것으로 봄
-  const collected: Collection = { 0: PROLOGUE.id, ...stored };
+  // 3월 프롤로그(#0)는 오프닝 영상으로 대신하므로 앨범에 보이지 않음 (저장 기록에는 남아 있어도 뺌)
+  const collected: Collection = Object.fromEntries(Object.entries(stored).filter(([, id]) => id !== PROLOGUE.id));
   const seen = loadSeenDates();
   const entries: Entry[] = Object.entries(collected)
     .map(([key, id]) => ({ number: Number(key), episode: EPISODE_CATALOG.find((e) => e.id === id) }))

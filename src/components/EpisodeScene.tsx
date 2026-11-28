@@ -18,6 +18,12 @@ import { loadSound, playUrl, type Playback } from '../utils/audio';
 import { DEFAULT_TEXT_SPEED, SETTINGS_KEYS, TEXT_SPEEDS, useStoredState } from '../utils/storage';
 import DangerWarning from './DangerWarning';
 import { playSound, usePlayOnce } from '../utils/sfx';
+import { episodeBgm, useBgm, useLowerBgmVolume } from '../utils/bgm';
+
+// 히로인 대사가 나오기 시작하면 낮추는 배경음악 음량 (0~100)
+const EPISODE_TALK_BGM_VOLUME = 10;
+// 마지막 히로인 대사 뒤로 독백·나레이션이 이만큼 이어지면 원래 음량으로 돌려놓음 (히로인이 다시 말하면 또 낮춤)
+const TALK_END_LINES = 4;
 
 // 자동 진행 시 문장이 다 나온 뒤 기다리는 시간
 const AUTO_MS = 1500;
@@ -158,6 +164,15 @@ export default function EpisodeScene({ number, label, episode, date, background 
   const shownSpeakers = stage.length > 0 ? stage : upcoming ? [upcoming] : [];
   // 1명이면 가운데, 2명이면 좌우, 3명이면 좌·중·우 (화면 너비 기준 %)
   const stagePositions = [[50], [50], [30, 70], [28, 50, 72]][Math.min(shownSpeakers.length, 3)];
+  // 에피소드 배경음악 (곡이 없는 에피소드는 무음)
+  // 히로인과 대화하는 동안은 대사·더빙이 잘 들리게 설정의 배경음악 음량을 10으로 낮춤
+  // 마지막 히로인 대사 뒤로 독백·나레이션이 TALK_END_LINES줄 이어지면 원래 음량으로 (설정이 10보다 작으면 계속 그대로)
+  const isHeroine = (l: EpisodeLine) => !!l.speaker && (HEROINES as readonly string[]).includes(l.speaker);
+  let lastHeroineLine = index;
+  while (lastHeroineLine >= 0 && !isHeroine(lines[lastHeroineLine])) lastHeroineLine--;
+  const talking = lastHeroineLine >= 0 && lines.slice(lastHeroineLine + 1, index + 1).filter(visible).length < TALK_END_LINES;
+  useBgm(episodeBgm(episode) ?? null);
+  useLowerBgmVolume(talking, EPISODE_TALK_BGM_VOLUME);
   const typing = typed < text.length;
   // 지금 보이는 선택지 (호감도 조건을 만족하지 않는 선택지는 숨김)
   const options = line.choices?.filter(visible);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Affection } from './episode';
 
 export const DATE_KEY = 'gameDate';
 
@@ -13,6 +14,8 @@ export const PROGRESS_KEYS = {
   items: 'items',
   collection: 'collection',
   choices: 'choices',
+  // 에피소드 id → 그 에피소드에서 실제로 오른 호감도 (앨범 대표 히로인)
+  episodeAffection: 'episodeAffection',
   seenDates: 'seenDates',
   dangerWarned: 'dangerWarned',
   exposed: 'exposed',
@@ -133,8 +136,28 @@ export function saveChoices(id: string, picks: number[]) {
   save(PROGRESS_KEYS.choices, JSON.stringify({ ...loadJSON<ChoiceRecord>(PROGRESS_KEYS.choices, {}), [id]: picks }));
 }
 
+// 에피소드 id → 끝까지 봤을 때 히로인별로 오른 호감도 (매력 보너스·조건부 장면까지 반영된 실제 값)
+export type EpisodeAffectionRecord = Record<string, Partial<Affection>>;
+
+export function loadEpisodeAffection(id: string): Partial<Affection> | undefined {
+  return loadJSON<EpisodeAffectionRecord>(PROGRESS_KEYS.episodeAffection, {})[id];
+}
+
+export function saveEpisodeAffection(id: string, gained: Partial<Affection>) {
+  save(
+    PROGRESS_KEYS.episodeAffection,
+    JSON.stringify({ ...loadJSON<EpisodeAffectionRecord>(PROGRESS_KEYS.episodeAffection, {}), [id]: gained }),
+  );
+}
+
 // 같은 키를 쓰는 다른 화면(예: 메인 화면과 에피소드 화면의 설정)에 바뀐 값을 알리는 이벤트
 const STORED_STATE_EVENT = 'stored-state';
+
+// 컴포넌트 밖에서 값을 바꿈 (저장하고, 같은 키를 쓰는 useStoredState에도 알림)
+export function setStoredState<T>(key: string, value: T) {
+  save(key, JSON.stringify(value));
+  window.dispatchEvent(new CustomEvent(STORED_STATE_EVENT, { detail: { key, value } }));
+}
 
 // useState와 같지만 값이 바뀔 때마다 localStorage에 저장해 새로고침해도 유지됨
 // 같은 키를 쓰는 다른 컴포넌트와도 값이 맞춰짐

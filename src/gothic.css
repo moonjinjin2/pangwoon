@@ -1643,15 +1643,21 @@
   color: var(--hud-red);
 }
 
-/* 선택지: 화면 가운데 위쪽 */
+/* 선택지: 화면 가운데 위쪽. 가장 긴 선택지가 한 줄에 들어가도록 너비가 늘어남 (기본 830, 화면보다 넓어지지는 않음) */
 .g-episode__choices {
   position: absolute;
   left: 50%;
   top: 28%;
-  width: calc(830 * var(--u));
+  width: max-content;
+  min-width: min(calc(830 * var(--u)), calc(100% - 32px));
   max-width: calc(100% - 32px);
   transform: translateX(-50%);
   cursor: default;
+}
+
+/* 선택지 문구는 줄바꿈 없이 한 줄로 (줄이 늘어 아래 선택지가 대화창에 가려지지 않게) */
+.g-episode__choices .g-choice__label {
+  white-space: nowrap;
 }
 
 /* 하단 대화창: 오른쪽 아래 버튼 줄 자리를 비우고, 다음 표시는 왼쪽 아래 */

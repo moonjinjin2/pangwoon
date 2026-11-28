@@ -21,11 +21,12 @@ import CollectionPage from './CollectionPage';
 import DevEpisodePage from './DevEpisodePage';
 import ShopPage from './ShopPage';
 import { MAIN_GUIDE } from '../utils/guide';
+import { MAIN_BGM, useBgm } from '../utils/bgm';
 import { ACTIVITIES, getWeekCost, getWeekResult, rollDays, type Effect, type Grade } from '../utils/activity';
 import type { Item } from '../utils/gacha';
 import { HEROINES, PLAYER_NAME, getEpisode, hasMainEpisode, type Affection, type Heroine } from '../utils/episode';
 import { getWeekIndex, isEpisodeDay } from '../utils/gameDate';
-import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, useStoredState } from '../utils/storage';
+import { DEFAULT_TEXT_SPEED, PROGRESS_KEYS, SETTINGS_KEYS, getNextEpisodeNumber, markCollected, saveChoices, saveEpisodeAffection, useStoredState } from '../utils/storage';
 
 interface Props {
   gameDate: string;
@@ -78,7 +79,7 @@ export default function MainPage({ gameDate, onExit, onGameOver, onProceed }: Pr
   const [devMode, setDevMode] = useStoredState(SETTINGS_KEYS.devMode, false);
   // 개발자 모드: 에피소드를 골라 바로 보는 테스트 화면
   const [devEpisodesOpen, setDevEpisodesOpen] = useState(false);
-  const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 50);
+  const [volume, setVolume] = useStoredState(SETTINGS_KEYS.bgmVolume, 30);
   const [voiceVolume, setVoiceVolume] = useStoredState(SETTINGS_KEYS.voiceVolume, 80);
   const [textSpeed, setTextSpeed] = useStoredState(SETTINGS_KEYS.textSpeed, DEFAULT_TEXT_SPEED);
 
@@ -119,6 +120,7 @@ export default function MainPage({ gameDate, onExit, onGameOver, onProceed }: Pr
   const completeEpisode = (number: number, id: string, changes: Partial<Affection>, picks?: number[]) => {
     markCollected(number, id, gameDate);
     if (picks) saveChoices(id, picks);
+    saveEpisodeAffection(id, changes);
     setAffection((prev) => {
       const next = { ...prev };
       for (const key of HEROINES) {
@@ -160,6 +162,9 @@ export default function MainPage({ gameDate, onExit, onGameOver, onProceed }: Pr
 
   // 활동·장면·결과창이 끝나 메인 화면으로 돌아온 뒤에 경고·엔딩을 띄움
   const busy = playing || showResult;
+
+  // 메인 화면 배경음악 (에피소드를 보는 동안은 에피소드 곡으로 바뀌고, 엔딩 화면에서는 멈춤)
+  useBgm(ending && !busy ? null : MAIN_BGM);
 
   useEffect(() => {
     const danger: Record<DangerKind, boolean> = { health: healthDanger };

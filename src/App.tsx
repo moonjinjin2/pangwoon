@@ -114,7 +114,7 @@ function Game() {
   );
 }
 
-// 로딩 화면을 최소 2초 보여주고 0.5초 동안 서서히 사라지게 함
+// 로딩 화면을 최소 2초 보여주고, 다 차면 잠깐 머문 뒤 0.5초 동안 서서히 사라지게 함
 const MIN_LOADING_MS = 2000;
 const LOADING_FADE_MS = 500;
 

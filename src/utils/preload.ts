@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // 앱 시작 때 게임에서 쓰는 이미지를 모두 미리 불러옴 (데이트 일러스트·아이템 아이콘 포함, 이후 화면에서는 따로 기다리지 않음)
 // 지금 쓰지 않는 이미지도 빼서 받지 않게 함 (새 이미지를 안 쓰게 되면 여기에도 추가)
@@ -88,38 +88,53 @@ export function usePreload(urls: string[]) {
 }
 
 // 로딩 화면을 최소 minMs 동안 보여줌 (이미 캐시돼 있어 바로 끝나면 화면이 번쩍 지나가 깜박이는 것처럼 보이므로)
-// 진행 막대는 실제 진행률과 경과 시간 중 느린 쪽을 따라 부드럽게 차오르고, 다 차면 fadeMs 동안 서서히 사라짐
-export function useMinLoading(done: boolean, progress: number, minMs: number, fadeMs: number) {
-  const [elapsed, setElapsed] = useState(0);
+// 진행 막대는 실제 진행률과 경과 시간 중 느린 쪽을 따라 차오르되, 실제 진행률이 한 번에 뛰어도 정해진 속도 이상으로는 빨라지지 않음
+// 다 차면 holdMs 동안 꽉 찬 모습을 보여준 뒤 fadeMs 동안 서서히 사라짐
+// 가장 빠르게 차오르는 속도 (밀리초당 진행률, 바닥부터 끝까지 최소 0.8초)
+const MAX_FILL_RATE = 1 / 800;
+
+export function useMinLoading(done: boolean, progress: number, minMs: number, fadeMs: number, holdMs = 500) {
+  const [shown, setShown] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  // 프레임 반복 안에서 최신 값을 읽도록 붙잡아 둠
+  const latest = useRef({ done, progress });
+  latest.current = { done, progress };
 
   useEffect(() => {
     // 로딩 화면이 실제로 처음 그려진 프레임부터 셈
     // (처음에 이미지를 받느라 첫 프레임이 늦게 그려지면, 마운트 시점부터 세는 경우 화면이 보이자마자 시간이 다 지나 있음)
     let start: number | null = null;
+    let last: number | null = null;
+    let value = 0;
+    let fullAt: number | null = null;
     let frame = requestAnimationFrame(function tick(now) {
       start ??= now;
-      const t = now - start;
-      setElapsed(t);
-      if (t < minMs + fadeMs) frame = requestAnimationFrame(tick);
+      const dt = last === null ? 0 : now - last;
+      last = now;
+      const { done, progress } = latest.current;
+      const goal = Math.min(done ? 1 : progress, (now - start) / minMs);
+      value = Math.max(value, Math.min(goal, value + dt * MAX_FILL_RATE));
+      setShown(value);
+      if (done && value >= 1) {
+        fullAt ??= now;
+        // 꽉 찬 하트를 잠깐 보여준 뒤 사라지기 시작 (사라지는 동안은 프레임을 돌리지 않음)
+        if (now - fullAt >= holdMs) {
+          setLeaving(true);
+          return;
+        }
+      }
+      frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [minMs, fadeMs]);
+  }, [minMs, holdMs]);
 
-  const shownProgress = Math.min(progress, elapsed / minMs);
-  const full = done && elapsed >= minMs;
-  // 다 찬 순간부터 사라지기 시작
-  const [fadeStart, setFadeStart] = useState<number | null>(null);
-  useEffect(() => {
-    if (full && fadeStart === null) setFadeStart(elapsed);
-  }, [full, fadeStart, elapsed]);
-
-  // 진행이 끝나도 렌더링 프레임이 멈추지 않게, 사라지는 동안은 타이머로 마무리
+  // 사라지는 동안은 타이머로 마무리
   const [gone, setGone] = useState(false);
   useEffect(() => {
-    if (fadeStart === null) return;
+    if (!leaving) return;
     const timer = setTimeout(() => setGone(true), fadeMs);
     return () => clearTimeout(timer);
-  }, [fadeStart, fadeMs]);
+  }, [leaving, fadeMs]);
 
-  return { progress: full ? 1 : shownProgress, leaving: fadeStart !== null, gone };
+  return { progress: shown, leaving, gone };
 }

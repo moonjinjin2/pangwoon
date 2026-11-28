@@ -6,7 +6,7 @@ type AudioContextCtor = typeof AudioContext;
 
 let ctx: AudioContext | null = null;
 
-function context() {
+export function context() {
   if (ctx) return ctx;
   const Ctor: AudioContextCtor = window.AudioContext ?? (window as unknown as { webkitAudioContext: AudioContextCtor }).webkitAudioContext;
   ctx = new Ctor();
